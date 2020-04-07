@@ -1,0 +1,12 @@
+kernel-rt
+kernel-modules/mlnx-ofa_kernel
+kernel-modules/intel-e1000e
+kernel-modules/intel-iavf
+kernel-modules/intel-i40e
+kernel-modules/intel-ixgbevf
+kernel-modules/intel-ixgbe
+kernel-modules/qat17
+kernel-modules/tpmdd
+kernel-modules/integrity
+kernel-modules/drbd
+kernel-modules/intel-opae-fpga
