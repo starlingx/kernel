@@ -1,0 +1,25 @@
+From 934c6a908315f7f5943760e9b9047e1225c54d3e Mon Sep 17 00:00:00 2001
+From: Dongqi Chen <chen.dq@neusoft.com>
+Date: Wed, 22 Apr 2020 23:42:26 -0700
+Subject: [PATCH] Fix wrong kernel version
+
+Signed-off-by: Dongqi Chen <chen.dq@neusoft.com>
+---
+ Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Makefile b/Makefile
+index 0dfd0a8..4db08f2 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,6 +1,6 @@
+ KERNELDIR ?= /lib/modules/$(shell uname -r)/build
+ PWD ?= $(shell pwd)
+-kerval = $(shell uname -r | sed 's/\([0-9]*\.[0-9]*\)\..*/\1/')
++kerval = $(shell echo $(KERNELDIR) | sed 's/.*\/\([0-9]*\.[0-9]*\)\..*/\1/')
+ 
+ cflags-y +=  -Wno-unused-value -Wno-unused-label -I$(M)/include -I$(M)/include/uapi -I$(M)/include/intel
+ cflags-y += -I$(M)/build/include -I$(M)/build/include/uapi -I$(M)/build/include/intel
+-- 
+1.8.3.1
+
