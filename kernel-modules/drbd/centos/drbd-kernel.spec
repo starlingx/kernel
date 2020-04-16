@@ -23,8 +23,10 @@ ExclusiveArch: x86_64
 # Sources.
 Source0: http://oss.linbit.com/drbd/drbd-%{tarball_version}.tar.gz
 
-# WRS
+# STX
 Patch0001: 0001-remove_bind_before_connect_error.patch
+Patch0002: 0002-drbd-convert-to-bioset_init-mempool_init.patch
+Patch0003: 0003-Fix-queue_lock-compile-issue.patch
 
 %define kversion %(rpm -q kernel%{?bt_ext}-devel | sort --version-sort | tail -1 | sed 's/kernel%{?bt_ext}-devel-//')
 
@@ -85,6 +87,8 @@ echo "Done."
 %prep
 %setup -q -n drbd-%{tarball_version}
 %patch0001 -p1
+%patch0002 -p1
+%patch0003 -p1
 
 %build
 rm -rf obj
@@ -111,10 +115,10 @@ find %{buildroot} -type f -name \*.ko -exec %{__strip} --strip-debug \{\} \;
 
 # Always Sign the modules(s).
 # If the module signing keys are not defined, define them here.
-%{!?privkey: %define privkey /usr/src/kernels/%{kversion}/signing_key.priv}
+%{!?privkey: %define privkey /usr/src/kernels/%{kversion}/signing_key.pem}
 %{!?pubkey: %define pubkey /usr/src/kernels/%{kversion}/signing_key.x509}
 for module in $(find %{buildroot} -type f -name \*.ko);
-do %{__perl} /usr/src/kernels/%{kversion}/scripts/sign-file \
+do /usr/src/kernels/%{kversion}/scripts/sign-file \
     sha256 %{privkey} %{pubkey} $module;
 done
 
