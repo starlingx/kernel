@@ -1,3 +1,4 @@
+!linux-4.18.0-147.3.1.el8_1.tar.gz#linux-4.18.0-147.3.1.el8_1#https://git.centos.org/sources/kernel/c8/0ee7820c1d452ac7f71c1b1f568f74cd6e8458e8#http_script#post-dl-script/tpm-kmod.sh
 drbd-8.4.11-1.tar.gz#drbd-8.4.11-1#http://www.linbit.com/downloads/drbd/8.4/drbd-8.4.11-1.tar.gz#http##
 e1000e-3.4.2.1.tar.gz#e1000e-3.4.2.1#https://sourceforge.net/projects/e1000/files/e1000e%20stable/3.4.2.1/e1000e-3.4.2.1.tar.gz#http##
 i40e-2.10.19.82.tar.gz#i40e-2.10.19.82#https://sourceforge.net/projects/e1000/files/i40e%20stable/2.10.19.82/i40e-2.10.19.82.tar.gz/download#http##
