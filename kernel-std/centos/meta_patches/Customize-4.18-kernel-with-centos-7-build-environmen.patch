@@ -1,0 +1,193 @@
+From 11b9c3c7d66d2698f41738a46990862dc0b85c14 Mon Sep 17 00:00:00 2001
+From: Shuicheng Lin <shuicheng.lin@intel.com>
+Date: Tue, 18 Feb 2020 15:41:52 +0800
+Subject: [PATCH 3/3] Customize 4.18 kernel with centos 7 build environment
+
+1. change python3 to python2
+2. fix compile issue with gcc-4.8.5
+3. remove "%ghost" to add back files in /boot folder in order to be
+   compatible with CentOS 7. These files are moved to /lib/modules folder
+   in 4.18 kernel. Otherwise, there is problem with weak-modules and
+   update-pxe-network-installer.
+4. disable selftests build due to lack of llvm-toolset in centos 7
+5. disable dump-ipa-clones due to gcc-4.8.5 doesn't support it
+6. disable bpf tools due to require python 3
+7. disable debug build to avoid extra tis_extra file for debug build,
+   and save build time.
+
+Signed-off-by: Shuicheng Lin <shuicheng.lin@intel.com>
+Signed-off-by: Dongqi Chen <chen.dq@neusoft.com>
+---
+ SPECS/kernel.spec | 65 ++++++++++++++++++++++++++-----------------------------
+ 1 file changed, 31 insertions(+), 34 deletions(-)
+
+diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
+index a7a8c97..3856633 100644
+--- a/SPECS/kernel.spec
++++ b/SPECS/kernel.spec
+@@ -121,6 +121,16 @@
+ 
+ %define with_gcov %{?_with_gcov: 1} %{?!_with_gcov: 0}
+ 
++# STX
++# disable debug build
++%define with_debug 0
++# turn off selftests to remove llvm-toolset dependency
++%define with_selftests 0
++# turn off ipaclone due to gcc-4.8.5 doesn't support dump-ipa-clones
++%define _without_ipaclones 1
++# turn off bpf tool due to python3 build failure
++%define with_bpftool 0
++
+ # turn off debug kernel and kabichk for gcov builds
+ %if %{with_gcov}
+ %define with_debug 0
+@@ -307,10 +317,10 @@ Requires: kernel-modules-uname-r = %{KVERREL}%{?variant}
+ #
+ BuildRequires: kmod, patch, bash, sh-utils, tar, git
+ BuildRequires: bzip2, xz, findutils, gzip, m4, perl-interpreter, perl-Carp, perl-devel, perl-generators, make, diffutils, gawk
+-BuildRequires: gcc, binutils, redhat-rpm-config, hmaccalc, python3-devel
++BuildRequires: gcc, binutils, redhat-rpm-config, hmaccalc, python2-devel
+ BuildRequires: net-tools, hostname, bc, bison, flex, elfutils-devel
+ %if %{with_doc}
+-BuildRequires: xmlto, asciidoc, python3-sphinx
++BuildRequires: xmlto, asciidoc, python2-sphinx
+ %endif
+ %if %{with_sparse}
+ BuildRequires: sparse
+@@ -330,7 +340,7 @@ BuildRequires: pciutils-devel
+ %endif
+ %endif
+ %if %{with_bpftool}
+-BuildRequires: python3-docutils
++BuildRequires: python2-docutils
+ BuildRequires: zlib-devel binutils-devel
+ %endif
+ %if %{with_selftests}
+@@ -489,6 +499,7 @@ Patch40006: intel-iommu-allow-ignoring-Ethernet-device-RMRR-with.patch
+ Patch40009: turn-off-write-same-in-smartqpi-driver.patch
+ # Workaround for broken bios causing IOMMU issues
+ Patch40010: Allow-dmar-quirks-for-broken-bioses.patch
++Patch40011: Fix-compile-error-with-gcc-4.8.5-and-python2.patch
+ 
+ # END OF PATCH DEFINITIONS
+ 
+@@ -605,24 +616,24 @@ This package provides debug information for the perf package.
+ # of matching the pattern against the symlinks file.
+ %{expand:%%global _find_debuginfo_opts %{?_find_debuginfo_opts} -p '.*%%{_bindir}/perf(\.debug)?|.*%%{_libexecdir}/perf-core/.*|.*%%{_libdir}/traceevent/plugins/.*|.*%%{_libdir}/libperf-jvmti.so(\.debug)?|XXX' -o perf-debuginfo.list}
+ 
+-%package -n python3-perf
++%package -n python-perf
+ Summary: Python bindings for apps which will manipulate perf events
+ Group: Development/Libraries
+-%description -n python3-perf
+-The python3-perf package contains a module that permits applications
++%description -n python-perf
++The python-perf package contains a module that permits applications
+ written in the Python programming language to use the interface
+ to manipulate perf events.
+ 
+-%package -n python3-perf-debuginfo
++%package -n python-perf-debuginfo
+ Summary: Debug information for package perf python bindings
+ Group: Development/Debug
+ Requires: %{name}-debuginfo-common-%{_target_cpu} = %{version}-%{release}
+ AutoReqProv: no
+-%description -n python3-perf-debuginfo
++%description -n python-perf-debuginfo
+ This package provides debug information for the perf python bindings.
+ 
+ # the python_sitearch macro should already be defined from above
+-%{expand:%%global _find_debuginfo_opts %{?_find_debuginfo_opts} -p '.*%%{python3_sitearch}/perf.*so(\.debug)?|XXX' -o python3-perf-debuginfo.list}
++%{expand:%%global _find_debuginfo_opts %{?_find_debuginfo_opts} -p '.*%%{python_sitearch}/perf.*so(\.debug)?|XXX' -o python-perf-debuginfo.list}
+ 
+ 
+ %endif # with_perf
+@@ -1021,6 +1032,7 @@ ApplyOptionalPatch Make-kernel-start-eth-devices-at-offset.patch
+ ApplyOptionalPatch intel-iommu-allow-ignoring-Ethernet-device-RMRR-with.patch
+ ApplyOptionalPatch turn-off-write-same-in-smartqpi-driver.patch
+ ApplyOptionalPatch Allow-dmar-quirks-for-broken-bioses.patch
++ApplyOptionalPatch Fix-compile-error-with-gcc-4.8.5-and-python2.patch
+ 
+ # END OF PATCH APPLICATIONS
+ 
+@@ -1032,21 +1044,6 @@ mv COPYING COPYING-%{version}
+ # This Prevents scripts/setlocalversion from mucking with our version numbers.
+ touch .scmversion
+ 
+-# Do not use "ambiguous" python shebangs. RHEL 8 now has a new script
+-# (/usr/lib/rpm/redhat/brp-mangle-shebangs), which forces us to specify a
+-# "non-ambiguous" python shebang for scripts we ship in buildroot. This
+-# script throws an error like below:
+-# *** ERROR: ambiguous python shebang in /usr/bin/kvm_stat: #!/usr/bin/python. Change it to python3 (or python2) explicitly.
+-# We patch all sources below for which we got a report/error.
+-pathfix.py -i %{__python3} -p -n \
+-	scripts/show_delta \
+-	scripts/diffconfig \
+-	scripts/bloat-o-meter \
+-	tools/perf/tests/attr.py \
+-	tools/perf/scripts/python/stat-cpi.py \
+-	tools/perf/scripts/python/sched-migration.py \
+-	Documentation
+-
+ %define make make %{?cross_opts} HOSTCFLAGS="%{?build_hostcflags}" HOSTLDFLAGS="%{?build_hostldflags}"
+ 
+ # only deal with configs if we are going to build for the arch
+@@ -1666,7 +1663,7 @@ BuildKernel %make_target %kernel_image %{with_vdso_install}
+ %endif
+ 
+ %global perf_make \
+-  make EXTRA_CFLAGS="${RPM_OPT_FLAGS}" LDFLAGS="%{__global_ldflags}" %{?cross_opts} -C tools/perf V=1 NO_PERF_READ_VDSO32=1 NO_PERF_READ_VDSOX32=1 WERROR=0 NO_LIBUNWIND=1 HAVE_CPLUS_DEMANGLE=1 NO_GTK2=1 NO_STRLCPY=1 NO_BIONIC=1 prefix=%{_prefix} PYTHON=%{__python3}
++  make EXTRA_CFLAGS="${RPM_OPT_FLAGS}" LDFLAGS="%{__global_ldflags}" %{?cross_opts} -C tools/perf V=1 NO_PERF_READ_VDSO32=1 NO_PERF_READ_VDSOX32=1 WERROR=0 NO_LIBUNWIND=1 HAVE_CPLUS_DEMANGLE=1 NO_GTK2=1 NO_STRLCPY=1 NO_BIONIC=1 prefix=%{_prefix} PYTHON=%{__python}
+ %if %{with_perf}
+ # perf
+ # make sure check-headers.sh is executable
+@@ -2195,15 +2192,15 @@ fi
+ %doc linux-%{KVERREL}/tools/perf/Documentation/examples.txt
+ %{_docdir}/perf-tip/tips.txt
+ 
+-%files -n python3-perf
++%files -n python-perf
+ %defattr(-,root,root)
+-%{python3_sitearch}/*
++%{python_sitearch}/*
+ 
+ %if %{with_debuginfo}
+ %files -f perf-debuginfo.list -n perf-debuginfo
+ %defattr(-,root,root)
+ 
+-%files -f python3-perf-debuginfo.list -n python3-perf-debuginfo
++%files -f python-perf-debuginfo.list -n python-perf-debuginfo
+ %defattr(-,root,root)
+ %endif
+ %endif # with_perf
+@@ -2311,20 +2308,20 @@ fi
+ %{!?_licensedir:%global license %%doc}\
+ %license linux-%{KVERREL}/COPYING-%{version}\
+ /lib/modules/%{KVERREL}%{?3:+%{3}}/%{?-k:%{-k*}}%{!?-k:vmlinuz}\
+-%ghost /%{image_install_path}/%{?-k:%{-k*}}%{!?-k:vmlinuz}-%{KVERREL}%{?3:+%{3}}\
++/%{image_install_path}/%{?-k:%{-k*}}%{!?-k:vmlinuz}-%{KVERREL}%{?3:+%{3}}\
+ /lib/modules/%{KVERREL}%{?3:+%{3}}/.vmlinuz.hmac \
+-%ghost /%{image_install_path}/.vmlinuz-%{KVERREL}%{?3:+%{3}}.hmac \
++/%{image_install_path}/.vmlinuz-%{KVERREL}%{?3:+%{3}}.hmac \
+ %ifarch aarch64\
+ /lib/modules/%{KVERREL}%{?3:+%{3}}/dtb \
+ %ghost /%{image_install_path}/dtb-%{KVERREL}%{?3:+%{3}} \
+ %endif\
+ %attr(0600, root, root) /lib/modules/%{KVERREL}%{?3:+%{3}}/System.map\
+-%ghost %attr(0600, root, root) /boot/System.map-%{KVERREL}%{?3:+%{3}}\
++%attr(0600, root, root) /boot/System.map-%{KVERREL}%{?3:+%{3}}\
+ /lib/modules/%{KVERREL}%{?3:+%{3}}/symvers.gz\
+ /lib/modules/%{KVERREL}%{?3:+%{3}}/config\
+-%ghost %attr(0600, root, root) /boot/symvers-%{KVERREL}%{?3:+%{3}}.gz\
+-%ghost %attr(0600, root, root) /boot/initramfs-%{KVERREL}%{?3:+%{3}}.img\
+-%ghost %attr(0644, root, root) /boot/config-%{KVERREL}%{?3:+%{3}}\
++%attr(0600, root, root) /boot/symvers-%{KVERREL}%{?3:+%{3}}.gz\
++%attr(0600, root, root) /boot/initramfs-%{KVERREL}%{?3:+%{3}}.img\
++%attr(0644, root, root) /boot/config-%{KVERREL}%{?3:+%{3}}\
+ %dir /lib/modules\
+ %dir /lib/modules/%{KVERREL}%{?3:+%{3}}\
+ %dir /lib/modules/%{KVERREL}%{?3:+%{3}}/kernel\
+-- 
+2.7.4
+

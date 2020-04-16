@@ -1,4 +1,4 @@
-From 36270456f8d6e274791fbf846ad03249759eafa6 Mon Sep 17 00:00:00 2001
+From 985af04466f07d6f5deaac906c52dc1181beb881 Mon Sep 17 00:00:00 2001
 From: Chris Friesen <chris.friesen@windriver.com>
 Date: Thu, 7 Apr 2016 11:16:19 -0600
 Subject: [PATCH] Notification of death of arbitrary processes
@@ -19,26 +19,26 @@ PR_DO_NOTIFY_TASK_STATE option.
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 Signed-off-by: Zhang Zhiguo <zhangzhg@neusoft.com>
-
+Signed-off-by: Shuicheng Lin <shuicheng.lin@intel.com>
 ---
  include/linux/init_task.h  |   9 ++
- include/linux/sched.h      |   6 +
- include/uapi/linux/prctl.h |  18 +++
+ include/linux/sched.h      |   6 ++
+ include/uapi/linux/prctl.h |  18 ++++
  init/Kconfig               |  15 +++
  init/init_task.c           |   1 +
  kernel/Makefile            |   1 +
- kernel/death_notify.c      | 226 +++++++++++++++++++++++++++++++++++++
- kernel/death_notify.h      |  46 ++++++++
- kernel/exit.c              |   6 +
+ kernel/death_notify.c      | 228 +++++++++++++++++++++++++++++++++++++++++++++
+ kernel/death_notify.h      |  46 +++++++++
+ kernel/exit.c              |   6 ++
  kernel/fork.c              |   4 +
- kernel/signal.c            |  11 ++
+ kernel/signal.c            |  11 +++
  kernel/sys.c               |   8 ++
- 12 files changed, 351 insertions(+)
+ 12 files changed, 353 insertions(+)
  create mode 100644 kernel/death_notify.c
  create mode 100644 kernel/death_notify.h
 
 diff --git a/include/linux/init_task.h b/include/linux/init_task.h
-index a454b8a..08ae031 100644
+index a7083a4..1ad2341 100644
 --- a/include/linux/init_task.h
 +++ b/include/linux/init_task.h
 @@ -24,6 +24,15 @@
@@ -58,10 +58,10 @@ index a454b8a..08ae031 100644
  extern struct cred init_cred;
  
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index bb3e390..6b954a5 100644
+index 681aa08..93e8080 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -1011,6 +1011,12 @@ struct task_struct {
+@@ -1045,6 +1045,12 @@ struct task_struct {
  	short				il_prev;
  	short				pref_node_fork;
  #endif
@@ -75,7 +75,7 @@ index bb3e390..6b954a5 100644
  	int				numa_scan_seq;
  	unsigned int			numa_scan_period;
 diff --git a/include/uapi/linux/prctl.h b/include/uapi/linux/prctl.h
-index b17201e..05a4756 100644
+index 327319b..7084845 100644
 --- a/include/uapi/linux/prctl.h
 +++ b/include/uapi/linux/prctl.h
 @@ -63,6 +63,24 @@
@@ -104,10 +104,10 @@ index b17201e..05a4756 100644
  #define PR_GET_SECCOMP	21
  #define PR_SET_SECCOMP	22
 diff --git a/init/Kconfig b/init/Kconfig
-index 9c529c7..6f53e81 100644
+index b47b164..2caf192 100644
 --- a/init/Kconfig
 +++ b/init/Kconfig
-@@ -1547,6 +1547,21 @@ config VM_EVENT_COUNTERS
+@@ -1609,6 +1609,21 @@ config VM_EVENT_COUNTERS
  	  on EXPERT systems.  /proc/vmstat will only show page counts
  	  if VM event counters are disabled.
  
@@ -130,17 +130,17 @@ index 9c529c7..6f53e81 100644
  	default y
  	bool "Enable SLUB debugging support" if EXPERT
 diff --git a/init/init_task.c b/init/init_task.c
-index 74f60ba..c468eeb 100644
+index 7267cbf..d84242e 100644
 --- a/init/init_task.c
 +++ b/init/init_task.c
-@@ -109,6 +109,7 @@ struct task_struct init_task
+@@ -116,6 +116,7 @@ struct task_struct init_task
  	.alloc_lock	= __SPIN_LOCK_UNLOCKED(init_task.alloc_lock),
  	.journal_info	= NULL,
  	INIT_CPU_TIMERS(init_task)
-+        INIT_SIGEXIT(tsk)
++	INIT_SIGEXIT(init_task)
  	.pi_lock	= __RAW_SPIN_LOCK_UNLOCKED(init_task.pi_lock),
  	.timer_slack_ns = 50000, /* 50 usec default slack */
- 	.pids = {
+ 	.thread_pid	= &init_struct_pid,
 diff --git a/kernel/Makefile b/kernel/Makefile
 index aebf6a8..2669df3 100644
 --- a/kernel/Makefile
@@ -155,10 +155,10 @@ index aebf6a8..2669df3 100644
  
 diff --git a/kernel/death_notify.c b/kernel/death_notify.c
 new file mode 100644
-index 0000000..dc4fc95
+index 0000000..5819d35
 --- /dev/null
 +++ b/kernel/death_notify.c
-@@ -0,0 +1,226 @@
+@@ -0,0 +1,228 @@
 +/*
 + * kernel/death_notify.c, Process death notification support
 + *
@@ -180,7 +180,9 @@ index 0000000..dc4fc95
 + */
 +
 +#include <linux/errno.h>
++#include <linux/signal.h>
 +#include <linux/sched.h>
++#include <linux/sched/task.h>
 +#include <linux/slab.h>
 +#include <linux/prctl.h>
 +#include <linux/uaccess.h>
@@ -265,7 +267,7 @@ index 0000000..dc4fc95
 + *
 + * Must be called holding a lock on tasklist_lock.
 + */
-+void do_notify_others(struct task_struct *tsk, struct siginfo *info)
++void do_notify_others(struct task_struct *tsk, struct kernel_siginfo *info)
 +{
 +	struct signotifier *node;
 +	unsigned int events;
@@ -278,7 +280,7 @@ index 0000000..dc4fc95
 +	list_for_each_entry(node, &tsk->notify, notify_list) {
 +		if (events & node->events) {
 +			info->si_signo = node->sig;
-+			group_send_sig_info(node->sig, info, node->notify_tsk);
++			group_send_sig_info(node->sig, info, node->notify_tsk, PIDTYPE_TGID);
 +		}
 +	}
 +}
@@ -337,7 +339,7 @@ index 0000000..dc4fc95
 +	 * find_task_by_pid(), so may as well take the write lock now.
 +	 * Must use write_lock_irq().
 +	 */
-+	qwrite_lock_irq(&tasklist_lock);
++	write_lock_irq(&tasklist_lock);
 +
 +	err = -ESRCH;
 +	p = find_task_by_vpid(args.pid);
@@ -374,7 +376,7 @@ index 0000000..dc4fc95
 +	}
 +
 +unlock_out:
-+	qwrite_unlock_irq(&tasklist_lock);
++	write_unlock_irq(&tasklist_lock);
 +
 +	/* Copy the old values back to caller. */
 +	if (copy_to_user((struct task_state_notify_info __user *)arg,
@@ -387,7 +389,7 @@ index 0000000..dc4fc95
 +
 diff --git a/kernel/death_notify.h b/kernel/death_notify.h
 new file mode 100644
-index 0000000..1609cb4
+index 0000000..14a0995
 --- /dev/null
 +++ b/kernel/death_notify.h
 @@ -0,0 +1,46 @@
@@ -425,20 +427,20 @@ index 0000000..1609cb4
 +
 +extern int do_notify_task_state(unsigned long arg);
 +extern void do_notify_others(struct task_struct *tsk,
-+					struct siginfo *info);
++					struct kernel_siginfo *info);
 +extern void release_notify_others(struct task_struct *p);
 +
 +#else /* !CONFIG_SIGEXIT */
 +
 +static inline void do_notify_others(struct task_struct *tsk,
-+					struct siginfo *info) {}
++					struct kernel_siginfo *info) {}
 +static inline void release_notify_others(struct task_struct *p) {}
 +
 +#endif /* CONFIG_SIGEXIT */
 +#endif
 +
 diff --git a/kernel/exit.c b/kernel/exit.c
-index deaa53a..fd0729f 100644
+index 3fb7be0..2005dcd 100644
 --- a/kernel/exit.c
 +++ b/kernel/exit.c
 @@ -67,6 +67,9 @@
@@ -451,7 +453,7 @@ index deaa53a..fd0729f 100644
  
  static void __unhash_process(struct task_struct *p, bool group_dead)
  {
-@@ -195,6 +198,9 @@ repeat:
+@@ -196,6 +199,9 @@ void release_task(struct task_struct *p)
  	proc_flush_task(p);
  
  	write_lock_irq(&tasklist_lock);
@@ -462,10 +464,10 @@ index deaa53a..fd0729f 100644
  	__exit_signal(p);
  
 diff --git a/kernel/fork.c b/kernel/fork.c
-index 3311231..04dca7c 100644
+index 0400c41..97b55a2 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -1796,6 +1796,10 @@ static __latent_entropy struct task_struct *copy_process(
+@@ -1910,6 +1910,10 @@ static __latent_entropy struct task_struct *copy_process(
  	p->sequential_io	= 0;
  	p->sequential_io_avg	= 0;
  #endif
@@ -477,10 +479,10 @@ index 3311231..04dca7c 100644
  	/* Perform scheduler related setup. Assign this task to a CPU. */
  	retval = sched_fork(clone_flags, p);
 diff --git a/kernel/signal.c b/kernel/signal.c
-index 8d8a940..ad65719 100644
+index 85a938c..b8bf3ee 100644
 --- a/kernel/signal.c
 +++ b/kernel/signal.c
-@@ -51,6 +51,9 @@
+@@ -52,6 +52,9 @@
  #include <asm/siginfo.h>
  #include <asm/cacheflush.h>
  #include "audit.h"	/* audit_signal_info() */
@@ -490,7 +492,7 @@ index 8d8a940..ad65719 100644
  
  /*
   * SLAB caches for signal bits.
-@@ -1803,6 +1806,10 @@ bool do_notify_parent(struct task_struct *tsk, int sig)
+@@ -1895,6 +1898,10 @@ bool do_notify_parent(struct task_struct *tsk, int sig)
  	__wake_up_parent(tsk, tsk->parent);
  	spin_unlock_irqrestore(&psig->siglock, flags);
  
@@ -501,7 +503,7 @@ index 8d8a940..ad65719 100644
  	return autoreap;
  }
  
-@@ -1875,6 +1882,10 @@ static void do_notify_parent_cldstop(struct task_struct *tsk,
+@@ -1967,6 +1974,10 @@ static void do_notify_parent_cldstop(struct task_struct *tsk,
  	 */
  	__wake_up_parent(tsk, parent);
  	spin_unlock_irqrestore(&sighand->siglock, flags);
@@ -511,9 +513,9 @@ index 8d8a940..ad65719 100644
 +#endif
  }
  
- static inline int may_ptrace_stop(void)
+ static inline bool may_ptrace_stop(void)
 diff --git a/kernel/sys.c b/kernel/sys.c
-index 38509dc..11e5355 100644
+index 8a0fab9..e957bd5 100644
 --- a/kernel/sys.c
 +++ b/kernel/sys.c
 @@ -75,6 +75,9 @@
@@ -539,5 +541,5 @@ index 38509dc..11e5355 100644
  		error = prctl_set_mm(arg2, arg3, arg4, arg5);
  		break;
 -- 
-2.18.1
+2.7.4
 
