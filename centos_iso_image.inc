@@ -47,10 +47,6 @@ kmod-tpm-rt
 qat17
 qat17-rt
 
-# integrity-kmod
-kmod-integrity
-kmod-integrity-rt
-
 # opae-intel-fpga-driver
 kmod-opae-fpga-driver
 kmod-opae-fpga-driver-rt
