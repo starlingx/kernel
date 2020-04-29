@@ -206,7 +206,6 @@ CONFIG_DP83640_PHY=y
 # CONFIG_SENSORS_BH1770 is not set
 # CONFIG_SENSORS_APDS990X is not set
 # CONFIG_PCH_PHUB is not set
-# CONFIG_EEPROM_AT24 is not set
 # CONFIG_EEPROM_MAX6875 is not set
 # CONFIG_EEPROM_93CX6 is not set
 # CONFIG_CB710_CORE is not set
@@ -831,5 +830,8 @@ CONFIG_CPU_FREQ_DEFAULT_GOV_PERFORMANCE=y
 # Needed for opae fpga kernel module
 # as it turns on hidden option REGMAP_MMIO
 CONFIG_MFD_SYSCON=y
+# Also need the following two options for opae fpga
+CONFIG_SPI_BITBANG=m
+CONFIG_EEPROM_AT24=m
 
 # CONFIG_KASAN is not set

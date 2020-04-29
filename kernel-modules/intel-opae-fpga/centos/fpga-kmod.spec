@@ -7,7 +7,7 @@
 # Define the kmod package name here.
 %define kmod_name opae-intel-fpga-driver
 # If a release doesn't have an iteration number, just use 0
-%define iteration 6
+%define iteration 8
 
 Name:    %{kmod_name}-kmod%{?bt_ext}
 Version: 2.0.1
@@ -22,7 +22,7 @@ ExclusiveArch: x86_64
 
 # Sources.
 # The source tarball name may or may not include the iteration number.
-Source0:  %{kmod_name}-%{version}.tar.gz
+Source0:  %{kmod_name}-%{version}-%{iteration}.tar.gz
 Patch01:  Remove-regmap-mmio-as-it-is-built-into-the-kernel.patch
 Patch02:  Fix-compile-error-with-CentOS-8.1-4.18.0-147-kernel.patch
 Patch03:  Fix-wrong-kernel-version.patch
@@ -83,7 +83,7 @@ It is built to depend upon the specific ABI provided by a range of releases
 of the same variant of the Linux kernel and not on any one specific build.
 
 %prep
-%autosetup -p 1 -n %{kmod_name}-%{version}
+%autosetup -p 1 -n %{kmod_name}-%{version}-%{iteration}
 %{__gzip} %{kmod_name}.7
 echo "override %{kmod_name} * weak-updates/%{kmod_name}" > kmod-%{kmod_name}.conf
 
@@ -92,10 +92,11 @@ echo "override %{kmod_name} * weak-updates/%{kmod_name}" > kmod-%{kmod_name}.con
 
 %install
 %{__install} -d %{buildroot}/lib/modules/%{kversion}/extra/%{kmod_name}/
-%{__install} %{_builddir}/%{kmod_name}-%{version}/*.ko %{buildroot}/lib/modules/%{kversion}/extra/%{kmod_name}/
+%{__install} %{_builddir}/%{kmod_name}-%{version}-%{iteration}/*.ko %{buildroot}/lib/modules/%{kversion}/extra/%{kmod_name}/
 %{__install} -d %{buildroot}%{_sysconfdir}/depmod.d/
 %{__install} kmod-%{kmod_name}.conf %{buildroot}%{_sysconfdir}/depmod.d/
 %{__install} -d %{buildroot}%{_defaultdocdir}/kmod-%{kmod_name}-%{version}/
+%{__install} LICENSE %{buildroot}%{_defaultdocdir}/kmod-%{kmod_name}-%{version}/
 %{__install} COPYING %{buildroot}%{_defaultdocdir}/kmod-%{kmod_name}-%{version}/
 %{__install} -d %{buildroot}%{_sysconfdir}/modules-load.d
 
