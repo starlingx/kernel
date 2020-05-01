@@ -4,7 +4,7 @@ In-Reply-To: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerv
 References: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerville@windriver.com>
 From: Matt Peters <matt.peters@windriver.com>
 Date: Mon, 30 May 2016 10:51:02 -0400
-Subject: [PATCH 08/26] intel-iommu: allow ignoring Ethernet device RMRR with
+Subject: [PATCH 06/10] intel-iommu: allow ignoring Ethernet device RMRR with
  IOMMU passthrough
 
 Some BIOS's are reporting DMAR RMRR entries for Ethernet devices
@@ -17,15 +17,13 @@ Originally-by: Matt Peters <matt.peters@windriver.com>
 [PG: Added bootarg wrapper and documentation entries.]
 Signed-off-by: Paul Gortmaker <paul.gortmaker@windriver.com>
 Signed-off-by: Nam Ninh <nam.ninh@windriver.com>
-
-Signed-off-by: Nam Ninh <nam.ninh@windriver.com>
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 Signed-off-by: Zhang Zhiguo <zhangzhg@neusoft.com>
-
+Signed-off-by: Dongqi Chen <chen.dq@neusoft.com>
 ---
- Documentation/Intel-IOMMU.txt                 | 18 ++++++++++++++++++
- .../admin-guide/kernel-parameters.txt         |  5 +++++
- drivers/iommu/intel-iommu.c                   | 19 +++++++++++++++++++
+ Documentation/Intel-IOMMU.txt                   | 18 ++++++++++++++++++
+ Documentation/admin-guide/kernel-parameters.txt |  5 +++++
+ drivers/iommu/intel-iommu.c                     | 19 +++++++++++++++++++
  3 files changed, 42 insertions(+)
 
 diff --git a/Documentation/Intel-IOMMU.txt b/Documentation/Intel-IOMMU.txt
@@ -58,10 +56,10 @@ index 9dae6b4..1080fcb 100644
  ----------------------
  
 diff --git a/Documentation/admin-guide/kernel-parameters.txt b/Documentation/admin-guide/kernel-parameters.txt
-index 2f4a7ad..c11ebc3 100644
+index 928b525..cea7932 100644
 --- a/Documentation/admin-guide/kernel-parameters.txt
 +++ b/Documentation/admin-guide/kernel-parameters.txt
-@@ -1651,6 +1651,11 @@
+@@ -1672,6 +1672,11 @@
  			than 32-bit addressing. The default is to look
  			for translation below 32-bit and if not available
  			then look in the higher range.
@@ -74,7 +72,7 @@ index 2f4a7ad..c11ebc3 100644
  			With this option on every unmap_single operation will
  			result in a hardware IOTLB flush operation as opposed
 diff --git a/drivers/iommu/intel-iommu.c b/drivers/iommu/intel-iommu.c
-index 7e9f1db..a28bafe 100644
+index 0962d65..ea478fa 100644
 --- a/drivers/iommu/intel-iommu.c
 +++ b/drivers/iommu/intel-iommu.c
 @@ -485,6 +485,7 @@ static int dmar_forcedac;
@@ -101,7 +99,7 @@ index 7e9f1db..a28bafe 100644
  		} else if (!strncmp(str, "strict", 6)) {
  			pr_info("Disable batched IOTLB flush\n");
  			intel_iommu_strict = 1;
-@@ -2917,6 +2927,15 @@ static bool device_is_rmrr_locked(struct device *dev)
+@@ -2920,6 +2930,15 @@ static bool device_is_rmrr_locked(struct device *dev)
  
  		if (IS_USB_DEVICE(pdev) || IS_GFX_DEVICE(pdev))
  			return false;
@@ -118,5 +116,5 @@ index 7e9f1db..a28bafe 100644
  
  	return true;
 -- 
-2.18.1
+2.7.4
 
