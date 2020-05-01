@@ -1,35 +1,33 @@
-From 70386017de51483cfc9c0fc3e809d6f9867c4c5f Mon Sep 17 00:00:00 2001
-Message-Id: <70386017de51483cfc9c0fc3e809d6f9867c4c5f.1507751678.git.Jim.Somerville@windriver.com>
+From d2d215014b01dc5c2bce75a2e9e21a3ffefbaa85 Mon Sep 17 00:00:00 2001
 From: Kam Nasim <kam.nasim@windriver.com>
 Date: Wed, 26 Apr 2017 12:23:03 -0400
-Subject: [PATCH 1/1] compat changes for building tpmdd out-of-tree
+Subject: [PATCH 2/3] compat changes for building tpmdd out-of-tree
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+Signed-off-by: Shuicheng Lin <shuicheng.lin@intel.com>
 ---
  Makefile  | 110 ++++++++++++++++++++-
  common.mk | 332 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- kcompat.h |  39 ++++++++
- tpm.h     |   3 +
- 4 files changed, 482 insertions(+), 2 deletions(-)
+ 2 files changed, 440 insertions(+), 2 deletions(-)
  create mode 100644 common.mk
- create mode 100644 kcompat.h
 
 diff --git a/Makefile b/Makefile
-index 23681f0..f3250cc 100644
+index a01c4ca..f2736cf 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -1,6 +1,9 @@
--#
+@@ -1,7 +1,10 @@
+ # SPDX-License-Identifier: GPL-2.0
+ #
 +
 +ifneq ($(KERNELRELEASE),)
 +# kbuild part of makefile
  # Makefile for the kernel tpm device drivers.
- #
+-#
 +
  obj-$(CONFIG_TCG_TPM) += tpm.o
- tpm-y := tpm-interface.o tpm-dev.o tpm-sysfs.o tpm-chip.o tpm2-cmd.o \
- 	 tpm-dev-common.o tpmrm-dev.o tpm1_eventlog.o tpm2_eventlog.o \
-@@ -17,7 +20,110 @@ obj-$(CONFIG_TCG_NSC) += tpm_nsc.o
+ tpm-y := tpm-chip.o
+ tpm-y += tpm-dev-common.o
+@@ -29,7 +32,110 @@ obj-$(CONFIG_TCG_NSC) += tpm_nsc.o
  obj-$(CONFIG_TCG_ATMEL) += tpm_atmel.o
  obj-$(CONFIG_TCG_INFINEON) += tpm_infineon.o
  obj-$(CONFIG_TCG_IBMVTPM) += tpm_ibmvtpm.o
@@ -37,7 +35,6 @@ index 23681f0..f3250cc 100644
  obj-$(CONFIG_TCG_XEN) += xen-tpmfront.o
  obj-$(CONFIG_TCG_CRB) += tpm_crb.o
  obj-$(CONFIG_TCG_VTPM_PROXY) += tpm_vtpm_proxy.o
-+
 +else   # ifneq($(KERNELRELEASE),)
 +# normal makefile
 +
@@ -141,6 +138,7 @@ index 23681f0..f3250cc 100644
 +.PHONY: default noisy clean silent sparse ccc install uninstall help
 +
 +endif   # ifneq($(KERNELRELEASE),)
++
 diff --git a/common.mk b/common.mk
 new file mode 100644
 index 0000000..671ca33
@@ -479,65 +477,6 @@ index 0000000..671ca33
 +					  modules \
 +                      M="${CURDIR}" \
 +                      ${2} ${1}
-diff --git a/kcompat.h b/kcompat.h
-new file mode 100644
-index 0000000..cd9578a
---- /dev/null
-+++ b/kcompat.h
-@@ -0,0 +1,39 @@
-+/**********************************************************************
-+ *
-+ * Copyright (c) 2017 Wind River Systems, Inc.
-+* SPDX-License-Identifier: Apache-2.0
-+*
-+*
-+*
-+ **********************************************************************/
-+
-+#ifndef _KCOMPAT_H_
-+#define _KCOMPAT_H_
-+
-+#ifndef LINUX_VERSION_CODE
-+#include <linux/version.h>
-+#else
-+#define KERNEL_VERSION(a,b,c) (((a) << 16) + ((b) << 8) + (c))
-+#endif
-+#include <linux/moduleparam.h>
-+#include <linux/pm_runtime.h>
-+
-+#if ( LINUX_VERSION_CODE <= KERNEL_VERSION(3,10,0) )
-+#include <linux/idr.h>
-+#include <linux/printk.h>
-+
-+// would normally be passed in from the Kernel, had
-+// we set CONFIG_TCG_TPM=y in the KConfig, however
-+// that has the added disadvantage of building the
-+// TPM driver in-kernel.
-+#define CONFIG_TCG_TPM_MODULE  1
-+
-+#define acpi_os_map_iomem(x, y) acpi_os_map_memory(x, y)
-+#define acpi_os_unmap_iomem(x, y) acpi_os_unmap_memory(x, y)
-+
-+#define module_pnp_driver(__pnp_driver) \
-+       module_driver(__pnp_driver, pnp_register_driver, \
-+                                   pnp_unregister_driver)
-+
-+#endif
-+#endif
-diff --git a/tpm.h b/tpm.h
-index 4b4c8de..b744e2f 100644
---- a/tpm.h
-+++ b/tpm.h
-@@ -23,6 +23,9 @@
- #ifndef __TPM_H__
- #define __TPM_H__
- 
-+// WRS: the kernel compat layer
-+#include "kcompat.h"
-+
- #include <linux/module.h>
- #include <linux/delay.h>
- #include <linux/fs.h>
 -- 
-1.8.3.1
+2.7.4
 
