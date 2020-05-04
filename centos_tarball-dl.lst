@@ -8,5 +8,5 @@ ixgbe-5.6.5.tar.gz#ixgbe-5.6.5#https://sourceforge.net/projects/e1000/files/ixgb
 ixgbevf-4.6.3.tar.gz#ixgbevf-4.6.3#https://sourceforge.net/projects/e1000/files/ixgbevf%20stable/4.6.3/ixgbevf-4.6.3.tar.gz/download#http##
 opae-intel-fpga-driver-2.0.1.tar.gz#opae-intel-fpga-driver-2.0.1#https://github.com/OPAE/opae-sdk/releases/download/1.3.6-4/opae-intel-fpga-driver-2.0.1.tar.gz#http##
 !qat1.7.l.4.5.0-00034.tar.gz#quickassist#https://01.org/sites/default/files/downloads/qat1.7.l.4.5.0-00034.tar.gz#http_script##post-dl-script/qat1.7.sh
-!tpm-kmod-e6aef069.tar.gz#tpm#http://git.infradead.org/users/jjs/linux-tpmdd.git/snapshot/e6aef069b6e97790cb127d5eeb86ae9ff0b7b0e3.tar.gz#http_script#post-dl-script/tpm-kmod.sh
+# !tpm-kmod-e6aef069.tar.gz#tpm#http://git.infradead.org/users/jjs/linux-tpmdd.git/snapshot/e6aef069b6e97790cb127d5eeb86ae9ff0b7b0e3.tar.gz#http_script#post-dl-script/tpm-kmod.sh
 !kernel-rt-4.18.0-147.3.1.rt24.96.el8_1.src.rpm#kernel-rt#https://git.centos.org/rpms/kernel-rt#http_script#327ec52423c67051249291f131ec7f6fff44a828#post-dl-script/kernel-rt.sh
