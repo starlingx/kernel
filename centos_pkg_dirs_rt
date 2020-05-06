@@ -9,3 +9,5 @@ kernel-modules/qat17
 kernel-modules/tpmdd
 kernel-modules/drbd
 kernel-modules/intel-opae-fpga
+userspace/mellanox/libibverbs
+userspace/mellanox/rdma-core

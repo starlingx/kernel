@@ -9,3 +9,5 @@ kernel-modules/tpmdd
 kernel-modules/drbd
 kernel-modules/intel-opae-fpga
 kernel-modules/mlnx-ofa_kernel
+userspace/mellanox/libibverbs
+userspace/mellanox/rdma-core
