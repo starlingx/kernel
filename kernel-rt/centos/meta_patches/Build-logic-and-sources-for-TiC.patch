@@ -1,7 +1,8 @@
-From 4a2a30175a859e5a60b5a0e999c9edfde03eee7c Mon Sep 17 00:00:00 2001
+From 8f38a28fc2750dc526363dc4b7cce3c152bb913b Mon Sep 17 00:00:00 2001
+Message-Id: <8f38a28fc2750dc526363dc4b7cce3c152bb913b.1588873412.git.Jim.Somerville@windriver.com>
 From: Jim Somerville <Jim.Somerville@windriver.com>
 Date: Mon, 23 Apr 2018 15:18:45 -0400
-Subject: [PATCH] Build logic and sources for TiC
+Subject: [PATCH 1/2] Build logic and sources for TiC
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 Signed-off-by: Robin Lu <bin1.lu@intel.com>
@@ -11,7 +12,7 @@ Signed-off-by: Dongqi Chen <chen.dq@neusoft.com>
  1 file changed, 53 insertions(+), 34 deletions(-)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
-index f9cfea3..4930a83 100644
+index f9cfea3..b89db57 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
 @@ -36,9 +36,9 @@ Summary: The Linux kernel
@@ -254,5 +255,5 @@ index f9cfea3..4930a83 100644
  %kernel_variant_files  %{with_vdso_install} %{with_zfcpdump} zfcpdump
  %endif
 -- 
-2.7.4
+1.8.3.1
 
