@@ -71,24 +71,21 @@ CONFIG_INTEL_IOMMU_DEFAULT_ON=y
 # CONFIG_MLX5_EN is not set
 # CONFIG_MLX5_CORE is not set
 
-# Turn off TPM drivers that we want
-# to build out-of-tree. This will
-# disable the TPM HW-RandomNUmberGenerator(RNG)
-# and TrustedKeys modules as well, since
-# they require the in-kernel TPM driver.
-# Both these modules will also need to be
-# built out-of-tree when needed.
-# CONFIG_TCG_TPM is not set
-# CONFIG_TCG_TIS is not set
-# CONFIG_HW_RANDOM_TPM is not set
-# CONFIG_TRUSTED_KEYS is not set
-# CONFIG_TCG_TIS_I2C_ATMEL is not set
-# CONFIG_TCG_TIS_I2C_INFINEON is not set
-# CONFIG_TCG_TIS_I2C_NUVOTON is not set
-# CONFIG_TCG_NSC is not set
-# CONFIG_TCG_ATMEL is not set
-# CONFIG_TCG_INFINEON is not set
-# CONFIG_TCG_CRB is not set
+# TPM built-in driver
+CONFIG_TCG_TPM=m
+CONFIG_TCG_TIS=m
+CONFIG_HW_RANDOM_TPM=y
+CONFIG_TRUSTED_KEYS=m
+CONFIG_TCG_TIS_I2C_ATMEL=m
+CONFIG_TCG_TIS_I2C_INFINEON=m
+CONFIG_TCG_TIS_I2C_NUVOTON=m
+CONFIG_TCG_NSC=m
+CONFIG_TCG_ATMEL=m
+CONFIG_TCG_INFINEON=m
+CONFIG_TCG_CRB=m
+# No support for legacy STMicroelectronics ST33ZP24 TPM drivers
+# These are legacy drivers for the TPM 1.2 specification only,
+# and would not apply to TPM 2.0 devices
 # CONFIG_TCG_TIS_ST33ZP24 is not set
 # CONFIG_TCG_TIS_ST33ZP24_I2C is not set
 

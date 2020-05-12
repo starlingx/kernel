@@ -38,10 +38,6 @@ kmod-ixgbe-rt
 kmod-drbd
 kmod-drbd-rt
 
-# tpm-kmod
-kmod-tpm
-kmod-tpm-rt
-
 # qat17
 qat17
 qat17-rt

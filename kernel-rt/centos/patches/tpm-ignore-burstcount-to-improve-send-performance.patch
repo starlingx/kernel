@@ -25,14 +25,15 @@ Acked-by: Mimi Zohar <zohar@linux.vnet.ibm.com>
 Reviewed-by: Jarkko Sakkinen <jarkko.sakkinen@linux.intel.com>
 Tested-by: Jarkko Sakkinen <jarkko.sakkinen@linux.intel.com>
 Signed-off-by: Jarkko Sakkinen <jarkko.sakkinen@linux.intel.com>
+Signed-off-by: Dongqi Chen <chen.dq@neusoft.com>
 ---
- tpm_tis_core.c | 43 +++++++++++++++----------------------------
+ drivers/char/tpm/tpm_tis_core.c | 43 ++++++++++++++---------------------------
  1 file changed, 15 insertions(+), 28 deletions(-)
 
-diff --git a/tpm_tis_core.c b/tpm_tis_core.c
+diff --git a/drivers/char/tpm/tpm_tis_core.c b/drivers/char/tpm/tpm_tis_core.c
 index b9f6468..54a6490 100644
---- a/tpm_tis_core.c
-+++ b/tpm_tis_core.c
+--- a/drivers/char/tpm/tpm_tis_core.c
++++ b/drivers/char/tpm/tpm_tis_core.c
 @@ -367,7 +367,6 @@ static int tpm_tis_send_data(struct tpm_chip *chip, const u8 *buf, size_t len)
  {
  	struct tpm_tis_data *priv = dev_get_drvdata(&chip->dev);

@@ -9,14 +9,14 @@ Subject: [PATCH 2/2] Kernel source patches for TiC
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 Signed-off-by: Dongqi Chen <chen.dq@neusoft.com>
 ---
- SPECS/kernel-rt.spec | 30 ++++++++++++++++++++++++++++++
- 1 file changed, 30 insertions(+)
+ SPECS/kernel-rt.spec | 33 +++++++++++++++++++++++++++++++++
+ 1 file changed, 33 insertions(+)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
 index b89db57..68a91e0 100644
 --- a/SPECS/kernel-rt.spec
 +++ b/SPECS/kernel-rt.spec
-@@ -431,6 +431,22 @@ Source3000: centos.cer
+@@ -431,6 +431,24 @@ Source3000: centos.cer
  Source30000: kernel-rt-4.18.0-x86_64.config.tis_extra
  
  ## Patches needed for building this package
@@ -29,6 +29,8 @@ index b89db57..68a91e0 100644
 +Patch40008: intel-iommu-allow-ignoring-Ethernet-device-RMRR-with.patch
 +Patch40026: turn-off-write-same-in-smartqpi-driver.patch
 +Patch40031: Allow-dmar-quirks-for-broken-bioses.patch
++# TPM built-in kernel-rt driver
++Patch40032: tpm-ignore-burstcount-to-improve-send-performance.patch
 +
 +# StarlingX Cloud rt patches here.
 +
@@ -39,7 +41,7 @@ index b89db57..68a91e0 100644
  
  # END OF PATCH DEFINITIONS
  
-@@ -936,6 +952,20 @@ cd linux-%{KVERREL}
+@@ -936,6 +954,21 @@ cd linux-%{KVERREL}
  
  # END OF PATCH APPLICATIONS
  
@@ -52,6 +54,7 @@ index b89db57..68a91e0 100644
 +ApplyOptionalPatch intel-iommu-allow-ignoring-Ethernet-device-RMRR-with.patch
 +ApplyOptionalPatch turn-off-write-same-in-smartqpi-driver.patch
 +ApplyOptionalPatch Allow-dmar-quirks-for-broken-bioses.patch
++ApplyOptionalPatch tpm-ignore-burstcount-to-improve-send-performance.patch
 +ApplyOptionalPatch debrand-rh-i686-cpu.patch
 +ApplyOptionalPatch debrand-rh_taint.patch
 +ApplyOptionalPatch debrand-single-cpu.patch
@@ -61,5 +64,5 @@ index b89db57..68a91e0 100644
  
  %if %{with_realtime}
 -- 
-1.8.3.1
+2.7.4
 

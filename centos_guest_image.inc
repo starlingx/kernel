@@ -23,11 +23,3 @@ kmod-ixgbe
 
 # qat17
 qat17
-
-#
-# TPM2 drivers
-#
-
-# tpm-kmod
-kmod-tpm
-

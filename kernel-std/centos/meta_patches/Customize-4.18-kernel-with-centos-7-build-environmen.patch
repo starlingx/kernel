@@ -18,8 +18,8 @@ Subject: [PATCH 3/3] Customize 4.18 kernel with centos 7 build environment
 Signed-off-by: Shuicheng Lin <shuicheng.lin@intel.com>
 Signed-off-by: Dongqi Chen <chen.dq@neusoft.com>
 ---
- SPECS/kernel.spec | 65 ++++++++++++++++++++++++++-----------------------------
- 1 file changed, 31 insertions(+), 34 deletions(-)
+ SPECS/kernel.spec | 66 +++++++++++++++++++++++++++----------------------------
+ 1 file changed, 32 insertions(+), 34 deletions(-)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
 index a7a8c97..3856633 100644
@@ -64,15 +64,16 @@ index a7a8c97..3856633 100644
  BuildRequires: zlib-devel binutils-devel
  %endif
  %if %{with_selftests}
-@@ -489,6 +499,7 @@ Patch40006: intel-iommu-allow-ignoring-Ethernet-device-RMRR-with.patch
- Patch40009: turn-off-write-same-in-smartqpi-driver.patch
- # Workaround for broken bios causing IOMMU issues
+@@ -491,6 +501,8 @@ Patch40009: turn-off-write-same-in-smartqpi-driver.patch
  Patch40010: Allow-dmar-quirks-for-broken-bioses.patch
-+Patch40011: Fix-compile-error-with-gcc-4.8.5-and-python2.patch
+ # TPM built-in kernel driver
+ Patch40011: tpm-ignore-burstcount-to-improve-send-performance.patch
++# Fix build error
++Patch40012: Fix-compile-error-with-gcc-4.8.5-and-python2.patch
  
  # END OF PATCH DEFINITIONS
  
-@@ -605,24 +616,24 @@ This package provides debug information for the perf package.
+@@ -607,24 +619,24 @@ This package provides debug information for the perf package.
  # of matching the pattern against the symlinks file.
  %{expand:%%global _find_debuginfo_opts %{?_find_debuginfo_opts} -p '.*%%{_bindir}/perf(\.debug)?|.*%%{_libexecdir}/perf-core/.*|.*%%{_libdir}/traceevent/plugins/.*|.*%%{_libdir}/libperf-jvmti.so(\.debug)?|XXX' -o perf-debuginfo.list}
  
@@ -103,15 +104,15 @@ index a7a8c97..3856633 100644
  
  
  %endif # with_perf
-@@ -1021,6 +1032,7 @@ ApplyOptionalPatch Make-kernel-start-eth-devices-at-offset.patch
- ApplyOptionalPatch intel-iommu-allow-ignoring-Ethernet-device-RMRR-with.patch
+@@ -1024,6 +1036,7 @@ ApplyOptionalPatch intel-iommu-allow-ignoring-Ethernet-device-RMRR-with.patch
  ApplyOptionalPatch turn-off-write-same-in-smartqpi-driver.patch
  ApplyOptionalPatch Allow-dmar-quirks-for-broken-bioses.patch
+ ApplyOptionalPatch tpm-ignore-burstcount-to-improve-send-performance.patch
 +ApplyOptionalPatch Fix-compile-error-with-gcc-4.8.5-and-python2.patch
  
  # END OF PATCH APPLICATIONS
  
-@@ -1032,21 +1044,6 @@ mv COPYING COPYING-%{version}
+@@ -1035,21 +1048,6 @@ mv COPYING COPYING-%{version}
  # This Prevents scripts/setlocalversion from mucking with our version numbers.
  touch .scmversion
  
@@ -133,7 +134,7 @@ index a7a8c97..3856633 100644
  %define make make %{?cross_opts} HOSTCFLAGS="%{?build_hostcflags}" HOSTLDFLAGS="%{?build_hostldflags}"
  
  # only deal with configs if we are going to build for the arch
-@@ -1666,7 +1663,7 @@ BuildKernel %make_target %kernel_image %{with_vdso_install}
+@@ -1669,7 +1667,7 @@ BuildKernel %make_target %kernel_image %{with_vdso_install}
  %endif
  
  %global perf_make \
@@ -142,7 +143,7 @@ index a7a8c97..3856633 100644
  %if %{with_perf}
  # perf
  # make sure check-headers.sh is executable
-@@ -2195,15 +2192,15 @@ fi
+@@ -2198,15 +2196,15 @@ fi
  %doc linux-%{KVERREL}/tools/perf/Documentation/examples.txt
  %{_docdir}/perf-tip/tips.txt
  
@@ -161,7 +162,7 @@ index a7a8c97..3856633 100644
  %defattr(-,root,root)
  %endif
  %endif # with_perf
-@@ -2311,20 +2308,20 @@ fi
+@@ -2314,20 +2312,20 @@ fi
  %{!?_licensedir:%global license %%doc}\
  %license linux-%{KVERREL}/COPYING-%{version}\
  /lib/modules/%{KVERREL}%{?3:+%{3}}/%{?-k:%{-k*}}%{!?-k:vmlinuz}\
