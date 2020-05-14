@@ -33,6 +33,10 @@ CONFIG_FUSION_SAS=y
 CONFIG_SCSI_AIC94XX=y
 CONFIG_SCSI_MVSAS=y
 CONFIG_RAID_ATTRS=y
+# This driver supports the 6Gb/s SAS capabilities
+# of the storage control unit found
+# in the Intel(R) C600 series chipset
+CONFIG_SCSI_ISCI=y
 #
 CONFIG_SOFT_WATCHDOG=y
 CONFIG_VIRTIO=y
