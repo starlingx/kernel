@@ -4,7 +4,7 @@ In-Reply-To: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerv
 References: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerville@windriver.com>
 From: Chris Friesen <chris.friesen@windriver.com>
 Date: Tue, 24 Nov 2015 16:27:28 -0500
-Subject: [PATCH 05/26] affine compute kernel threads
+Subject: [PATCH 03/10] affine compute kernel threads
 
 This is a kernel enhancement to configure the cpu affinity of kernel
 threads via kernel boot option kthread_cpus=<cpulist>. The compute
@@ -30,7 +30,6 @@ Signed-off-by: Vu Tran <vu.tran@windriver.com>
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 Signed-off-by: Zhang Zhiguo <zhangzhg@neusoft.com>
-
 ---
  Documentation/admin-guide/kernel-parameters.txt |  9 +++++++++
  include/linux/cpumask.h                         |  3 +++
@@ -41,10 +40,10 @@ Signed-off-by: Zhang Zhiguo <zhangzhg@neusoft.com>
  6 files changed, 33 insertions(+), 2 deletions(-)
 
 diff --git a/Documentation/admin-guide/kernel-parameters.txt b/Documentation/admin-guide/kernel-parameters.txt
-index 3ff6f8d..2f4a7ad 100644
+index 5d43bff..928b525 100644
 --- a/Documentation/admin-guide/kernel-parameters.txt
 +++ b/Documentation/admin-guide/kernel-parameters.txt
-@@ -1944,6 +1944,15 @@
+@@ -1968,6 +1968,15 @@
  			Default: on
  			Built with CONFIG_DEBUG_KMEMLEAK_DEFAULT_OFF=y,
  			the default is off.
@@ -58,8 +57,8 @@ index 3ff6f8d..2f4a7ad 100644
 +			are being spawned. Allows to keep kernel threads
 +			away from certain cores unless absoluteluy necessary.
  
-	kpti=		[ARM64] Control page table isolation of user
-			and kernel address spaces.
+ 	kpti=		[ARM64] Control page table isolation of user
+ 			and kernel address spaces.
 diff --git a/include/linux/cpumask.h b/include/linux/cpumask.h
 index 57f20a0..4526034 100644
 --- a/include/linux/cpumask.h
@@ -86,10 +85,10 @@ index 57f20a0..4526034 100644
  #if NR_CPUS > 1
  #define num_online_cpus()	cpumask_weight(cpu_online_mask)
 diff --git a/init/main.c b/init/main.c
-index 8cce5b1..0c5457a 100644
+index 42c2f2e..f248b7f 100644
 --- a/init/main.c
 +++ b/init/main.c
-@@ -1135,6 +1135,8 @@ static noinline void __init kernel_init_freeable(void)
+@@ -1142,6 +1142,8 @@ static noinline void __init kernel_init_freeable(void)
  
  	do_basic_setup();
  
@@ -99,10 +98,10 @@ index 8cce5b1..0c5457a 100644
  	if (ksys_open((const char __user *) "/dev/console", O_RDWR, 0) < 0)
  		pr_err("Warning: unable to open an initial console.\n");
 diff --git a/kernel/cpu.c b/kernel/cpu.c
-index fb61ee6..4c7b343 100644
+index d94cf04..0f2e63f 100644
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
-@@ -2218,6 +2218,9 @@ EXPORT_SYMBOL_GPL(cpu_bit_bitmap);
+@@ -2226,6 +2226,9 @@ EXPORT_SYMBOL_GPL(cpu_bit_bitmap);
  const DECLARE_BITMAP(cpu_all_bits, NR_CPUS) = CPU_BITS_ALL;
  EXPORT_SYMBOL(cpu_all_bits);
  
@@ -112,7 +111,7 @@ index fb61ee6..4c7b343 100644
  #ifdef CONFIG_INIT_ALL_POSSIBLE
  struct cpumask __cpu_possible_mask __read_mostly
  	= {CPU_BITS_ALL};
-@@ -2235,6 +2238,17 @@ EXPORT_SYMBOL(__cpu_present_mask);
+@@ -2243,6 +2246,17 @@ EXPORT_SYMBOL(__cpu_present_mask);
  struct cpumask __cpu_active_mask __read_mostly;
  EXPORT_SYMBOL(__cpu_active_mask);
  
@@ -131,10 +130,10 @@ index fb61ee6..4c7b343 100644
  {
  	cpumask_copy(&__cpu_present_mask, src);
 diff --git a/kernel/kthread.c b/kernel/kthread.c
-index 486dedb..697ec70 100644
+index 1f0bf2d..3a5f1af 100644
 --- a/kernel/kthread.c
 +++ b/kernel/kthread.c
-@@ -338,7 +338,7 @@ struct task_struct *__kthread_create_on_node(int (*threadfn)(void *data),
+@@ -339,7 +339,7 @@ struct task_struct *__kthread_create_on_node(int (*threadfn)(void *data),
  		 * The kernel thread should not inherit these properties.
  		 */
  		sched_setscheduler_nocheck(task, SCHED_NORMAL, &param);
@@ -143,7 +142,7 @@ index 486dedb..697ec70 100644
  	}
  	kfree(create);
  	return task;
-@@ -561,7 +561,7 @@ int kthreadd(void *unused)
+@@ -562,7 +562,7 @@ int kthreadd(void *unused)
  	/* Setup a clean context for our children to inherit. */
  	set_task_comm(tsk, "kthreadd");
  	ignore_signals(tsk);
@@ -153,10 +152,10 @@ index 486dedb..697ec70 100644
  
  	current->flags |= PF_NOFREEZE;
 diff --git a/kernel/umh.c b/kernel/umh.c
-index c449858..90c3a60 100644
+index d937cba..94715df 100644
 --- a/kernel/umh.c
 +++ b/kernel/umh.c
-@@ -72,6 +72,9 @@ static int call_usermodehelper_exec_async(void *data)
+@@ -74,6 +74,9 @@ static int call_usermodehelper_exec_async(void *data)
  	flush_signal_handlers(current, 1);
  	spin_unlock_irq(&current->sighand->siglock);
  
@@ -167,5 +166,5 @@ index c449858..90c3a60 100644
  	 * Our parent (unbound workqueue) runs with elevated scheduling
  	 * priority. Avoid propagating that into the userspace child.
 -- 
-2.18.1
+2.7.4
 

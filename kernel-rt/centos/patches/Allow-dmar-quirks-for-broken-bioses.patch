@@ -27,6 +27,7 @@ Lu Baolu of Intel Corp to lkml
 https://lkml.org/lkml/2019/12/24/15
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+Signed-off-by: Dongqi Chen <chen.dq@neusoft.com>
 ---
  drivers/iommu/dmar.c | 25 ++++++++++++++++++++++++-
  1 file changed, 24 insertions(+), 1 deletion(-)
@@ -35,9 +36,9 @@ diff --git a/drivers/iommu/dmar.c b/drivers/iommu/dmar.c
 index 4658dc3..eeaef2e 100644
 --- a/drivers/iommu/dmar.c
 +++ b/drivers/iommu/dmar.c
-@@ -75,6 +75,26 @@ static unsigned long dmar_seq_ids[BITS_TO_LONGS(DMAR_UNITS_SUPPORTED)];
- static int alloc_iommu(struct dmar_drhd_unit *drhd);
- static void free_iommu(struct intel_iommu *iommu);
+@@ -76,6 +76,26 @@ static void free_iommu(struct intel_iommu *iommu);
+ 
+ extern const struct iommu_ops intel_iommu_ops;
  
 +static int scope_mismatch_quirk;
 +static void quirk_dmar_scope_mismatch(struct pci_dev *dev)
@@ -62,7 +63,7 @@ index 4658dc3..eeaef2e 100644
  static void dmar_register_drhd_unit(struct dmar_drhd_unit *drhd)
  {
  	/*
-@@ -257,7 +277,10 @@ int dmar_insert_dev_scope(struct dmar_pci_notify_info *info,
+@@ -258,7 +278,10 @@ int dmar_insert_dev_scope(struct dmar_pci_notify_info *info,
  		      info->dev->class >> 8 != PCI_CLASS_BRIDGE_OTHER))) {
  			pr_warn("Device scope type does not match for %s\n",
  				pci_name(info->dev));
@@ -75,5 +76,5 @@ index 4658dc3..eeaef2e 100644
  
  		for_each_dev_scope(devices, devices_cnt, i, tmp)
 -- 
-1.8.3.1
+2.7.4
 

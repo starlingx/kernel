@@ -4,7 +4,7 @@ In-Reply-To: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerv
 References: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerville@windriver.com>
 From: Chris Friesen <chris.friesen@windriver.com>
 Date: Thu, 12 May 2016 18:00:00 -0400
-Subject: [PATCH 07/26] Make kernel start eth devices at offset
+Subject: [PATCH 05/10] Make kernel start eth devices at offset
 
 In order to avoid naming collisions, we want to make the kernel
 start naming its "ethX" devices at eth1000 instead of eth0.  This
@@ -12,16 +12,15 @@ will let us rename to a range starting at eth0.
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 Signed-off-by: Zhang Zhiguo <zhangzhg@neusoft.com>
-
 ---
  net/core/dev.c | 6 ++++++
  1 file changed, 6 insertions(+)
 
 diff --git a/net/core/dev.c b/net/core/dev.c
-index b6f9647..b424353 100644
+index 6a531ca..980860d 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -1096,6 +1096,12 @@ static int __dev_alloc_name(struct net *net, const char *name, char *buf)
+@@ -1100,6 +1100,12 @@ static int __dev_alloc_name(struct net *net, const char *name, char *buf)
  				set_bit(i, inuse);
  		}
  
@@ -35,5 +34,5 @@ index b6f9647..b424353 100644
  		free_page((unsigned long) inuse);
  	}
 -- 
-2.18.1
+2.7.4
 

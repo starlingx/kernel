@@ -1,6 +1,5 @@
-
-# List of packages to be included/installed in RT guest image
-# If these have dependencies, they will be pulled in automatically
+# List of packages to be included/installed in the ISO image.
+# If these have dependencies, they will be pulled in automatically.
 #
 
 # kernel
@@ -39,17 +38,9 @@ kmod-ixgbe-rt
 kmod-drbd
 kmod-drbd-rt
 
-# tpm-kmod
-kmod-tpm
-kmod-tpm-rt
-
 # qat17
 qat17
 qat17-rt
-
-# integrity-kmod
-kmod-integrity
-kmod-integrity-rt
 
 # opae-intel-fpga-driver
 kmod-opae-fpga-driver
@@ -58,4 +49,4 @@ kmod-opae-fpga-driver-rt
 # mellanox drivers
 mlnx-ofa_kernel-modules
 mlnx-ofa_kernel-rt-modules
-
+rdma-core

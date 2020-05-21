@@ -4,7 +4,7 @@ In-Reply-To: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerv
 References: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerville@windriver.com>
 From: Chris Friesen <chris.friesen@windriver.com>
 Date: Tue, 24 Nov 2015 16:27:29 -0500
-Subject: [PATCH 06/26] Affine irqs and workqueues with kthread_cpus
+Subject: [PATCH 04/10] Affine irqs and workqueues with kthread_cpus
 
 If the kthread_cpus boot arg is set it means we want to affine
 kernel threads to the specified CPU mask as much as possible
@@ -24,14 +24,13 @@ Signed-off-by: Vu Tran <vu.tran@windriver.com>
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 Signed-off-by: Zhang Zhiguo <zhangzhg@neusoft.com>
-
 ---
  kernel/irq/manage.c | 7 +++++++
  kernel/workqueue.c  | 4 ++++
  2 files changed, 11 insertions(+)
 
 diff --git a/kernel/irq/manage.c b/kernel/irq/manage.c
-index 9a8b7ba..eaefb91 100644
+index c4e31f4..002dec3 100644
 --- a/kernel/irq/manage.c
 +++ b/kernel/irq/manage.c
 @@ -400,6 +400,13 @@ int irq_setup_affinity(struct irq_desc *desc)
@@ -49,10 +48,10 @@ index 9a8b7ba..eaefb91 100644
  	raw_spin_unlock(&mask_lock);
  	return ret;
 diff --git a/kernel/workqueue.c b/kernel/workqueue.c
-index 78b1920..886fe16 100644
+index 4228207..c7fa0ec 100644
 --- a/kernel/workqueue.c
 +++ b/kernel/workqueue.c
-@@ -5707,6 +5707,8 @@ int __init workqueue_init_early(void)
+@@ -5730,6 +5730,8 @@ int __init workqueue_init_early(void)
  
  		BUG_ON(!(attrs = alloc_workqueue_attrs(GFP_KERNEL)));
  		attrs->nice = std_nice[i];
@@ -61,7 +60,7 @@ index 78b1920..886fe16 100644
  		unbound_std_wq_attrs[i] = attrs;
  
  		/*
-@@ -5717,6 +5719,8 @@ int __init workqueue_init_early(void)
+@@ -5740,6 +5742,8 @@ int __init workqueue_init_early(void)
  		BUG_ON(!(attrs = alloc_workqueue_attrs(GFP_KERNEL)));
  		attrs->nice = std_nice[i];
  		attrs->no_numa = true;
@@ -71,5 +70,4 @@ index 78b1920..886fe16 100644
  	}
  
 -- 
-2.18.1
-
+2.7.4

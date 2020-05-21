@@ -17,13 +17,15 @@ License: GPLv2
 Summary: %{kmod_name}%{?bt_ext} kernel module(s)
 URL:     http://www.intel.com/
 
-BuildRequires: kernel%{?bt_ext}-devel, redhat-rpm-config, perl, openssl
+BuildRequires: kernel%{?bt_ext}-devel, redhat-rpm-config, perl, openssl, elfutils-libelf-devel
 ExclusiveArch: x86_64
 
 # Sources.
 # The source tarball name may or may not include the iteration number.
 Source0:  %{kmod_name}-%{version}.tar.gz
 Patch01:  Remove-regmap-mmio-as-it-is-built-into-the-kernel.patch
+Patch02:  Fix-compile-error-with-CentOS-8.1-4.18.0-147-kernel.patch
+Patch03:  Fix-wrong-kernel-version.patch
 
 %define kversion %(rpm -q kernel%{?bt_ext}-devel | sort --version-sort | tail -1 | sed 's/kernel%{?bt_ext}-devel-//')
 
@@ -102,10 +104,10 @@ find %{buildroot} -type f -name \*.ko -exec %{__strip} --strip-debug \{\} \;
 
 # Always Sign the modules(s).
 # If the module signing keys are not defined, define them here.
-%{!?privkey: %define privkey /usr/src/kernels/%{kversion}/signing_key.priv}
+%{!?privkey: %define privkey /usr/src/kernels/%{kversion}/signing_key.pem}
 %{!?pubkey: %define pubkey /usr/src/kernels/%{kversion}/signing_key.x509}
 for module in $(find %{buildroot} -type f -name \*.ko);
-do %{__perl} /usr/src/kernels/%{kversion}/scripts/sign-file \
+do /usr/src/kernels/%{kversion}/scripts/sign-file \
     sha256 %{privkey} %{pubkey} $module;
 done
 
