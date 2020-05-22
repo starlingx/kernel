@@ -23,6 +23,7 @@ BuildRequires: libudev-devel
 BuildRequires: boost-devel
 BuildRequires: perl
 BuildRequires: openssl
+BuildRequires: elfutils-libelf-devel
 
 %define icp_tools accelcomp
 %define kernel_version %(rpm -q kernel%{?bt_ext}-devel | sed 's/kernel%{?bt_ext}-devel-//')

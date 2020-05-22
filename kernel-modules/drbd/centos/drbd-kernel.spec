@@ -18,6 +18,7 @@ License: GPLv2+
 Summary: %{kmod_name} kernel module(s)
 
 BuildRequires: kernel%{?bt_ext}-devel, redhat-rpm-config, perl, openssl
+BuildRequires: elfutils-libelf-devel
 ExclusiveArch: x86_64
 
 # Sources.

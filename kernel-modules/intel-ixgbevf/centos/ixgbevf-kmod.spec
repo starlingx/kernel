@@ -16,6 +16,7 @@ Summary: %{kmod_name} kernel module(s)
 URL:     http://www.intel.com/
 
 BuildRequires: kernel%{?bt_ext}-devel, redhat-rpm-config, perl, openssl
+BuildRequires: elfutils-libelf-devel
 ExclusiveArch: x86_64
 
 # Sources.

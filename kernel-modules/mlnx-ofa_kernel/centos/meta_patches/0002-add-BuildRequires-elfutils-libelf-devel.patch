@@ -1,0 +1,24 @@
+From 372af54951e76f0f03c85a3e99711a400a9e7072 Mon Sep 17 00:00:00 2001
+From: Scott Little <scott.little@windriver.com>
+Date: Fri, 22 May 2020 17:22:30 -0400
+Subject: [PATCH] add BuildRequires elfutils-libelf-devel
+
+---
+ SPECS/mlnx-ofa_kernel.spec | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/SPECS/mlnx-ofa_kernel.spec b/SPECS/mlnx-ofa_kernel.spec
+index 44a31ef..bddd949 100644
+--- a/SPECS/mlnx-ofa_kernel.spec
++++ b/SPECS/mlnx-ofa_kernel.spec
+@@ -35,6 +35,7 @@
+ 
+ %{!?KMP: %global KMP 0}
+ BuildRequires: kernel%{?bt_ext}-devel, openssl
++BuildRequires: elfutils-libelf-devel
+ %global WITH_SYSTEMD %(if ( test -d "%{_unitdir}" > /dev/null); then echo -n '1'; else echo -n '0'; fi)
+ 
+ %{!?configure_options: %global configure_options --with-core-mod --with-user_mad-mod --with-user_access-mod --with-addr_trans-mod --with-mlx4-mod --with-mlx4_en-mod --with-mlx5-mod --with-mlxfw-mod --with-ipoib-mod}
+-- 
+1.8.3.1
+
