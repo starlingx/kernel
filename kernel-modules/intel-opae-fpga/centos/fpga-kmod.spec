@@ -84,7 +84,6 @@ of the same variant of the Linux kernel and not on any one specific build.
 
 %prep
 %autosetup -p 1 -n %{kmod_name}-%{version}
-%{__gzip} %{kmod_name}.7
 echo "override %{kmod_name} * weak-updates/%{kmod_name}" > kmod-%{kmod_name}.conf
 
 %build
