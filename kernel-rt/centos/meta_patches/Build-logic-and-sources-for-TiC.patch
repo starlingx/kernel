@@ -7,9 +7,10 @@ Subject: [PATCH 1/2] Build logic and sources for TiC
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 Signed-off-by: Robin Lu <bin1.lu@intel.com>
 Signed-off-by: Dongqi Chen <chen.dq@neusoft.com>
+Signed-off-by: Yong Fu <fuyong@neusoft.com>
 ---
- SPECS/kernel-rt.spec | 87 ++++++++++++++++++++++++++++++++--------------------
- 1 file changed, 53 insertions(+), 34 deletions(-)
+ SPECS/kernel-rt.spec | 85 +++++++++++++++++++++++++++-----------------
+ 1 file changed, 52 insertions(+), 33 deletions(-)
 
 diff --git a/SPECS/kernel-rt.spec b/SPECS/kernel-rt.spec
 index f9cfea3..b89db57 100644
@@ -67,15 +68,6 @@ index f9cfea3..b89db57 100644
  %define with_bpftool 0
  %define with_zfcpdump 0
  %define with_kabichk  0
-@@ -291,7 +297,7 @@ Requires: rt-setup
- #
- BuildRequires: kmod, patch, bash, tar, git
- BuildRequires: bzip2, xz, findutils, gzip, m4, perl-interpreter, perl-Carp, perl-devel, perl-generators, make, diffutils, gawk
--BuildRequires: gcc, binutils, redhat-rpm-config, hmaccalc, python3-devel
-+BuildRequires: gcc, binutils, redhat-rpm-config, hmaccalc, python2-devel
- BuildRequires: net-tools, hostname, bc, bison, flex, elfutils-devel
- %if %{with_sparse}
- BuildRequires: sparse
 @@ -357,6 +363,7 @@ BuildRequires: xmlto
  %if %{with_perf} || %{with_tools}
  BuildRequires: asciidoc
@@ -255,5 +247,5 @@ index f9cfea3..b89db57 100644
  %kernel_variant_files  %{with_vdso_install} %{with_zfcpdump} zfcpdump
  %endif
 -- 
-1.8.3.1
+2.17.1
 
