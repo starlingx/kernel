@@ -1,2 +1,2 @@
 0001-Support-TiS-system.patch
-0002-Support-Centos8-OS.patch
+0002-fix-mlnx-ofa_kernel-devel-dependency-on-python2.patch

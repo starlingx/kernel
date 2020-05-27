@@ -1,0 +1,23 @@
+From 7e3c187ae28090bf4b43ffedd71becb71c67904c Mon Sep 17 00:00:00 2001
+From: Yong Fu <fuyong@neusoft.com>
+Date: Tue, 26 May 2020 14:13:55 +0800
+Subject: [PATCH] Use-python3-instead-of-python2
+
+Signed-off-by: Yong Fu <fuyong@neusoft.com>
+---
+ source/ofed_scripts/mlnx_tune | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/source/ofed_scripts/mlnx_tune b/source/ofed_scripts/mlnx_tune
+index 7654722..e6d61ec 100755
+--- a/source/ofed_scripts/mlnx_tune
++++ b/source/ofed_scripts/mlnx_tune
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python2
++#!/usr/bin/env python3
+ #
+ # Copyright (c) 2017 Mellanox Technologies. All rights reserved.
+ #
+-- 
+2.17.1
+
