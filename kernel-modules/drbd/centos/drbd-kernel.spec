@@ -9,7 +9,7 @@
 
 Name: drbd-kernel%{?bt_ext}
 Summary: Kernel driver for DRBD
-Version: 9.0.21
+Version: 8.4.11
 %define upstream_release 1
 Release: %{upstream_release}%{?_tis_dist}.%{tis_patch_ver}
 %global tarball_version %(echo "%{version}-%{?upstream_release}" | sed -e "s,%{?dist}$,,")
@@ -17,7 +17,8 @@ Group: System Environment/Kernel
 License: GPLv2+
 Summary: %{kmod_name} kernel module(s)
 
-BuildRequires: kernel%{?bt_ext}-devel, redhat-rpm-config, perl, openssl, elfutils-libelf-devel
+BuildRequires: kernel%{?bt_ext}-devel, redhat-rpm-config, perl, openssl
+BuildRequires: elfutils-libelf-devel
 ExclusiveArch: x86_64
 
 # Sources.
