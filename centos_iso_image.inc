@@ -34,6 +34,10 @@ kmod-ixgbevf-rt
 kmod-ixgbe
 kmod-ixgbe-rt
 
+# igb_uio-kmod
+kmod-igb_uio
+kmod-igb_uio-rt
+
 # drbd-kernel
 kmod-drbd
 kmod-drbd-rt
