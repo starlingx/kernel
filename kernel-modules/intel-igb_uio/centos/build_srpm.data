@@ -1,0 +1,4 @@
+COPY_LIST=" \
+  $PKG_BASE/files/* \
+  $STX_BASE/downloads/dpdk-20.05.tar.gz"
+TIS_PATCH_VER=1
