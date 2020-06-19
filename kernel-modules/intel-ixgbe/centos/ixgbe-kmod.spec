@@ -45,10 +45,6 @@ echo "Working. This may take some time ..."
 if [ -e "/boot/System.map-%{kversion}" ]; then
     /usr/sbin/depmod -aeF "/boot/System.map-%{kversion}" "%{kversion}" > /dev/null || :
 fi
-modules=( $(find /lib/modules/%{kversion}/extra/ixgbe | grep '\.ko$') )
-if [ -x "/sbin/weak-modules" ]; then
-    printf '%s\n' "${modules[@]}" | /sbin/weak-modules --add-modules
-fi
 echo "Done."
 %preun         -n kmod-ixgbe%{?bt_ext}
 rpm -ql kmod-ixgbe%{?bt_ext}-%{version}-%{release}.x86_64 | grep '\.ko$' > /var/run/rpm-kmod-ixgbe%{?bt_ext}-modules
@@ -57,16 +53,11 @@ echo "Working. This may take some time ..."
 if [ -e "/boot/System.map-%{kversion}" ]; then
     /usr/sbin/depmod -aeF "/boot/System.map-%{kversion}" "%{kversion}" > /dev/null || :
 fi
-modules=( $(cat /var/run/rpm-kmod-ixgbe%{?bt_ext}-modules) )
 rm /var/run/rpm-kmod-ixgbe%{?bt_ext}-modules
-if [ -x "/sbin/weak-modules" ]; then
-    printf '%s\n' "${modules[@]}" | /sbin/weak-modules --remove-modules
-fi
 echo "Done."
 %files         -n kmod-ixgbe%{?bt_ext}
 %defattr(644,root,root,755)
 /lib/modules/%{kversion}/
-%config(noreplace)/etc/depmod.d/kmod-ixgbe.conf
 %doc /usr/share/doc/kmod-ixgbe-%{version}/
 %doc /usr/share/man/man7/
 %{_sysconfdir}/modules-load.d/ixgbe.conf
@@ -83,7 +74,6 @@ of the same variant of the Linux kernel and not on any one specific build.
 %prep
 %autosetup -p 1 -n %{kmod_name}-%{version}
 %{__gzip} %{kmod_name}.7
-echo "override %{kmod_name} * weak-updates/%{kmod_name}" > kmod-%{kmod_name}.conf
 
 %build
 pushd src >/dev/null
@@ -93,8 +83,6 @@ popd >/dev/null
 %install
 %{__install} -d %{buildroot}/lib/modules/%{kversion}/extra/%{kmod_name}/
 %{__install} src/%{kmod_name}.ko %{buildroot}/lib/modules/%{kversion}/extra/%{kmod_name}/
-%{__install} -d %{buildroot}%{_sysconfdir}/depmod.d/
-%{__install} kmod-%{kmod_name}.conf %{buildroot}%{_sysconfdir}/depmod.d/
 %{__install} -d %{buildroot}%{_defaultdocdir}/kmod-%{kmod_name}-%{version}/
 %{__install} %{SOURCE5} %{buildroot}%{_defaultdocdir}/kmod-%{kmod_name}-%{version}/
 %{__install} pci.updates %{buildroot}%{_defaultdocdir}/kmod-%{kmod_name}-%{version}/

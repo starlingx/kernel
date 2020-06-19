@@ -62,10 +62,6 @@ echo "Working. This may take some time ..."
 if [ -e "/boot/System.map-%{kversion}" ]; then
     /usr/sbin/depmod -aeF "/boot/System.map-%{kversion}" "%{kversion}" > /dev/null || :
 fi
-modules=( $(find /lib/modules/%{kversion}/extra/igb_uio | grep '\.ko$') )
-if [ -x "/sbin/weak-modules" ]; then
-    printf '%s\n' "${modules[@]}" | /sbin/weak-modules --add-modules
-fi
 echo "Done."
 
 %preun         -n kmod-igb_uio%{?bt_ext}
@@ -76,17 +72,12 @@ echo "Working. This may take some time ..."
 if [ -e "/boot/System.map-%{kversion}" ]; then
     /usr/sbin/depmod -aeF "/boot/System.map-%{kversion}" "%{kversion}" > /dev/null || :
 fi
-modules=( $(cat /var/run/rpm-kmod-igb_uio%{?bt_ext}-modules) )
 rm /var/run/rpm-kmod-igb_uio%{?bt_ext}-modules
-if [ -x "/sbin/weak-modules" ]; then
-    printf '%s\n' "${modules[@]}" | /sbin/weak-modules --remove-modules
-fi
 echo "Done."
 
 %files         -n kmod-igb_uio%{?bt_ext}
 %defattr(644,root,root,755)
 /lib/modules/%{kversion}/
-%config(noreplace)/etc/depmod.d/kmod-igb_uio.conf
 %doc /usr/share/doc/kmod-igb_uio-%{version}/
 %defattr(755,root,root,755)
 %{_datadir}/starlingx/scripts/dpdk-devbind.py
@@ -102,7 +93,6 @@ of the same variant of the Linux kernel and not on any one specific build.
 
 %prep
 %autosetup -p 1 -n dpdk-%{version}
-echo "override %{kmod_name} * weak-updates/%{kmod_name}" > kmod-%{kmod_name}.conf
 
 %build
 make T=%{DPDK_TARGET} config
@@ -118,8 +108,6 @@ ls build/kmod/
 find . -name *.ko
 %{__install} -d %{buildroot}/lib/modules/%{kversion}/extra/%{kmod_name}/
 %{__install} build/kmod/%{kmod_name}.ko %{buildroot}/lib/modules/%{kversion}/extra/%{kmod_name}/
-%{__install} -d %{buildroot}%{_sysconfdir}/depmod.d/
-%{__install} kmod-%{kmod_name}.conf %{buildroot}%{_sysconfdir}/depmod.d/
 %{__install} -d %{buildroot}%{_defaultdocdir}/kmod-%{kmod_name}-%{version}/
 %{__install} license/gpl-2.0.txt %{buildroot}%{_defaultdocdir}/kmod-%{kmod_name}-%{version}/
 %{__install} -d %{buildroot}%{_datadir}/starlingx/scripts

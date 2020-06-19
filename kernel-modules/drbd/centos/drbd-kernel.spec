@@ -57,10 +57,6 @@ echo "Working. This may take some time ..."
 if [ -e "/boot/System.map-%{kversion}" ]; then
     /usr/sbin/depmod -aeF "/boot/System.map-%{kversion}" "%{kversion}" > /dev/null || :
 fi
-modules=( $(find /lib/modules/%{kversion}/extra/drbd | grep '\.ko$') )
-if [ -x "/sbin/weak-modules" ]; then
-    printf '%s\n' "${modules[@]}" | /sbin/weak-modules --add-modules
-fi
 echo "Done."
 %preun         -n kmod-drbd%{?bt_ext}
 rpm -ql kmod-drbd%{?bt_ext}-%{version}-%{release}.x86_64 | grep '\.ko$' > /var/run/rpm-kmod-drbd%{?bt_ext}-modules
@@ -69,16 +65,11 @@ echo "Working. This may take some time ..."
 if [ -e "/boot/System.map-%{kversion}" ]; then
     /usr/sbin/depmod -aeF "/boot/System.map-%{kversion}" "%{kversion}" > /dev/null || :
 fi
-modules=( $(cat /var/run/rpm-kmod-drbd%{?bt_ext}-modules) )
 rm /var/run/rpm-kmod-drbd%{?bt_ext}-modules
-if [ -x "/sbin/weak-modules" ]; then
-    printf '%s\n' "${modules[@]}" | /sbin/weak-modules --remove-modules
-fi
 echo "Done."
 %files         -n kmod-drbd%{?bt_ext}
 %defattr(644,root,root,755)
 /lib/modules/%{kversion}/
-%config(noreplace)/etc/depmod.d/drbd.conf
 %doc /usr/share/doc/kmod-drbd-%{version}/
 
 
@@ -102,14 +93,11 @@ make -C obj/default %{_smp_mflags} all KDIR=/usr/src/kernels/%{kversion}
 pwd
 %{__install} -d %{buildroot}/lib/modules/%{kversion}/extra/%{kmod_name}/
 %{__install} obj/default/%{kmod_name}.ko %{buildroot}/lib/modules/%{kversion}/extra/%{kmod_name}/
-%{__install} -d %{buildroot}%{_sysconfdir}/depmod.d/
 %{__install} -d %{buildroot}%{_defaultdocdir}/kmod-%{kmod_name}-%{version}/
 %{__install} ChangeLog %{buildroot}%{_defaultdocdir}/kmod-%{kmod_name}-%{version}/
 %{__install} COPYING %{buildroot}%{_defaultdocdir}/kmod-%{kmod_name}-%{version}/
 mv obj/default/.kernel.config.gz obj/k-config-$kernelrelease.gz
 %{__install} obj/k-config-$kernelrelease.gz %{buildroot}%{_defaultdocdir}/kmod-%{kmod_name}-%{version}/
-
-echo "override drbd * weak-updates" > %{buildroot}%{_sysconfdir}/depmod.d/drbd.conf 
 
 # Strip the modules(s).
 find %{buildroot} -type f -name \*.ko -exec %{__strip} --strip-debug \{\} \;

@@ -47,10 +47,6 @@ echo "Working. This may take some time ..."
 if [ -e "/boot/System.map-%{kversion}" ]; then
     /usr/sbin/depmod -aeF "/boot/System.map-%{kversion}" "%{kversion}" > /dev/null || :
 fi
-modules=( $(find /lib/modules/%{kversion}/extra/opae-intel-fpga-driver | grep '\.ko$') )
-if [ -x "/sbin/weak-modules" ]; then
-    printf '%s\n' "${modules[@]}" | /sbin/weak-modules --add-modules
-fi
 echo "Done."
 
 %preun         -n kmod-opae-fpga-driver%{?bt_ext}
@@ -61,17 +57,12 @@ echo "Working. This may take some time ..."
 if [ -e "/boot/System.map-%{kversion}" ]; then
     /usr/sbin/depmod -aeF "/boot/System.map-%{kversion}" "%{kversion}" > /dev/null || :
 fi
-modules=( $(cat /var/run/rpm-kmod-opae-fpga-driver%{?bt_ext}-modules) )
 rm /var/run/rpm-kmod-opae-fpga-driver%{?bt_ext}-modules
-if [ -x "/sbin/weak-modules" ]; then
-    printf '%s\n' "${modules[@]}" | /sbin/weak-modules --remove-modules
-fi
 echo "Done."
 
 %files         -n kmod-opae-fpga-driver%{?bt_ext}
 %defattr(644,root,root,755)
 /lib/modules/%{kversion}/
-%config(noreplace)/etc/depmod.d/kmod-opae-intel-fpga-driver.conf
 %doc /usr/share/doc/kmod-%{kmod_name}-%{version}/
 
 # Disable the building of the debug package(s).
@@ -85,7 +76,6 @@ of the same variant of the Linux kernel and not on any one specific build.
 %prep
 %autosetup -p 1 -n %{kmod_name}-%{version}-%{iteration}
 %{__gzip} %{kmod_name}.7
-echo "override %{kmod_name} * weak-updates/%{kmod_name}" > kmod-%{kmod_name}.conf
 
 %build
 %{__make} KERNELDIR=%{_usrsrc}/kernels/%{kversion}
@@ -93,8 +83,6 @@ echo "override %{kmod_name} * weak-updates/%{kmod_name}" > kmod-%{kmod_name}.con
 %install
 %{__install} -d %{buildroot}/lib/modules/%{kversion}/extra/%{kmod_name}/
 %{__install} %{_builddir}/%{kmod_name}-%{version}-%{iteration}/*.ko %{buildroot}/lib/modules/%{kversion}/extra/%{kmod_name}/
-%{__install} -d %{buildroot}%{_sysconfdir}/depmod.d/
-%{__install} kmod-%{kmod_name}.conf %{buildroot}%{_sysconfdir}/depmod.d/
 %{__install} -d %{buildroot}%{_defaultdocdir}/kmod-%{kmod_name}-%{version}/
 %{__install} LICENSE %{buildroot}%{_defaultdocdir}/kmod-%{kmod_name}-%{version}/
 %{__install} COPYING %{buildroot}%{_defaultdocdir}/kmod-%{kmod_name}-%{version}/
