@@ -1,7 +1,7 @@
 drbd-8.4.11-1.tar.gz#drbd-8.4.11-1#http://www.linbit.com/downloads/drbd/8.4/drbd-8.4.11-1.tar.gz#http##
 e1000e-3.6.0.tar.gz#e1000e-3.6.0#https://sourceforge.net/projects/e1000/files/e1000e%20stable/3.6.0/e1000e-3.6.0.tar.gz#http##
-i40e-2.10.19.82.tar.gz#i40e-2.10.19.82#https://sourceforge.net/projects/e1000/files/i40e%20stable/2.10.19.82/i40e-2.10.19.82.tar.gz/download#http##
-iavf-3.7.61.20.tar.gz#iavf-3.7.61.20#https://sourceforge.net/projects/e1000/files/iavf%20stable/3.7.61.20/iavf-3.7.61.20.tar.gz/download#http##
+i40e-2.11.29.tar.gz#i40e-2.11.29#https://sourceforge.net/projects/e1000/files/i40e%20stable/2.11.29/i40e-2.11.29.tar.gz/download#http##
+iavf-3.9.5.tar.gz#iavf-3.9.5#https://sourceforge.net/projects/e1000/files/iavf%20stable/3.9.5/iavf-3.9.5.tar.gz/download#http##
 ixgbe-5.6.5.tar.gz#ixgbe-5.6.5#https://sourceforge.net/projects/e1000/files/ixgbe%20stable/5.6.5/ixgbe-5.6.5.tar.gz/download#http##
 ixgbevf-4.6.3.tar.gz#ixgbevf-4.6.3#https://sourceforge.net/projects/e1000/files/ixgbevf%20stable/4.6.3/ixgbevf-4.6.3.tar.gz/download#http##
 dpdk-20.05.tar.gz#dpdk-20.05#https://fast.dpdk.org/rel/dpdk-20.05.tar.gz#http##
