@@ -38,6 +38,7 @@ Source2: qat_service
 
 #Patch1: 0001-Install-config-file-for-each-VF.patch
 Patch2: Get-and-report-the-return-code-on-firmware-load-fail.patch
+Patch3: crypto-qat-Silence-smp_processor_id-warning.patch
 
 %description
 Intel(r) QuickAssist Technology API
@@ -54,6 +55,7 @@ fi
 
 #%patch1 -p1
 %patch2 -p1
+%patch3 -p1
 
 %build
 
