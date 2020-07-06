@@ -982,3 +982,6 @@ CONFIG_EEPROM_AT24=m
 # enable e1000 driver as module same as kernel-std
 CONFIG_E1000=m
 
+# qdisc for tsn
+CONFIG_NET_SCH_ETF=m
+CONFIG_NET_SCH_TAPRIO=m
