@@ -7,7 +7,7 @@ kernel
 kernel-tools
 kernel-tools-libs
 perf
-python-perf
+python3-perf
 
 # kernel-rt
 kernel-rt
