@@ -2,7 +2,7 @@ From ac67546ccbecd3ee18145be31d87d7253048adda Mon Sep 17 00:00:00 2001
 Message-Id: <ac67546ccbecd3ee18145be31d87d7253048adda.1566587341.git.Jim.Somerville@windriver.com>
 From: "zhao.shuai" <zhaos@neusoft.com>
 Date: Mon, 5 Aug 2019 17:55:01 +0800
-Subject: [PATCH 2/3] Kernel-source-patches-for-TiC
+Subject: [PATCH 2/2] Kernel-source-patches-for-TiC
 
 Signed-off-by: zhao.shuai <zhaos@neusoft.com>
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
@@ -15,10 +15,10 @@ Signed-off-by: Dongqi Chen <chen.dq@neusoft.com>
  1 file changed, 25 insertions(+)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index adc3580..a7a8c97 100644
+index 59d8502..05627ef 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
-@@ -478,6 +478,20 @@ Patch1001: debrand-rh_taint.patch
+@@ -481,6 +481,20 @@ Patch1001: debrand-rh_taint.patch
  # empty final patch to facilitate testing of kernel patches
  Patch999999: linux-kernel-test.patch
  
@@ -39,7 +39,7 @@ index adc3580..a7a8c97 100644
  # END OF PATCH DEFINITIONS
  
  BuildRoot: %{_tmppath}/kernel-%{KVERREL}-root
-@@ -1000,6 +1014,17 @@ ApplyOptionalPatch debrand-rh_taint.patch
+@@ -1003,6 +1017,17 @@ ApplyOptionalPatch debrand-rh_taint.patch
  #ApplyOptionalPatch debrand-rh-i686-cpu.patch 
  
  
@@ -58,5 +58,5 @@ index adc3580..a7a8c97 100644
  
  # Any further pre-build tree manipulations happen here.
 -- 
-2.7.4
+2.17.1
 

@@ -1,7 +1,7 @@
 From ab74a468c73dc364eccba5e8200e31a7638534d4 Mon Sep 17 00:00:00 2001
 From: Jim Somerville <Jim.Somerville@windriver.com>
 Date: Fri, 20 Apr 2018 14:51:56 -0400
-Subject: [PATCH 1/3] Build logic and sources for TiC
+Subject: [PATCH 1/2] Build logic and sources for TiC
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 Signed-off-by: zhao.shuai <zhaos@neusoft.com>
@@ -9,11 +9,11 @@ Signed-off-by: Zhang Zhiguo <zhangzhg@neusoft.com>
 Signed-off-by: Robin Lu <bin1.lu@intel.com>
 Signed-off-by: Shuicheng Lin <shuicheng.lin@intel.com>
 ---
- SPECS/kernel.spec | 60 +++++++++++++++++++++++++++++++++++++++++++++++++++----
- 1 file changed, 56 insertions(+), 4 deletions(-)
+ SPECS/kernel.spec | 77 ++++++++++++++++++++++++++++++++++++++++-------
+ 1 file changed, 66 insertions(+), 11 deletions(-)
 
 diff --git a/SPECS/kernel.spec b/SPECS/kernel.spec
-index 2755684..adc3580 100644
+index 2755684..59d8502 100644
 --- a/SPECS/kernel.spec
 +++ b/SPECS/kernel.spec
 @@ -12,6 +12,8 @@
@@ -58,7 +58,17 @@ index 2755684..adc3580 100644
  #
  # Control whether to run an extensive DWARF based kABI check.
  # Note that this option needs to have baseline setup in SOURCE300.
-@@ -372,6 +378,7 @@ BuildRequires: xmlto
+@@ -115,6 +121,9 @@
+ 
+ %define with_gcov %{?_with_gcov: 1} %{?!_with_gcov: 0}
+ 
++# STX disable debug build
++%define with_debug 0
++
+ # turn off debug kernel and kabichk for gcov builds
+ %if %{with_gcov}
+ %define with_debug 0
+@@ -372,6 +381,7 @@ BuildRequires: xmlto
  %if %{with_perf} || %{with_tools}
  BuildRequires: asciidoc
  %endif
@@ -66,7 +76,7 @@ index 2755684..adc3580 100644
  
  Source0: linux-%{rpmversion}-%{pkgrelease}.tar.xz
  
-@@ -456,6 +463,12 @@ Source2001: cpupower.config
+@@ -456,6 +466,12 @@ Source2001: cpupower.config
  # Sources for CentOS debranding
  Source9000: centos.pem
  
@@ -79,7 +89,7 @@ index 2755684..adc3580 100644
  ## Patches needed for building this package
  
  Patch1000: debrand-single-cpu.patch
-@@ -699,6 +712,13 @@ Kernel sample programs and selftests.
+@@ -699,6 +715,13 @@ Kernel sample programs and selftests.
  
  %endif # with_selftests
  
@@ -93,7 +103,7 @@ index 2755684..adc3580 100644
  %if %{with_gcov}
  %package gcov
  Summary: gcov graph and source files for coverage data collection.
-@@ -1018,6 +1038,8 @@ cd configs
+@@ -1018,6 +1041,8 @@ cd configs
  
  # Drop some necessary files from the source dir into the buildroot
  cp $RPM_SOURCE_DIR/kernel-*.config .
@@ -102,7 +112,7 @@ index 2755684..adc3580 100644
  cp %{SOURCE41} .
  VERSION=%{version} ./generate_all_configs.sh
  
-@@ -1037,6 +1059,18 @@ do
+@@ -1037,6 +1062,18 @@ do
  done
  %endif
  
@@ -121,7 +131,7 @@ index 2755684..adc3580 100644
  cp %{SOURCE42} .
  ./process_configs.sh -w -c kernel %{rpmversion}
  
-@@ -1102,6 +1136,7 @@ BuildKernel() {
+@@ -1102,6 +1139,7 @@ BuildKernel() {
      # and now to start the build process
  
      %{make} -s %{?_smp_mflags} mrproper
@@ -129,7 +139,7 @@ index 2755684..adc3580 100644
      cp configs/$Config .config
  
      %if %{signkernel}%{signmodules}
-@@ -1188,6 +1223,8 @@ BuildKernel() {
+@@ -1188,6 +1226,8 @@ BuildKernel() {
          echo "pesigning failed"
          exit 1
      fi
@@ -138,7 +148,7 @@ index 2755684..adc3580 100644
      mv vmlinuz.signed $SignImage
      if [ "$KernelExtension" == "gz" ]; then
          gzip -f9 $SignImage
-@@ -1529,6 +1566,12 @@ BuildKernel() {
+@@ -1529,6 +1569,12 @@ BuildKernel() {
  	# Save the signing keys so we can sign the modules in __modsign_install_post
  	cp certs/signing_key.pem certs/signing_key.pem.sign${Flav}
  	cp certs/signing_key.x509 certs/signing_key.x509.sign${Flav}
@@ -151,7 +161,7 @@ index 2755684..adc3580 100644
      fi
  %endif
  
-@@ -2017,6 +2060,10 @@ fi\
+@@ -2017,6 +2063,10 @@ fi\
  #
  %define kernel_variant_posttrans() \
  %{expand:%%posttrans %{?1:%{1}-}core}\
@@ -162,7 +172,35 @@ index 2755684..adc3580 100644
  if [ -x %{_sbindir}/weak-modules ]\
  then\
      %{_sbindir}/weak-modules --add-kernel %{KVERREL}%{?1:+%{1}} || exit $?\
-@@ -2315,6 +2362,11 @@ fi
+@@ -2242,20 +2292,20 @@ fi
+ %{!?_licensedir:%global license %%doc}\
+ %license linux-%{KVERREL}/COPYING-%{version}\
+ /lib/modules/%{KVERREL}%{?3:+%{3}}/%{?-k:%{-k*}}%{!?-k:vmlinuz}\
+-%ghost /%{image_install_path}/%{?-k:%{-k*}}%{!?-k:vmlinuz}-%{KVERREL}%{?3:+%{3}}\
++/%{image_install_path}/%{?-k:%{-k*}}%{!?-k:vmlinuz}-%{KVERREL}%{?3:+%{3}}\
+ /lib/modules/%{KVERREL}%{?3:+%{3}}/.vmlinuz.hmac \
+-%ghost /%{image_install_path}/.vmlinuz-%{KVERREL}%{?3:+%{3}}.hmac \
++/%{image_install_path}/.vmlinuz-%{KVERREL}%{?3:+%{3}}.hmac \
+ %ifarch aarch64\
+ /lib/modules/%{KVERREL}%{?3:+%{3}}/dtb \
+-%ghost /%{image_install_path}/dtb-%{KVERREL}%{?3:+%{3}} \
++/%{image_install_path}/dtb-%{KVERREL}%{?3:+%{3}} \
+ %endif\
+ %attr(0600, root, root) /lib/modules/%{KVERREL}%{?3:+%{3}}/System.map\
+-%ghost %attr(0600, root, root) /boot/System.map-%{KVERREL}%{?3:+%{3}}\
++%attr(0600, root, root) /boot/System.map-%{KVERREL}%{?3:+%{3}}\
+ /lib/modules/%{KVERREL}%{?3:+%{3}}/symvers.gz\
+ /lib/modules/%{KVERREL}%{?3:+%{3}}/config\
+-%ghost %attr(0600, root, root) /boot/symvers-%{KVERREL}%{?3:+%{3}}.gz\
+-%ghost %attr(0600, root, root) /boot/initramfs-%{KVERREL}%{?3:+%{3}}.img\
+-%ghost %attr(0644, root, root) /boot/config-%{KVERREL}%{?3:+%{3}}\
++%attr(0600, root, root) /boot/symvers-%{KVERREL}%{?3:+%{3}}.gz\
++%attr(0600, root, root) /boot/initramfs-%{KVERREL}%{?3:+%{3}}.img\
++%attr(0644, root, root) /boot/config-%{KVERREL}%{?3:+%{3}}\
+ %dir /lib/modules\
+ %dir /lib/modules/%{KVERREL}%{?3:+%{3}}\
+ %dir /lib/modules/%{KVERREL}%{?3:+%{3}}/kernel\
+@@ -2315,6 +2365,11 @@ fi
  
  %kernel_variant_ipaclones %{with_up}
  
@@ -175,5 +213,5 @@ index 2755684..adc3580 100644
  # and build.
  #
 -- 
-2.7.4
+2.17.1
 
