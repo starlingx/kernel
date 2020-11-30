@@ -16,6 +16,7 @@ Summary: %{kmod_name}%{?bt_ext} kernel module(s)
 URL:     http://www.intel.com/
 
 BuildRequires: kernel%{?bt_ext}-devel, redhat-rpm-config, perl, openssl
+BuildRequires: elfutils-libelf-devel
 ExclusiveArch: x86_64
 
 # Sources.
@@ -43,10 +44,6 @@ echo "Working. This may take some time ..."
 if [ -e "/boot/System.map-%{kversion}" ]; then
     /usr/sbin/depmod -aeF "/boot/System.map-%{kversion}" "%{kversion}" > /dev/null || :
 fi
-modules=( $(find /lib/modules/%{kversion}/extra/e1000e | grep '\.ko$') )
-if [ -x "/sbin/weak-modules" ]; then
-    printf '%s\n' "${modules[@]}" | /sbin/weak-modules --add-modules
-fi
 echo "Done."
 
 %preun         -n kmod-e1000e%{?bt_ext}
@@ -57,17 +54,12 @@ echo "Working. This may take some time ..."
 if [ -e "/boot/System.map-%{kversion}" ]; then
     /usr/sbin/depmod -aeF "/boot/System.map-%{kversion}" "%{kversion}" > /dev/null || :
 fi
-modules=( $(cat /var/run/rpm-kmod-e1000e%{?bt_ext}-modules) )
 rm /var/run/rpm-kmod-e1000e%{?bt_ext}-modules
-if [ -x "/sbin/weak-modules" ]; then
-    printf '%s\n' "${modules[@]}" | /sbin/weak-modules --remove-modules
-fi
 echo "Done."
 
 %files         -n kmod-e1000e%{?bt_ext}
 %defattr(644,root,root,755)
 /lib/modules/%{kversion}/
-%config(noreplace)/etc/depmod.d/kmod-e1000e.conf
 %doc /usr/share/doc/kmod-e1000e-%{version}/
 %doc /usr/share/man/man7/
 %{_sysconfdir}/modules-load.d/e1000e.conf
@@ -83,7 +75,6 @@ of the same variant of the Linux kernel and not on any one specific build.
 %prep
 %autosetup -p 1 -n %{kmod_name}-%{version}
 %{__gzip} %{kmod_name}.7
-echo "override %{kmod_name} * weak-updates/%{kmod_name}" > kmod-%{kmod_name}.conf
 
 %build
 pushd src >/dev/null
@@ -93,8 +84,6 @@ popd >/dev/null
 %install
 %{__install} -d %{buildroot}/lib/modules/%{kversion}/extra/%{kmod_name}/
 %{__install} src/%{kmod_name}.ko %{buildroot}/lib/modules/%{kversion}/extra/%{kmod_name}/
-%{__install} -d %{buildroot}%{_sysconfdir}/depmod.d/
-%{__install} kmod-%{kmod_name}.conf %{buildroot}%{_sysconfdir}/depmod.d/
 %{__install} -d %{buildroot}%{_defaultdocdir}/kmod-%{kmod_name}-%{version}/
 %{__install} %{SOURCE5} %{buildroot}%{_defaultdocdir}/kmod-%{kmod_name}-%{version}/
 %{__install} pci.updates %{buildroot}%{_defaultdocdir}/kmod-%{kmod_name}-%{version}/

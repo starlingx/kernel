@@ -12,7 +12,7 @@ diff --git a/SPECS/mlnx-ofa_kernel.spec b/SPECS/mlnx-ofa_kernel.spec
 index 2fccf4f..7525baa 100644
 --- a/SPECS/mlnx-ofa_kernel.spec
 +++ b/SPECS/mlnx-ofa_kernel.spec
-@@ -100,6 +100,7 @@ Patch01: 0001-neuter-HAVE_IEEE_GETQCN.patch
+@@ -112,6 +112,7 @@ Patch01: 0001-neuter-HAVE_IEEE_GETQCN.patch
  Patch02: 0001-neuter-a-bunch-of-ks-stuff.patch
  Patch03: 0001-neuter-some-stats-output.patch
  Patch04: Disable-use-of-page-pool.patch
@@ -20,7 +20,7 @@ index 2fccf4f..7525baa 100644
  
  BuildRoot: %{?build_root:%{build_root}}%{!?build_root:/var/tmp/OFED}
  Vendor: Mellanox Technologies
-@@ -293,6 +294,7 @@ mkdir obj
+@@ -305,6 +306,7 @@ mkdir obj
  %patch02 -p1
  %patch03 -p1
  %patch04 -p1

@@ -4,6 +4,7 @@
 
 # kernel
 kernel
+kernel-modules-extra
 kernel-tools
 kernel-tools-libs
 perf
@@ -12,6 +13,7 @@ python3-perf
 # kernel-rt
 kernel-rt
 kernel-rt-kvm
+kernel-rt-modules-extra
 kernel-rt-tools
 
 # e1000e-kmod
@@ -33,6 +35,10 @@ kmod-ixgbevf-rt
 # ixgbe-kmod
 kmod-ixgbe
 kmod-ixgbe-rt
+
+# igb_uio-kmod
+kmod-igb_uio
+kmod-igb_uio-rt
 
 # drbd-kernel
 kmod-drbd

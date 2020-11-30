@@ -1,0 +1,23 @@
+From bc372ae6430ee11840f1eab10e05273d04aa7110 Mon Sep 17 00:00:00 2001
+From: Yong Fu <fuyong@neusoft.com>
+Date: Mon, 30 Nov 2020 14:46:06 +0800
+Subject: [PATCH] Use-python3-instead-of-python
+
+Signed-off-by: Yong Fu <fuyong@neusoft.com>
+---
+ usertools/dpdk-devbind.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/usertools/dpdk-devbind.py b/usertools/dpdk-devbind.py
+index dc00882..8cafa90 100755
+--- a/usertools/dpdk-devbind.py
++++ b/usertools/dpdk-devbind.py
+@@ -1,4 +1,4 @@
+-#! /usr/bin/env python
++#! /usr/bin/env python3
+ # SPDX-License-Identifier: BSD-3-Clause
+ # Copyright(c) 2010-2014 Intel Corporation
+ #
+-- 
+2.17.1
+

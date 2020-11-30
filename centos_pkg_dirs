@@ -4,6 +4,7 @@ kernel-modules/intel-iavf
 kernel-modules/intel-i40e
 kernel-modules/intel-ixgbevf
 kernel-modules/intel-ixgbe
+kernel-modules/intel-igb_uio
 kernel-modules/qat17
 kernel-modules/drbd
 kernel-modules/intel-opae-fpga

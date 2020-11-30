@@ -1,4 +1,9 @@
 COPY_LIST=" \
   $PATCHES_BASE/* \
-  $STX_BASE/downloads/opae-intel-fpga-driver-2.0.1.tar.gz"
-TIS_PATCH_VER=3
+  $STX_BASE/downloads/opae-intel-fpga-driver-2.0.1-8.tar.gz"
+OPT_DEP_LIST_FOR_BUILD_TYPE[std]=$GIT_BASE/kernel-std
+OPT_DEP_LIST_FOR_BUILD_TYPE[rt]=$GIT_BASE/kernel-rt
+BASE_SRCREV_FOR_PATH[$GIT_BASE/kernel-std]=b3b85950aecb5fef6902d4dfcf578b402ec6a69d
+BASE_SRCREV_FOR_PATH[$GIT_BASE/kernel-rt]=b3b85950aecb5fef6902d4dfcf578b402ec6a69d
+PKG_BASE_SRCREV=aab4c0a0882fe82985726f45cffc692d1dfe1998
+TIS_PATCH_VER=PKG_GITREVCOUNT+OTHER_GITREVCOUNT
