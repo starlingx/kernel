@@ -12,6 +12,9 @@ kmod-iavf-rt
 # i40e-kmod
 kmod-i40e-rt
 
+# ice-kmod
+kmod-ice-rt
+
 # ixgbevf-kmod
 kmod-ixgbevf-rt
 

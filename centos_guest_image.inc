@@ -15,6 +15,9 @@ kmod-iavf
 # i40e-kmod
 kmod-i40e
 
+# ice-kmod
+kmod-ice
+
 # ixgbevf-kmod
 kmod-ixgbevf
 

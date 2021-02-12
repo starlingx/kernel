@@ -28,6 +28,10 @@ kmod-i40e-rt
 kmod-iavf
 kmod-iavf-rt
 
+# ice-kmod
+kmod-ice
+kmod-ice-rt
+
 # ixgbevf-kmod
 kmod-ixgbevf
 kmod-ixgbevf-rt
