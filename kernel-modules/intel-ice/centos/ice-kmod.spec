@@ -15,7 +15,7 @@ Summary:	Intel(R) Ethernet Connection E800 Series Linux Driver
 URL: http://support.intel.com
 
 
-BuildRequires:	kernel%{?bt_ext}-devel
+BuildRequires:	kernel%{?bt_ext}-devel, redhat-rpm-config, perl, openssl, elfutils-libelf-devel
 Requires:	kernel%{?bt_ext}-devel, findutils, gawk, bash
 
 %define kernel_module_package_buildreqs kernel%{?bt_ext}-devel
