@@ -7,6 +7,8 @@ kernel
 kernel-modules-extra
 kernel-tools
 kernel-tools-libs
+kernel-headers
+kernel-devel
 perf
 python-perf
 
@@ -15,6 +17,8 @@ kernel-rt
 kernel-rt-kvm
 kernel-rt-modules-extra
 kernel-rt-tools
+kernel-rt-headers
+kernel-rt-devel
 
 # e1000e-kmod
 kmod-e1000e
