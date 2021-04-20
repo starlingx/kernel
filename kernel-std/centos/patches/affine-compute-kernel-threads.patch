@@ -1,10 +1,7 @@
-From 6b6edb5a389c03e208e6a123a7807af66283237d Mon Sep 17 00:00:00 2001
-Message-Id: <6b6edb5a389c03e208e6a123a7807af66283237d.1527544850.git.Jim.Somerville@windriver.com>
-In-Reply-To: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerville@windriver.com>
-References: <b6ceef1c915827b50ce3f76da4dc47f3eb768b44.1527544850.git.Jim.Somerville@windriver.com>
+From 86a6c5a26e59c6cb938f5e08e33933723249bfe6 Mon Sep 17 00:00:00 2001
 From: Chris Friesen <chris.friesen@windriver.com>
 Date: Tue, 24 Nov 2015 16:27:28 -0500
-Subject: [PATCH 03/10] affine compute kernel threads
+Subject: [PATCH] affine compute kernel threads
 
 This is a kernel enhancement to configure the cpu affinity of kernel
 threads via kernel boot option kthread_cpus=<cpulist>. The compute
@@ -30,17 +27,18 @@ Signed-off-by: Vu Tran <vu.tran@windriver.com>
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 Signed-off-by: Zhang Zhiguo <zhangzhg@neusoft.com>
+Signed-off-by: Vefa Bicakci <vefa.bicakci@windriver.com>
 ---
  Documentation/admin-guide/kernel-parameters.txt |  9 +++++++++
  include/linux/cpumask.h                         |  3 +++
  init/main.c                                     |  2 ++
- kernel/cpu.c                                    | 14 ++++++++++++++
+ kernel/cpu.c                                    | 20 ++++++++++++++++++++
  kernel/kthread.c                                |  4 ++--
  kernel/umh.c                                    |  3 +++
- 6 files changed, 33 insertions(+), 2 deletions(-)
+ 6 files changed, 39 insertions(+), 2 deletions(-)
 
 diff --git a/Documentation/admin-guide/kernel-parameters.txt b/Documentation/admin-guide/kernel-parameters.txt
-index 5d43bff..928b525 100644
+index 5d43bff81f1d..928b52500e9e 100644
 --- a/Documentation/admin-guide/kernel-parameters.txt
 +++ b/Documentation/admin-guide/kernel-parameters.txt
 @@ -1968,6 +1968,15 @@
@@ -60,7 +58,7 @@ index 5d43bff..928b525 100644
  	kpti=		[ARM64] Control page table isolation of user
  			and kernel address spaces.
 diff --git a/include/linux/cpumask.h b/include/linux/cpumask.h
-index 57f20a0..4526034 100644
+index 57f20a0a7794..452603496e53 100644
 --- a/include/linux/cpumask.h
 +++ b/include/linux/cpumask.h
 @@ -54,6 +54,7 @@ extern unsigned int nr_cpu_ids;
@@ -85,7 +83,7 @@ index 57f20a0..4526034 100644
  #if NR_CPUS > 1
  #define num_online_cpus()	cpumask_weight(cpu_online_mask)
 diff --git a/init/main.c b/init/main.c
-index 42c2f2e..f248b7f 100644
+index 42c2f2ed74a2..f248b7f07082 100644
 --- a/init/main.c
 +++ b/init/main.c
 @@ -1142,6 +1142,8 @@ static noinline void __init kernel_init_freeable(void)
@@ -98,29 +96,28 @@ index 42c2f2e..f248b7f 100644
  	if (ksys_open((const char __user *) "/dev/console", O_RDWR, 0) < 0)
  		pr_err("Warning: unable to open an initial console.\n");
 diff --git a/kernel/cpu.c b/kernel/cpu.c
-index d94cf04..0f2e63f 100644
+index d94cf04ef0b8..0f3625c90996 100644
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
-@@ -2226,6 +2226,9 @@ EXPORT_SYMBOL_GPL(cpu_bit_bitmap);
- const DECLARE_BITMAP(cpu_all_bits, NR_CPUS) = CPU_BITS_ALL;
- EXPORT_SYMBOL(cpu_all_bits);
- 
-+const DECLARE_BITMAP(cpu_kthread_bits, NR_CPUS) = CPU_BITS_ALL;
-+EXPORT_SYMBOL(cpu_kthread_bits);
-+
- #ifdef CONFIG_INIT_ALL_POSSIBLE
- struct cpumask __cpu_possible_mask __read_mostly
- 	= {CPU_BITS_ALL};
-@@ -2243,6 +2246,17 @@ EXPORT_SYMBOL(__cpu_present_mask);
+@@ -2243,6 +2243,26 @@ EXPORT_SYMBOL(__cpu_present_mask);
  struct cpumask __cpu_active_mask __read_mostly;
  EXPORT_SYMBOL(__cpu_active_mask);
  
-+struct cpumask __cpu_kthread_mask __read_mostly;
++struct cpumask __cpu_kthread_mask __read_mostly
++	= {CPU_BITS_ALL};
 +EXPORT_SYMBOL(__cpu_kthread_mask);
 +
 +static int __init kthread_setup(char *str)
 +{
-+	cpulist_parse(str, (struct cpumask *)&cpu_kthread_bits);
++	struct cpumask tmp_mask;
++	int err;
++
++	err = cpulist_parse(str, &tmp_mask);
++	if (!err)
++		cpumask_copy(&__cpu_kthread_mask, &tmp_mask);
++	else
++		pr_err("Cannot parse 'kthread_cpus=%s'; error %d\n", str, err);
++
 +	return 1;
 +}
 +__setup("kthread_cpus=", kthread_setup);
@@ -130,7 +127,7 @@ index d94cf04..0f2e63f 100644
  {
  	cpumask_copy(&__cpu_present_mask, src);
 diff --git a/kernel/kthread.c b/kernel/kthread.c
-index 1f0bf2d..3a5f1af 100644
+index 1f0bf2d0f207..3a5f1af5054e 100644
 --- a/kernel/kthread.c
 +++ b/kernel/kthread.c
 @@ -339,7 +339,7 @@ struct task_struct *__kthread_create_on_node(int (*threadfn)(void *data),
@@ -152,7 +149,7 @@ index 1f0bf2d..3a5f1af 100644
  
  	current->flags |= PF_NOFREEZE;
 diff --git a/kernel/umh.c b/kernel/umh.c
-index d937cba..94715df 100644
+index d937cbad903a..94715dff7d61 100644
 --- a/kernel/umh.c
 +++ b/kernel/umh.c
 @@ -74,6 +74,9 @@ static int call_usermodehelper_exec_async(void *data)
@@ -166,5 +163,5 @@ index d937cba..94715df 100644
  	 * Our parent (unbound workqueue) runs with elevated scheduling
  	 * priority. Avoid propagating that into the userspace child.
 -- 
-2.7.4
+2.29.2
 
