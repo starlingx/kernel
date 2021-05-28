@@ -74,6 +74,7 @@ CONFIG_INTEL_IOMMU_DEFAULT_ON=y
 # CONFIG_MLX4_CORE is not set
 # CONFIG_MLX5_EN is not set
 # CONFIG_MLX5_CORE is not set
+# CONFIG_ICE is not set
 
 # TPM built-in driver
 CONFIG_TCG_TPM=m

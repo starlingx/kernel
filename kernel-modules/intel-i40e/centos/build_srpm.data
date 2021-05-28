@@ -1,6 +1,6 @@
 COPY_LIST=" \
   $PKG_BASE/files/* \
-  $STX_BASE/downloads/i40e-2.11.29.tar.gz"
+  $STX_BASE/downloads/i40e-2.14.13.tar.gz"
 OPT_DEP_LIST_FOR_BUILD_TYPE[std]=$GIT_BASE/kernel-std
 OPT_DEP_LIST_FOR_BUILD_TYPE[rt]=$GIT_BASE/kernel-rt
 BASE_SRCREV_FOR_PATH[$GIT_BASE/kernel-std]=58597630f681940c2a20cca75dc96c06ae9be15b
