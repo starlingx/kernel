@@ -10,3 +10,6 @@ ixgbevf-4.6.3.tar.gz#ixgbevf-4.6.3#https://sourceforge.net/projects/e1000/files/
 !MLNX_OFED_SRC-5.0-2.1.8.0.tgz#MLNX_OFED_SRC-5.0-2.1.8.0#http://content.mellanox.com/ofed/MLNX_OFED-5.0-2.1.8.0/MLNX_OFED_SRC-5.0-2.1.8.0.tgz#http_script##unused
 opae-intel-fpga-driver-2.0.1-8.tar.gz#opae-intel-fpga-driver-2.0.1-8#https://github.com/OPAE/opae-sdk/releases/download/1.3.7-4/opae-intel-fpga-driver-2.0.1-8.tar.gz#http##
 !qat1.7.l.4.5.0-00034.tar.gz#quickassist#https://01.org/sites/default/files/downloads/qat1.7.l.4.5.0-00034.tar.gz#http_script##post-dl-script/qat1.7.sh
+!QAT1.7.L.4.14.0-00031.tar.gz#quickassist#https://downloadmirror.intel.com/30178/eng/QAT1.7.L.4.14.0-00031.tar.gz#http_script##unused
+!dpdk-kmods-2a9f0f72a2d926382634cf8f1de10e1acf57542b.tar.gz#dpdk-kmods#git://dpdk.org/dpdk-kmods/#git#2a9f0f72a2d926382634cf8f1de10e1acf57542b##
+!OPAE_1.3.7-5_el7.zip#OPAE#https://github.com/OPAE/opae-sdk/releases/download/1.3.7-5/OPAE_1.3.7-5_el7.zip#http_script##unused
