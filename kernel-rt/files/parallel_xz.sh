@@ -1,0 +1,1 @@
+../../kernel-std/files/parallel_xz.sh
