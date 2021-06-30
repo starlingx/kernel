@@ -1,6 +1,5 @@
 COPY_LIST=" \
-  $PATCHES_BASE/* \
-  $STX_BASE/downloads/opae-intel-fpga-driver-2.0.1-8.tar.gz"
+  $PATCHES_BASE/* "
 OPT_DEP_LIST_FOR_BUILD_TYPE[std]=$GIT_BASE/kernel-std
 OPT_DEP_LIST_FOR_BUILD_TYPE[rt]=$GIT_BASE/kernel-rt
 BASE_SRCREV_FOR_PATH[$GIT_BASE/kernel-std]=b3b85950aecb5fef6902d4dfcf578b402ec6a69d

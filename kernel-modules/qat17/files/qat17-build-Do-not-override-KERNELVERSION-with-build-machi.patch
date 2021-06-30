@@ -1,0 +1,70 @@
+From 87f6c5a8e843461df50229f2b07ba69bc98b7e04 Mon Sep 17 00:00:00 2001
+From: "M. Vefa Bicakci" <vefa.bicakci@windriver.com>
+Date: Fri, 2 Jul 2021 13:08:50 -0400
+Subject: [PATCH] build: Do not override KERNELVERSION with build machine's
+ kernel version
+
+Prior to this commit, the build system would fail with the following
+error message when building the qat kernel modules on a host with a
+3.10.y-based kernel, targeting kernel version 5.10.y:
+
+  ld -m elf_x86_64   -whole-archive -whole-archive  -r \
+    -o .../quickassist/.../performance/cpa_sample_code.o
+  ld: no input files
+
+This occurs because the Makefile in question uses the major kernel
+version of the build host's running kernel, as opposed to the target
+kernel's version.
+
+This commit fixes this issue as follows:
+
+* Do not redefine KERNELVERSION; use a new make variable named
+  KVER_MAJOR instead.
+
+* Use the target kernel's version from the KERNELVERSION variable to
+  define the KVER_MAJOR variable's value.
+
+* Add helpful debugging output.
+
+Note: This patch is for qat17-4.13.0, and even though qat17-4.14.0 has
+slightly improved this Makefile to check for kernel major versions
+greater than '5' as well, the same fix is necessary there too.
+
+Signed-off-by: M. Vefa Bicakci <vefa.bicakci@windriver.com>
+---
+ .../src/sample_code/performance/Makefile             | 12 ++++++++++--
+ 1 file changed, 10 insertions(+), 2 deletions(-)
+
+diff --git a/quickassist/lookaside/access_layer/src/sample_code/performance/Makefile b/quickassist/lookaside/access_layer/src/sample_code/performance/Makefile
+index 9ac31dd..0468892 100644
+--- a/quickassist/lookaside/access_layer/src/sample_code/performance/Makefile
++++ b/quickassist/lookaside/access_layer/src/sample_code/performance/Makefile
+@@ -310,7 +310,15 @@ endif
+ ifeq ($(ICP_OS_LEVEL),kernel_space)
+     SOURCES += qae/$(OS)/$(ICP_OS_LEVEL)/qae_mem_utils.c
+     ifeq ($(OS),linux)
+-	KERNELVERSION=$(shell uname -r | cut -d'.' -f1)
++        ifeq ($(KERNELVERSION),)
++            KVER_MAJOR=$(shell uname -r | cut -d'.' -f1)
++        else
++            KVER_MAJOR=$(shell echo "$(KERNELVERSION)" | cut -d'.' -f1)
++        endif
++        $(info Debug: KERNELRELEASE=$(KERNELRELEASE))
++        $(info Debug: KERNELVERSION=$(KERNELVERSION))
++        $(info Debug: VERSION=$(VERSION) PATCHLEVEL=$(PATCHLEVEL))
++        $(info Debug: KVER_MAJOR=$(KVER_MAJOR))
+     endif
+ endif
+ 
+@@ -390,7 +398,7 @@ endif
+ RM=rm -f
+ ifeq ($(OS),linux)
+     ifeq ($(ICP_OS_LEVEL),kernel_space)
+-        ifeq ($(shell test $(KERNELVERSION) -ge 5; echo $$?), 0)
++        ifeq ($(shell test $(KVER_MAJOR) -ge 5; echo $$?), 0)
+             ADDITIONAL_KERNEL_LIBS=$(patsubst %.c, %.o, $(SOURCES))
+         endif
+     endif
+-- 
+2.31.1
+

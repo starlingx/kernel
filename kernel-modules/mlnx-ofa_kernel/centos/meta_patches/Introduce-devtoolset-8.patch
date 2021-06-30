@@ -1,0 +1,61 @@
+From 3a79ff9ba9c5becc19121bc628971265c93e8a2c Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Tue, 20 Apr 2021 21:34:25 -0400
+Subject: [PATCH] Introduce devtoolset-8
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ mlnx-ofa_kernel.spec | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
+
+diff --git a/SPECS/mlnx-ofa_kernel.spec b/SPECS/mlnx-ofa_kernel.spec
+index e187ff5..d4d3f19 100644
+--- a/SPECS/mlnx-ofa_kernel.spec
++++ b/SPECS/mlnx-ofa_kernel.spec
+@@ -35,6 +35,10 @@
+ 
+ %{!?KMP: %global KMP 0}
+ BuildRequires: kernel%{?bt_ext}-devel, openssl
++BuildRequires:  devtoolset-8-build
++BuildRequires:  devtoolset-8-binutils
++BuildRequires:  devtoolset-8-gcc
++BuildRequires:  devtoolset-8-make
+ %global WITH_SYSTEMD %(if ( test -d "%{_unitdir}" > /dev/null); then echo -n '1'; else echo -n '0'; fi)
+ 
+ %{!?configure_options: %global configure_options --with-core-mod --with-user_mad-mod --with-user_access-mod --with-addr_trans-mod --with-mlx5-mod --with-mlxfw-mod --with-ipoib-mod}
+@@ -287,6 +291,10 @@ The driver sources are located at: http://www.mellanox.com/downloads/ofed/mlnx-o
+ 
+ %prep
+ %setup -n %{_basename}-%{_version}
++%if 0%{?rhel} == 7
++source scl_source enable devtoolset-8 || :
++source scl_source enable llvm-toolset-7.0 || :
++%endif
+ set -- *
+ mkdir source
+ mv "$@" source/
+@@ -296,6 +304,10 @@ sed -s -i -e '1s|python\>|python3|' `grep -rl '^#!.*python' source/ofed_scripts`
+ mkdir obj
+ 
+ %build
++%if 0%{?rhel} == 7
++source scl_source enable devtoolset-8 || :
++source scl_source enable llvm-toolset-7.0 || :
++%endif
+ export EXTRA_CFLAGS='-DVERSION=\"%version\"'
+ export INSTALL_MOD_DIR=%{install_mod_dir}
+ export CONF_OPTIONS="%{configure_options}"
+@@ -314,6 +326,10 @@ for flavor in %flavors_to_build; do
+ done
+ 
+ %install
++%if 0%{?rhel} == 7
++source scl_source enable devtoolset-8 || :
++source scl_source enable llvm-toolset-7.0 || :
++%endif
+ touch ofed-files
+ export RECORD_PY_FILES=1
+ export INSTALL_MOD_PATH=%{buildroot}
+-- 
+2.29.2
+

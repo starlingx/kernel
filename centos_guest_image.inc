@@ -18,11 +18,5 @@ kmod-i40e
 # ice-kmod
 kmod-ice
 
-# ixgbevf-kmod
-kmod-ixgbevf
-
-# ixgbe-kmod
-kmod-ixgbe
-
 # qat17
 qat17

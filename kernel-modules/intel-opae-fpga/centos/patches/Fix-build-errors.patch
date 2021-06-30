@@ -1,0 +1,104 @@
+From 262f8cbac0e4699edfcc5d1027479f85f9c8177f Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Sun, 27 Jun 2021 23:13:51 -0700
+Subject: [PATCH 1/2] Fix build errors.
+
+Fix the following issues.
+1. readx_poll_timeout redefined
+2. change mmap_sem to mmap_lock
+   because commit da1c55f1b272f4bd54671d459b39ea7b54944ef9
+   mmap locking API: rename mmap_sem to mmap_lock
+3. change i2c_new_device to i2c_new_client_device because
+   i2c_new_device is deprecated.
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ drivers/fpga/intel/dma-region.c           | 4 ++--
+ drivers/fpga/intel/fme-main.c             | 1 -
+ drivers/i2c/busses/i2c-altera.c           | 3 +--
+ drivers/mtd/devices/intel-on-chip-flash.c | 1 -
+ drivers/mtd/spi-nor/intel-generic-qspi.c  | 1 -
+ 5 files changed, 3 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/fpga/intel/dma-region.c b/drivers/fpga/intel/dma-region.c
+index 87c8f32..d6749b1 100644
+--- a/drivers/fpga/intel/dma-region.c
++++ b/drivers/fpga/intel/dma-region.c
+@@ -51,7 +51,7 @@ static long afu_dma_adjust_locked_vm(struct device *dev, long npages, bool incr)
+ 	if (!current->mm)
+ 		return 0;
+ 
+-	down_write(&current->mm->mmap_sem);
++	down_write(&current->mm->mmap_lock);
+ 
+ 	if (incr) {
+ 		locked = current->mm->locked_vm + npages;
+@@ -75,7 +75,7 @@ static long afu_dma_adjust_locked_vm(struct device *dev, long npages, bool incr)
+ 				rlimit(RLIMIT_MEMLOCK),
+ 				ret ? "- execeeded" : "");
+ 
+-	up_write(&current->mm->mmap_sem);
++	up_write(&current->mm->mmap_lock);
+ 
+ 	return ret;
+ }
+diff --git a/drivers/fpga/intel/fme-main.c b/drivers/fpga/intel/fme-main.c
+index 0b68232..29b2cc0 100644
+--- a/drivers/fpga/intel/fme-main.c
++++ b/drivers/fpga/intel/fme-main.c
+@@ -30,7 +30,6 @@
+ #include <linux/uaccess.h>
+ #include <linux/intel-fpga.h>
+ #include <linux/fpga/fpga-mgr-4-12.h>
+-#include <linux/iopoll-4-12.h>
+ #include <linux/i2c/altera.h>
+ #include <linux/spi/altera.h>
+ #include <linux/mtd/altera-asmip2.h>
+diff --git a/drivers/i2c/busses/i2c-altera.c b/drivers/i2c/busses/i2c-altera.c
+index 381c562..cea3247 100644
+--- a/drivers/i2c/busses/i2c-altera.c
++++ b/drivers/i2c/busses/i2c-altera.c
+@@ -20,7 +20,6 @@
+ #include <linux/err.h>
+ #include <linux/i2c.h>
+ #include <linux/i2c/altera.h>
+-#include <linux/iopoll-4-12.h>
+ #include <linux/interrupt.h>
+ #include <linux/module.h>
+ #include <linux/io.h>
+@@ -633,7 +632,7 @@ static int altr_i2c_probe(struct platform_device *pdev)
+ 	if (pdata) {
+ 		/* add in known devices to the bus */
+ 		for (i = 0; i < pdata->num_devices; i++)
+-			i2c_new_device(&idev->adapter, pdata->devices + i);
++			i2c_new_client_device(&idev->adapter, pdata->devices + i);
+ 	}
+ 
+ 	dev_info(&pdev->dev, "Altera SoftIP I2C Probe Complete\n");
+diff --git a/drivers/mtd/devices/intel-on-chip-flash.c b/drivers/mtd/devices/intel-on-chip-flash.c
+index 259801d..05e16af 100644
+--- a/drivers/mtd/devices/intel-on-chip-flash.c
++++ b/drivers/mtd/devices/intel-on-chip-flash.c
+@@ -11,7 +11,6 @@
+  */
+ 
+ #include <linux/bitfield-intel-pac.h>
+-#include <linux/iopoll-4-12.h>
+ #include <linux/module.h>
+ #include <linux/mtd/mtd.h>
+ #include <linux/mtd/intel-on-chip-flash.h>
+diff --git a/drivers/mtd/spi-nor/intel-generic-qspi.c b/drivers/mtd/spi-nor/intel-generic-qspi.c
+index 4183125..25d6d84 100644
+--- a/drivers/mtd/spi-nor/intel-generic-qspi.c
++++ b/drivers/mtd/spi-nor/intel-generic-qspi.c
+@@ -10,7 +10,6 @@
+  */
+ 
+ #include <linux/bitfield-intel-pac.h>
+-#include <linux/iopoll-4-12.h>
+ #include <linux/module.h>
+ #include <linux/mtd/intel-generic-qspi.h>
+ #include <linux/mtd/mtd.h>
+-- 
+2.31.1
+

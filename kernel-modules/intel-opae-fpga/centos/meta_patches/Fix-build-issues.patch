@@ -1,0 +1,52 @@
+From 70669797bbce2b74a78fb777d7acb87d93fee752 Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Sun, 27 Jun 2021 23:52:04 -0700
+Subject: [PATCH 2/2] Fix build issues
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ opae-intel-fpga-driver.spec | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/SPECS/opae-intel-fpga-driver.spec b/SPECS/opae-intel-fpga-driver.spec
+index 48f0590..3701475 100755
+--- a/SPECS/opae-intel-fpga-driver.spec
++++ b/SPECS/opae-intel-fpga-driver.spec
+@@ -42,6 +42,8 @@ BuildRequires: kernel%{?bt_ext}-devel
+ %endif
+ Requires: dkms, gcc, kernel%{?bt_ext}-devel, make
+ %define debug_package ${nil}
++Patch0001: Fix-build-errors.patch
++Patch0002: use-altera.h-from-driver-instead-of-from-kernel.patch
+ 
+ %package -n kmod-opae-fpga-driver%{?bt_ext}
+ Summary: OPAE modules files
+@@ -74,6 +76,8 @@ source scl_source enable devtoolset-8 || :
+ source scl_source enable llvm-toolset-7.0 || :
+ %endif
+ %setup -q -n %{kmod_name}-%{version}
++%patch0001 -p1
++%patch0002 -p1
+ 
+ %description
+ OPAE Driver
+@@ -240,13 +244,15 @@ rm -rf $RPM_BUILD_ROOT
+
+ %files -n kmod-opae-fpga-driver%{?bt_ext}
+ %defattr(-,root,root)
+-/usr/src/%{kmod_name}-%{version}-%{_release}
++/lib/modules
++/etc/udev
+
+ %files -n kmod-opae-fpga-driver%{?bt_ext}-devel
+ #/usr/include/*
+
+ %files -n kmod-opae-fpga-driver%{?bt_ext}-prebuilt
+ %defattr(-,root,root)
++/usr/src/%{kmod_name}-%{version}-%{_release}
+ /lib/modules
+ /etc/udev
+
+-- 
+2.31.1
+

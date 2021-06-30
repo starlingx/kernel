@@ -7,8 +7,8 @@
 Summary: Intel(r) QuickAssist Technology API
 %define pkgname qat17
 Name: %{pkgname}%{?bt_ext}
-Version: 4.5.0
-%define upstream_release 00034
+Version: 4.14.0
+%define upstream_release 00031
 Release: %{upstream_release}%{?_tis_dist}.%{tis_patch_ver}
 License: GPLv2
 Group: base
@@ -24,6 +24,13 @@ BuildRequires: boost-devel
 BuildRequires: perl
 BuildRequires: openssl
 BuildRequires: elfutils-libelf-devel
+BuildRequires: yasm
+%if 0%{?rhel} == 7
+BuildRequires:  devtoolset-8-build
+BuildRequires:  devtoolset-8-binutils
+BuildRequires:  devtoolset-8-gcc
+BuildRequires:  devtoolset-8-make
+%endif
 
 %define icp_tools accelcomp
 %define kernel_version %(rpm -q kernel%{?bt_ext}-devel | sed 's/kernel%{?bt_ext}-devel-//')
@@ -31,33 +38,39 @@ BuildRequires: elfutils-libelf-devel
 %define qat_unpack_dir %{_builddir}/%{name}-%{version}
 %define qat_src_dir %{qat_unpack_dir}
 
-Source: qat1.7.l.%{version}-%{upstream_release}.tar.gz
+Source: QAT1.7.L.%{version}-%{upstream_release}.tar.gz
 Source1: qat
 # Use our own service script rather than massively patching theirs
 Source2: qat_service
 
-#Patch1: 0001-Install-config-file-for-each-VF.patch
-Patch2: Get-and-report-the-return-code-on-firmware-load-fail.patch
-Patch3: crypto-qat-Silence-smp_processor_id-warning.patch
+Patch1: crypto-qat-Silence-smp_processor_id-warning.patch
+Patch2: qat17-build-Do-not-override-KERNELVERSION-with-build-machi.patch
 
 %description
 Intel(r) QuickAssist Technology API
 
 %prep
+%if 0%{?rhel} == 7
+source scl_source enable devtoolset-8 || :
+source scl_source enable llvm-toolset-7.0 || :
+%endif
 rm -rf %{qat_unpack_dir}
 mkdir -p %{qat_unpack_dir}
 cd %{qat_unpack_dir}
 
-gzip -dc %{_sourcedir}/qat1.7.l.%{version}-%{upstream_release}.tar.gz | tar -xvvf -
+gzip -dc %{_sourcedir}/QAT1.7.L.%{version}-%{upstream_release}.tar.gz | tar -xvvf -
 if [ $? -ne 0 ]; then
   exit $?
 fi
 
-#%patch1 -p1
+%patch1 -p1
 %patch2 -p1
-%patch3 -p1
 
 %build
+%if 0%{?rhel} == 7
+source scl_source enable devtoolset-8 || :
+source scl_source enable llvm-toolset-7.0 || :
+%endif
 
 ICP_ROOT=%{qat_src_dir}
 KERNEL_SOURCE_ROOT=%{staging_kernel_dir}
@@ -74,6 +87,10 @@ make -C %{qat_src_dir}/
 make -C %{qat_src_dir}/ sample-all
 
 %install
+%if 0%{?rhel} == 7
+source scl_source enable devtoolset-8 || :
+source scl_source enable llvm-toolset-7.0 || :
+%endif
 
 %{__install} -d %{buildroot}%{_sysconfdir}/default
 %{__install} -m 750 %SOURCE1 %{buildroot}%{_sysconfdir}/default

@@ -1,0 +1,34 @@
+From 7b589d8176fa503b7d817692312dd394c35925e3 Mon Sep 17 00:00:00 2001
+From: Vefa Bicakci <vefa.bicakci@windriver.com>
+Date: Tue, 1 Jun 2021 13:44:23 -0400
+Subject: [PATCH] Apply a dummy patch to let "build-pkgs --edit" work
+
+Signed-off-by: M. Vefa Bicakci <vefa.bicakci@windriver.com>
+---
+ SPECS/mlnx-ofa_kernel.spec | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/SPECS/mlnx-ofa_kernel.spec b/SPECS/mlnx-ofa_kernel.spec
+index d4d3f1932db6..5a2982cfaa5f 100644
+--- a/SPECS/mlnx-ofa_kernel.spec
++++ b/SPECS/mlnx-ofa_kernel.spec
+@@ -109,6 +109,7 @@ Url: http://www.mellanox.com/
+ Group: System Environment/Base
+ Source: %{_basename}-%{_version}.tgz
+ Source100: modules-load.conf
++Patch01: 0001-A-dummy-change-to-let-StarlingX-build-work.patch
+ BuildRoot: %{?build_root:%{build_root}}%{!?build_root:/var/tmp/OFED}
+ Vendor: Mellanox Technologies
+ Obsoletes: kernel-ib
+@@ -303,6 +304,8 @@ sed -s -i -e '1s|python\>|python3|' `grep -rl '^#!.*python' source/ofed_scripts`
+ %endif
+ mkdir obj
+ 
++%patch01 -p1
++
+ %build
+ %if 0%{?rhel} == 7
+ source scl_source enable devtoolset-8 || :
+-- 
+2.29.2
+

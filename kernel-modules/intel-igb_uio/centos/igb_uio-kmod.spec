@@ -8,39 +8,26 @@
 %define kmod_name igb_uio
 
 Name:    %{kmod_name}-kmod%{?bt_ext}
-Version: 20.05
+Version: 21.02
 Release: 0%{?_tis_dist}.%{tis_patch_ver}
 Group:   System Environment/Kernel
 License: GPLv2
 Summary: %{kmod_name} kernel module(s)
 URL:     http://www.intel.com/
 
-BuildRequires: kernel%{?bt_ext}-devel, redhat-rpm-config, perl, openssl
-BuildRequires: elfutils-libelf-devel
-BuildRequires: gcc
-BuildRequires: glibc-headers
-BuildRequires: numactl-devel
-BuildRequires: libmnl-devel
-ExclusiveArch: x86_64
 
-# Get the kernel headers version installed, not based on uname.
-%define KERNEL_VERSION %(rpm -q kernel%{?bt_ext}-devel | sort --version-sort | tail -1 | sed 's/kernel%{?bt_ext}-devel-//')
-%define DPDK_TARGET_MACHINE default
-%define STAGING_KERNEL_DIR /usr/src/kernels/%{KERNEL_VERSION}/
-%define DPDK_EXTRA_CFLAGS "-fPIC -g -msse4.2"
-%define DPDK_TARGET x86_64-native-linuxapp-gcc
-
-%define EXTRA_OEMAKE prefix= \\\
-TARGET_LDFLAGS= \\\
-TARGET_CFLAGS= \\\
-RTE_KERNELDIR=%{STAGING_KERNEL_DIR} \\\
-EXTRA_CFLAGS=%{DPDK_EXTRA_CFLAGS} \\\
-RTE_TARGET=%{DPDK_TARGET} \\\
-GCC_MAJOR_VERSION="%(gcc -dumpversion | cut -f1 -d.)" \\\
-GCC_MINOR_VERSION="%(gcc -dumpversion | cut -f2 -d.)"
+BuildRequires: kernel%{?bt_ext}-devel, openssl, redhat-rpm-config
+%if 0%{?rhel} == 7
+BuildRequires:  devtoolset-8-build
+BuildRequires:  devtoolset-8-binutils
+BuildRequires:  devtoolset-8-gcc
+BuildRequires:  devtoolset-8-make
+%endif
+ 
+ExclusiveArch: x86_64 i686 aarch64 ppc64le
 
 # Sources.
-Source0:  dpdk-%{version}.tar.gz
+Source0: dpdk-kmods-2a9f0f72a2d926382634cf8f1de10e1acf57542b.tar.gz
 
 %define kversion %(rpm -q kernel%{?bt_ext}-devel | sort --version-sort | tail -1 | sed 's/kernel%{?bt_ext}-devel-//')
 
@@ -78,10 +65,6 @@ echo "Done."
 %files         -n kmod-igb_uio%{?bt_ext}
 %defattr(644,root,root,755)
 /lib/modules/%{kversion}/
-%doc /usr/share/doc/kmod-igb_uio-%{version}/
-%defattr(755,root,root,755)
-%{_datadir}/starlingx/scripts/dpdk-devbind.py
-%exclude %{_datadir}/starlingx/scripts/*.py[oc]
 
 # Disable the building of the debug package(s).
 %define debug_package %{nil}
@@ -92,26 +75,21 @@ It is built to depend upon the specific ABI provided by a range of releases
 of the same variant of the Linux kernel and not on any one specific build.
 
 %prep
-%autosetup -p 1 -n dpdk-%{version}
+%autosetup -p 1 -n dpdk-kmods
 
 %build
-make T=%{DPDK_TARGET} config
+%if 0%{?rhel} == 7
+source scl_source enable devtoolset-8 || :
+source scl_source enable llvm-toolset-7.0 || :
+%endif
 
-# This line changes default compiler flags from native to proper value
-sed -i 's/"native"/"%{DPDK_TARGET_MACHINE}"/' build/.config
-sed -i 's/CONFIG_RTE_EAL_IGB_UIO=n/CONFIG_RTE_EAL_IGB_UIO=y/' build/.config
-
-make %{?_smp_mflags} %{EXTRA_OEMAKE}
-ls build/kmod/
+cd linux/igb_uio
+%{__make} KSRC=%{_usrsrc}/kernels/%{kversion}
 
 %install
 find . -name *.ko
 %{__install} -d %{buildroot}/lib/modules/%{kversion}/extra/%{kmod_name}/
-%{__install} build/kmod/%{kmod_name}.ko %{buildroot}/lib/modules/%{kversion}/extra/%{kmod_name}/
-%{__install} -d %{buildroot}%{_defaultdocdir}/kmod-%{kmod_name}-%{version}/
-%{__install} license/gpl-2.0.txt %{buildroot}%{_defaultdocdir}/kmod-%{kmod_name}-%{version}/
-%{__install} -d %{buildroot}%{_datadir}/starlingx/scripts
-%{__install} -m755 usertools/dpdk-devbind.py %{buildroot}%{_datadir}/starlingx/scripts/dpdk-devbind.py
+%{__install} linux/igb_uio/%{kmod_name}.ko %{buildroot}/lib/modules/%{kversion}/extra/%{kmod_name}/
 
 # Strip the modules(s).
 find %{buildroot} -type f -name \*.ko -exec %{__strip} --strip-debug \{\} \;
@@ -129,5 +107,7 @@ done
 %{__rm} -rf %{buildroot}
 
 %changelog
+* Mon Apr 26 2021 Jiping Ma <jiping.ma2@windriver.com> - 21.02
+- Up to version 21.02, based on Linux kernel 5.10.
 * Wed Jun 03 2020 Steven Webster <steven.webster@windriver.com> - 20.05-1
 - Initial RPM package, based on Starlingx iavf-kmod.

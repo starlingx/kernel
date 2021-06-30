@@ -21,8 +21,6 @@ kernel-rt-headers
 kernel-rt-devel
 
 # e1000e-kmod
-kmod-e1000e
-kmod-e1000e-rt
 
 # i40e-kmod
 kmod-i40e
@@ -37,20 +35,14 @@ kmod-ice
 kmod-ice-rt
 
 # ixgbevf-kmod
-kmod-ixgbevf
-kmod-ixgbevf-rt
 
 # ixgbe-kmod
-kmod-ixgbe
-kmod-ixgbe-rt
 
 # igb_uio-kmod
 kmod-igb_uio
 kmod-igb_uio-rt
 
 # drbd-kernel
-kmod-drbd
-kmod-drbd-rt
 
 # qat17
 qat17

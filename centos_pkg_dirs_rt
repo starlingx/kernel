@@ -1,14 +1,10 @@
 kernel-rt
 kernel-modules/mlnx-ofa_kernel
-kernel-modules/intel-e1000e
 kernel-modules/intel-iavf
 kernel-modules/intel-i40e
 kernel-modules/intel-ice
-kernel-modules/intel-ixgbevf
-kernel-modules/intel-ixgbe
 kernel-modules/intel-igb_uio
 kernel-modules/qat17
-kernel-modules/drbd
 kernel-modules/intel-opae-fpga
 userspace/mellanox/libibverbs
 userspace/mellanox/rdma-core
