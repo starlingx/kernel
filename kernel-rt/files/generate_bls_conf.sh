@@ -1,0 +1,1 @@
+../../kernel-std/files/generate_bls_conf.sh
