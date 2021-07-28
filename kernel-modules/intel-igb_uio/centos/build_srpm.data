@@ -1,6 +1,6 @@
 COPY_LIST=" \
   $PKG_BASE/files/* \
-  $STX_BASE/downloads/dpdk-20.05.tar.gz"
+  $STX_BASE/downloads/dpdk-kmods-2a9f0f72a2d926382634cf8f1de10e1acf57542b.tar.gz"
 OPT_DEP_LIST_FOR_BUILD_TYPE[std]=$GIT_BASE/kernel-std
 OPT_DEP_LIST_FOR_BUILD_TYPE[rt]=$GIT_BASE/kernel-rt
 BASE_SRCREV_FOR_PATH[$GIT_BASE/kernel-std]=145ff64b9734e5c45cfd8eb837a04e257b4b9581

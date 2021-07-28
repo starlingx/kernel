@@ -1,5 +1,6 @@
 COPY_LIST=" \
   $PKG_BASE/files/* \
+  $DISTRO/patches/* \
   $STX_BASE/downloads/iavf-4.0.1.tar.gz"
 OPT_DEP_LIST_FOR_BUILD_TYPE[std]=$GIT_BASE/kernel-std
 OPT_DEP_LIST_FOR_BUILD_TYPE[rt]=$GIT_BASE/kernel-rt

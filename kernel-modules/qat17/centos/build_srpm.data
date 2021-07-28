@@ -1,6 +1,6 @@
 COPY_LIST=" \
   $PKG_BASE/files/* \
-  $STX_BASE/downloads/qat1.7.l.4.5.0-00034.tar.gz \
+  $STX_BASE/downloads/QAT1.7.L.4.14.0-00031.tar.gz \
 "
 OPT_DEP_LIST_FOR_BUILD_TYPE[std]=$GIT_BASE/kernel-std
 OPT_DEP_LIST_FOR_BUILD_TYPE[rt]=$GIT_BASE/kernel-rt

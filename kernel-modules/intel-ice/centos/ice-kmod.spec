@@ -15,8 +15,14 @@ Summary:	Intel(R) Ethernet Connection E800 Series Linux Driver
 URL: http://support.intel.com
 
 
-BuildRequires:	kernel%{?bt_ext}-devel, redhat-rpm-config, perl, openssl, elfutils-libelf-devel
+BuildRequires:	kernel%{?bt_ext}-devel, redhat-rpm-config, openssl, elfutils-libelf-devel
 Requires:	kernel%{?bt_ext}-devel, findutils, gawk, bash
+%if 0%{?rhel} == 7
+BuildRequires:  devtoolset-8-build
+BuildRequires:  devtoolset-8-binutils
+BuildRequires:  devtoolset-8-gcc
+BuildRequires:  devtoolset-8-make
+%endif
 
 %define kernel_module_package_buildreqs kernel%{?bt_ext}-devel
 
@@ -43,14 +49,26 @@ This package provides the Intel(R) Ethernet Connection E800 Series Linux Driver,
 ice, built for the Linux kernel using the %{_target_cpu} family of processors.
 
 %prep
+%if 0%{?rhel} == 7
+source scl_source enable devtoolset-8 || :
+source scl_source enable llvm-toolset-7.0 || :
+%endif
 %autosetup -p 1 -n %{kmod_name}-%{version}
 
 %build
+%if 0%{?rhel} == 7
+source scl_source enable devtoolset-8 || :
+source scl_source enable llvm-toolset-7.0 || :
+%endif
 pushd src >/dev/null
 %{__make} KSRC=%{_usrsrc}/kernels/%{kversion}
 popd >/dev/null
 
 %install
+%if 0%{?rhel} == 7
+source scl_source enable devtoolset-8 || :
+source scl_source enable llvm-toolset-7.0 || :
+%endif
 %{__install} -d %{buildroot}/lib/modules/%{kversion}/extra/%{kmod_name}/
 %{__install} src/%{kmod_name}.ko %{buildroot}/lib/modules/%{kversion}/extra/%{kmod_name}/
 %{__install} -d %{buildroot}%{_defaultdocdir}/kmod-%{kmod_name}-%{version}/

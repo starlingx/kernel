@@ -1,0 +1,50 @@
+From 5784019caaa7d4d33798be2e70ea5b63d9c5252a Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Tue, 29 Jun 2021 19:09:25 -0700
+Subject: [PATCH] Fix build issues
+
+1. Deleted dma_zalloc_coherent() because it had been removed.
+   dma_zalloc_coherent() is no longer needed as it has no users because
+   dma_alloc_coherent() already zeroes out memory for us.
+2. Use smp_rmb() directly in 5.10 version.
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ src/iavf_helper.h | 5 -----
+ src/iavf_txrx.c   | 2 +-
+ 2 files changed, 1 insertion(+), 6 deletions(-)
+
+diff --git a/src/iavf_helper.h b/src/iavf_helper.h
+index edfa216..de79f96 100644
+--- a/src/iavf_helper.h
++++ b/src/iavf_helper.h
+@@ -21,13 +21,8 @@ inline int iavf_allocate_dma_mem_d(struct iavf_hw *hw,
+ 	struct iavf_adapter *nf = (struct iavf_adapter *)hw->back;
+ 
+ 	mem->size = ALIGN(size, alignment);
+-#ifdef HAVE_DMA_ALLOC_COHERENT_ZEROES_MEM
+ 	mem->va = dma_alloc_coherent(&nf->pdev->dev, mem->size,
+ 				     &mem->pa, GFP_KERNEL);
+-#else /* HAVE_DMA_ALLOC_COHERENT_ZEROES_MEM */
+-	mem->va = dma_zalloc_coherent(&nf->pdev->dev, mem->size,
+-				      &mem->pa, GFP_KERNEL);
+-#endif /* HAVE_DMA_ALLOC_COHERENT_ZEROES_MEM */
+ 	if (!mem->va)
+ 		return -ENOMEM;
+ 
+diff --git a/src/iavf_txrx.c b/src/iavf_txrx.c
+index 03c685c..da3cfed 100644
+--- a/src/iavf_txrx.c
++++ b/src/iavf_txrx.c
+@@ -289,7 +289,7 @@ static bool iavf_clean_tx_irq(struct iavf_vsi *vsi,
+ 			break;
+ 
+ 		/* prevent any other reads prior to eop_desc */
+-		read_barrier_depends();
++		smp_rmb();
+ 
+ 		iavf_trace(clean_tx_irq, tx_ring, tx_desc, tx_buf);
+ 		/* if the descriptor isn't done, no work yet to do */
+-- 
+2.31.1
+
