@@ -4,6 +4,9 @@
 %undefine bt_ext
 %endif
 
+# dpdk-devbind.py uses Python 3.
+%define __python python3
+
 # Define the kmod package name here.
 %define kmod_name igb_uio
 
@@ -28,6 +31,7 @@ ExclusiveArch: x86_64 i686 aarch64 ppc64le
 
 # Sources.
 Source0: dpdk-kmods-2a9f0f72a2d926382634cf8f1de10e1acf57542b.tar.gz
+Source1: dpdk-devbind.py
 
 %define kversion %(rpm -q kernel%{?bt_ext}-devel | sort --version-sort | tail -1 | sed 's/kernel%{?bt_ext}-devel-//')
 
@@ -65,6 +69,9 @@ echo "Done."
 %files         -n kmod-igb_uio%{?bt_ext}
 %defattr(644,root,root,755)
 /lib/modules/%{kversion}/
+%defattr(755,root,root,755)
+%{_datadir}/starlingx/scripts/dpdk-devbind.py
+%exclude %{_datadir}/starlingx/scripts/*.py[oc]
 
 # Disable the building of the debug package(s).
 %define debug_package %{nil}
@@ -90,6 +97,8 @@ cd linux/igb_uio
 find . -name *.ko
 %{__install} -d %{buildroot}/lib/modules/%{kversion}/extra/%{kmod_name}/
 %{__install} linux/igb_uio/%{kmod_name}.ko %{buildroot}/lib/modules/%{kversion}/extra/%{kmod_name}/
+%{__install} -d %{buildroot}%{_datadir}/starlingx/scripts
+%{__install} -m755 %{SOURCE1} %{buildroot}%{_datadir}/starlingx/scripts/dpdk-devbind.py
 
 # Strip the modules(s).
 find %{buildroot} -type f -name \*.ko -exec %{__strip} --strip-debug \{\} \;
