@@ -1,0 +1,38 @@
+From 555ee6e9b3cb4ecb6c6a0a4806a960d564b9f983 Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Mon, 23 Aug 2021 20:11:33 -0700
+Subject: [PATCH] implicit declaration of function '__is_constexpr'
+
+We get a build error now when we use kernel version 5.10.57
+include/linux/minmax.h:23:4: error: implicit declaration of function '__is_constexpr';
+Because commit 1354ec840899e87259286cc844d4c161ea86fae7 in the yocto kernel changed
+the definition of GENMASK_INPUT_CHECK from __builtin_constant_p to __is_constexpr.
+so we need add __is_constexpr definition in const.h
+ 
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ include/linux/const.h | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/include/linux/const.h b/include/linux/const.h
+index afe88a0..92daf28 100644
+--- a/source/include/linux/const.h
++++ b/source/include/linux/const.h
+@@ -7,6 +7,14 @@
+ 
+ #include_next <linux/const.h>
+ 
++/*
++ * This returns a constant expression while determining if an argument is
++ * a constant expression, most importantly without evaluating the argument.
++ * Glory to Martin Uecker <Martin.Uecker@med.uni-goettingen.de>
++ */
++#define __is_constexpr(x) \
++        (sizeof(int) == sizeof(*(8 ? ((void *)((long)(x) * 0l)) : (int *)8)))
++
+ #ifndef UL
+ #define UL(x)           (_UL(x))
+ #endif
+-- 
+2.31.1
+

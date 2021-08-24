@@ -93,7 +93,7 @@ Summary: The Linux kernel
 %if 0%{?released_kernel}
 
 # Do we have a -stable update to apply?
-%define stable_update 30
+%define stable_update 57
 # Set rpm version accordingly
 %if 0%{?stable_update}
 %define stablerev %{stable_update}
@@ -416,7 +416,7 @@ BuildRequires: util-linux
 
 %ifarch x86_64
 %define asmarch x86
-%define all_arch_configs kernel-%{version}-x86_64*.config
+%define all_arch_configs kernel-x86_64*.config
 %define kernel_image arch/x86/boot/bzImage
 %endif
 
@@ -734,8 +734,8 @@ Source89: filter-modules.sh
 #Source46: kernel-ppc64le-debug-fedora.config
 #Source47: kernel-s390x-fedora.config
 #Source48: kernel-s390x-debug-fedora.config
-Source49: kernel-5.10.30-x86_64.config
-Source50: kernel-5.10.30-x86_64-debug.config
+Source49: kernel-x86_64.config
+Source50: kernel-x86_64-debug.config
 
 
 Source51: generate_all_configs.sh
@@ -771,7 +771,7 @@ Source3000: ima_signing_key.pub
 
 # This file is intentionally left empty in the stock kernel. Its a nicety
 # added for those wanting to do custom rebuilds with altered config opts.
-Source1000: kernel-5.10.30-x86_64.config.tis_extra
+Source1000: kernel-x86_64.config.tis_extra
 
 # Here should be only the patches up to the upstream canonical Linus tree.
 
@@ -1550,7 +1550,7 @@ done
 %endif
 
 %if !%{debugbuildsenabled}
-rm -f kernel-%{version}-*debug.config
+rm -f kernel-*debug.config
 %endif
 
 # enable GCOV kernel config options if gcov is on
@@ -1566,7 +1566,7 @@ OPTS=""
 %if %{with_configchecks}
 	OPTS="$OPTS -w -n -c"
 %endif
-./process_configs.sh $OPTS kernel %{rpmversion}
+./process_configs.sh $OPTS kernel
 
 # end of kernel config
 %endif
@@ -1637,7 +1637,7 @@ BuildKernel() {
     fi
 
     # Pick the right config file for the kernel we're building
-    Config=kernel-%{version}-%{_target_cpu}${Flavour:+-${Flavour}}.config
+    Config=kernel-%{_target_cpu}${Flavour:+-${Flavour}}.config
     DevelDir=/usr/src/kernels/%{KVERREL}${Flav}
 
     # When the bootable image is just the ELF kernel, strip it.
