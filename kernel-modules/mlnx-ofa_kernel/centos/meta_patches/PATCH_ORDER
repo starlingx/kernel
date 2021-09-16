@@ -1,3 +1,3 @@
 Support-TiS-system.patch
 Introduce-devtoolset-8.patch
-Apply-a-dummy-patch-to-let-build-pkgs-edit-work.patch
+Fix-compile-issues-when-using-kernel-5.10.57.patch
