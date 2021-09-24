@@ -1,0 +1,29 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+
+Upstream-Name: QAT
+Upstream-Contact: Intel Corporation
+Source: https://downloadmirror.intel.com/30178/eng/QAT1.7.L.4.14.0-00031.tar.gz
+Files: *
+Copyright: (C) Intel Corporation 2008
+License:
+ The Licensing of the files within this project splits under various set of
+ licenses which are listed below.
+  - Dual BSD/GPLv2 License
+  - BSD License
+  - GPLv2 License
+  - OpenSSL License
+  - ZLIB License
+
+ For full GPLv2 License, please see the file LICENSE.GPL contained in the top
+ level folder.
+ For full OpenSSL License, please see the file LICENSE.OPENSSL contained in
+ the top level folder.
+ For Dual BSD/GPLv2, BSD and ZLIB Licenses, please see the file headers of
+ the relevant files.
+
+ Binary files are provided under the binary redistribution license. Please see
+ the file binary-redistribution-license.txt contained in the top level folder.
+
+ On Debian-based systems: the full text of GPLv2 license can be found in
+ '/usr/share/common-licenses/GPL-2'; the full text of BSD license can be
+ found in '/usr/share/common-licenses/BSD'.

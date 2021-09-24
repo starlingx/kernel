@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# parameters:
+# (1) modules' path; (2) privkey for signing; (3) pubkey for signing
+
+privkey=$2
+pubkey=$3
+
+if [ ! -f /usr/lib/linux-kbuild-*/scripts/sign-file ]; then
+	echo "Tool sign-file doesn't exist!"
+	exit 1
+fi
+
+found=0
+for module in $(find $1 -type f -name \*.ko); do
+	found=1
+	echo ${module}
+	/usr/lib/linux-kbuild-*/scripts/sign-file sha256 \
+	${privkey} ${pubkey} ${module}
+	if [ $? -eq 1 ]; then
+		echo "Fail to sign!"
+		exit 1
+	fi
+done
+
+if [ ${found} -eq 1 ]; then
+	echo "Signed successfully!"
+else
+	echo "No ko found!"
+	exit 1
+fi
