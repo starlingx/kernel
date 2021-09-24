@@ -1,0 +1,5 @@
+kmod-opae-fpga-driver (2.0.1-10) unstable; urgency=medium
+
+  * Initial release
+
+ -- Li Zhou <li.zhou@windriver.com>  Wed, 24 Nov 2021 11:10:19 +0800

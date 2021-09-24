@@ -1,0 +1,13 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+
+Upstream-Name: opae-intel-fpga-driver
+Upstream-Contact: https://github.com/OPAE
+Source: opae-intel-fpga-driver-2.0.1-10.src.rpm in https://github.com/OPAE/opae-sdk/releases/download/1.3.7-5/OPAE_1.3.7-5_el7.zip
+Files: *
+Copyright: (c) https://github.com/OPAE
+License: GPL-2
+ The full GNU General Public License is included in this distribution in the
+ file called "COPYING".
+
+ On Debian-based systems the full text of the GNU General Public License
+ version 2 license can be found in `/usr/share/common-licenses/GPL-2'.

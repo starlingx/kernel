@@ -1,0 +1,2 @@
+Fix-build-errors.patch
+use-altera.h-from-driver-instead-of-from-kernel.patch
