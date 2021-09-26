@@ -1,0 +1,138 @@
+From 01c5670a853dcadd67722c737455c623a0471813 Mon Sep 17 00:00:00 2001
+From: Li Zhou <li.zhou@windriver.com>
+Date: Sun, 26 Sep 2021 06:22:38 +0000
+Subject: [PATCH] mlnx-ofa_kernel: adapt the debian folder for starlingX
+
+Adapt the upstream debian folder for starlingX:
+- don't use dkms and build the kernel modules from source code;
+- add mlnx-ofed-kernel-modules package;
+- add the building configuration <--build-dummy-mods> and install
+  mlnx.conf to keep aligned with starlingX;
+- adapt the kernelver to make the building work.
+
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+---
+ debian/control         | 21 ++++++---------------
+ debian/extra/mlnx.conf | 19 +++++++++++++++++++
+ debian/rules           | 20 +++++++++++++++++---
+ 3 files changed, 42 insertions(+), 18 deletions(-)
+ create mode 100644 debian/extra/mlnx.conf
+
+diff --git a/debian/control b/debian/control
+index e9c2285..176d36f 100644
+--- a/debian/control
++++ b/debian/control
+@@ -2,7 +2,7 @@ Source: mlnx-ofed-kernel
+ Section: net
+ Priority: optional
+ Maintainer: Vladimir Sokolovsky <vlad@mellanox.com>
+-Build-Depends: debhelper (>= 8.0.0), autotools-dev, bzip2, dkms, python3-distutils | python
++Build-Depends: debhelper (>= 8.0.0), autotools-dev, bzip2, dkms, python3-distutils | python, linux-headers-5.10.0-6-amd64, linux-kbuild-5.10
+ Standards-Version: 3.9.2
+ Homepage: http://www.mellanox.com/page/products_dyn?product_family=26&mtag=linux_sw_drivers
+ 
+@@ -11,18 +11,9 @@ Architecture: any
+ Depends: ${misc:Depends}, coreutils, pciutils, grep, procps, module-init-tools | kmod, lsof
+ Description: Userspace tools to restart and tune mlnx-ofed kernel modules
+ 
+-Package: mlnx-ofed-kernel-dkms
+-Section: kernel
+-Architecture: all
+-Depends: dkms, make, ${misc:Depends}, coreutils, pciutils, grep, procps, module-init-tools | kmod, lsof, mlnx-ofed-kernel-utils, python3-distutils | python
+-Recommends: linux-headers-arm64 | linux-headers-powerpc | linux-headers-ppc64 | linux-headers-ppc64le | linux-headers-amd64 | linux-headers-generic | linux-headers
+-Provides: mlnx-rdma-rxe-dkms
+-Conflicts: mlnx-rdma-rxe-dkms
+-Replaces: mlnx-rdma-rxe-dkms
+-Description: DKMS support for mlnx-ofed kernel modules
+- This package provides integration with the DKMS infrastructure for
+- automatically building out of tree kernel modules.
+- .
++Package: mlnx-ofed-kernel-modules
++Architecture: any
++Depends: ${shlibs:Depends}, ${misc:Depends}
++Description: ofed kernel modules
++ This package provides the mlnx-ofed out of tree kernel modules.
+  This package provides the source code for the mlnx-ofed kernel modules.
+- .
+- This package contains the source to be built with dkms.
+diff --git a/debian/extra/mlnx.conf b/debian/extra/mlnx.conf
+new file mode 100644
+index 0000000..d6ced47
+--- /dev/null
++++ b/debian/extra/mlnx.conf
+@@ -0,0 +1,19 @@
++mlx_compat
++ib_cm
++ib_core
++ib_ucm
++ib_uverbs
++iw_cm
++rdma_cm
++rdma_ucm
++mlx5_ib
++rdma_rxe
++ib_iser
++ib_isert
++ib_srp
++mlx5_core
++nvme-rdma
++nvmet-rdma
++rpcrdma
++svcrdma
++xprtrdma
+diff --git a/debian/rules b/debian/rules
+index cd95a6b..82fddfb 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -15,8 +15,20 @@
+ # Uncomment this to turn on verbose mode.
+ #export DH_VERBOSE=1
+ 
+-WITH_DKMS ?= 1
++WITH_DKMS ?= 0
+ WITH_MOD_SIGN ?= 0
++
++#Here kernelver should be the one this package depends on,
++#while "uname -r" got the building machine's os release number.
++kheaders_name = $(shell ls /usr/src | grep linux-headers | grep amd64)
++kernelver = $(shell echo $(kheaders_name) | sed 's/linux-headers-//g')
++
++ifeq ($(WITH_MOD_SIGN),1)
++_keydir ?= /usr/src/kernels/$(kernelver)/
++export MODULE_SIGN_PRIV_KEY=$(_keydir)/signing_key.priv
++export MODULE_SIGN_PUB_KEY=$(_keydir)/signing_key.x509
++endif
++
+ MLXNUMC = $(shell grep ^processor /proc/cpuinfo | wc -l)
+ NJOBS ?= $(shell if [ $(MLXNUMC) -lt 16 ]; then echo $(MLXNUMC); else echo 16; fi)
+ 
+@@ -40,7 +52,6 @@ export INSTALL_MOD_PATH:=$(CURDIR)/debian/$(pdkms)
+ DIST_NAME := $(shell lsb_release -si)
+ DIST_RELEASE := $(DIST_NAME)/$(shell lsb_release -sc)
+ 
+-kernelver ?= $(shell uname -r)
+ kernelver1 = $(shell echo $(kernelver) | sed -e 's/_/-/g')
+ kernel_source_dir ?= "/lib/modules/$(kernelver)/build"
+ 
+@@ -61,7 +72,7 @@ override_dh_auto_configure:
+ ifneq ($(WITH_DKMS),1)
+ 	@echo Building for $(kernelver)
+ 	find compat -type f -exec touch -t 200012201010 '{}' \; || true
+-	$(CURDIR)/configure --kernel-version=$(kernelver) --kernel-sources=$(kernel_source_dir) $(shell $(CURDIR)/ofed_scripts/dkms_ofed $(kernelver) $(kernel_source_dir) get-config) --with-njobs=$(NJOBS)
++	$(CURDIR)/configure --kernel-version=$(kernelver) --kernel-sources=$(kernel_source_dir) $(shell $(CURDIR)/ofed_scripts/dkms_ofed $(kernelver) $(kernel_source_dir) get-config) --with-njobs=$(NJOBS) --build-dummy-mods
+ endif
+ 
+ override_dh_auto_build:
+@@ -190,6 +201,9 @@ endif
+ 
+ 	cd ofed_scripts/utils;	$(PYTHON) ./setup.py install --install-layout=deb --root=../../debian/$(putils)
+ 
++	dh_installdirs -p$(pdkms) /etc/modules-load.d/
++	install -m 644  debian/extra/mlnx.conf debian/$(pdkms)/etc/modules-load.d/
++
+ override_dh_installinit:
+ 
+ 
+-- 
+2.17.1
+

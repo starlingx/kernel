@@ -1,0 +1,11 @@
+---
+debver: 5.3
+debname: mlnx-ofed-kernel
+dl_path:
+  name: mlnx-ofa-kernel-5.3.tgz
+  url: "https://linux.mellanox.com/public/repo/mlnx_ofed/\
+    5.3-1.0.0.1/SRPMS/mlnx-ofa_kernel-5.3.tgz"
+  md5sum: 5bb7e5b85145a3315273c860567cbc1d
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true
