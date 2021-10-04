@@ -1,18 +1,20 @@
-From d25056d46d4b5406131274e79243ad7f18242039 Mon Sep 17 00:00:00 2001
+From a6a16444cbb50ce98c3cdf8ad5dff5e6ef1f66c1 Mon Sep 17 00:00:00 2001
 From: Jim Somerville <Jim.Somerville@windriver.com>
 Date: Mon, 26 Mar 2018 11:03:47 -0400
-Subject: [PATCH 1/2] i40e add more debug info for VFs still in reset
+Subject: [PATCH] i40e add more debug info for VFs still in reset
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+[mvb: Refresh patch for i40e v2.6.11]
+Signed-off-by: M. Vefa Bicakci <vefa.bicakci@windriver.com>
 ---
  src/i40e_virtchnl_pf.c | 16 ++++++++--------
  1 file changed, 8 insertions(+), 8 deletions(-)
 
 diff --git a/src/i40e_virtchnl_pf.c b/src/i40e_virtchnl_pf.c
-index b07c9a0..50b1dbd 100644
+index 11190fb94c29..2de803d3463e 100644
 --- a/src/i40e_virtchnl_pf.c
 +++ b/src/i40e_virtchnl_pf.c
-@@ -5031,8 +5031,8 @@ static int i40e_set_vf_mac(struct i40e_vf *vf, struct i40e_vsi *vsi,
+@@ -5525,8 +5525,8 @@ static int i40e_set_vf_mac(struct i40e_vf *vf, struct i40e_vsi *vsi,
  		msleep(20);
  	}
  	if (!test_bit(I40E_VF_STATE_INIT, &vf->vf_states)) {
@@ -23,7 +25,7 @@ index b07c9a0..50b1dbd 100644
  		ret = -EAGAIN;
  		goto error_param;
  	}
-@@ -5164,8 +5164,8 @@ int i40e_ndo_set_vf_port_vlan(struct net_device *netdev,
+@@ -5663,8 +5663,8 @@ int i40e_ndo_set_vf_port_vlan(struct net_device *netdev,
  	vf = &pf->vf[vf_id];
  	vsi = pf->vsi[vf->lan_vsi_idx];
  	if (!test_bit(I40E_VF_STATE_INIT, &vf->vf_states)) {
@@ -34,7 +36,7 @@ index b07c9a0..50b1dbd 100644
  		ret = -EAGAIN;
  		goto error_pvid;
  	}
-@@ -5348,8 +5348,8 @@ int i40e_ndo_set_vf_bw(struct net_device *netdev, int vf_id, int max_tx_rate)
+@@ -5856,8 +5856,8 @@ int i40e_ndo_set_vf_bw(struct net_device *netdev, int vf_id, int max_tx_rate)
  	vf = &pf->vf[vf_id];
  	vsi = pf->vsi[vf->lan_vsi_idx];
  	if (!test_bit(I40E_VF_STATE_INIT, &vf->vf_states)) {
@@ -45,7 +47,7 @@ index b07c9a0..50b1dbd 100644
  		ret = -EAGAIN;
  		goto error;
  	}
-@@ -5547,8 +5547,8 @@ int i40e_ndo_set_vf_spoofchk(struct net_device *netdev, int vf_id, bool enable)
+@@ -6062,8 +6062,8 @@ int i40e_ndo_set_vf_spoofchk(struct net_device *netdev, int vf_id, bool enable)
  
  	vf = &(pf->vf[vf_id]);
  	if (!test_bit(I40E_VF_STATE_INIT, &vf->vf_states)) {

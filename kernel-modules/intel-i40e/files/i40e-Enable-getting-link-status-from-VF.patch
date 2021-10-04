@@ -1,11 +1,7 @@
-From 647a8819680fb79b0416d0883096e49cc746db0e Mon Sep 17 00:00:00 2001
-From: Steven Webster <steven.webster@windriver.com>
-Date: Thu, 25 Jun 2020 11:23:05 -0400
-Subject: [PATCH] From b8c666367cd98a2b0033c043f6f206abd8e238a6 Mon Sep 17
- 00:00:00 2001 Message-Id:
- <b8c666367cd98a2b0033c043f6f206abd8e238a6.1572295393.git.Jim.Somerville@windriver.com>
- From: Vadim Suraev <vsuraev@northforgeinc.com> Date: Mon, 8 Feb 2016 15:57:30
- -0500 Subject: [PATCH 1/2] i40e: Enable getting link status from VF
+From de86a2f22230d3193ba08afe02b5bdfe75575089 Mon Sep 17 00:00:00 2001
+From: Vadim Suraev <vsuraev@northforgeinc.com>
+Date: Mon, 8 Feb 2016 15:57:30 -0500
+Subject: [PATCH] i40e: Enable getting link status from VF
 
 Add handling of custom OP code sent from the PMD VF to get link status via the
 virtual channel interface.
@@ -15,16 +11,18 @@ Signed-off-by: eric zhang <eric.zhang@windriver.com>
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 Signed-off-by: Steven Webster <Steven.Webster@windriver.com>
 Signed-off-by: Babak Sarashki <babak.sarashki@windriver.com>
+[mvb: Refresh patch for i40e v2.6.11]
+Signed-off-by: M. Vefa Bicakci <vefa.bicakci@windriver.com>
 ---
- src/i40e_virtchnl_pf.c | 78 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ src/i40e_virtchnl_pf.c | 78 ++++++++++++++++++++++++++++++++++++++++++
  src/virtchnl.h         |  1 +
  2 files changed, 79 insertions(+)
 
 diff --git a/src/i40e_virtchnl_pf.c b/src/i40e_virtchnl_pf.c
-index b7325d0..0542c92 100644
+index 5ec2a78b937d..11190fb94c29 100644
 --- a/src/i40e_virtchnl_pf.c
 +++ b/src/i40e_virtchnl_pf.c
-@@ -3198,6 +3198,81 @@ err_out:
+@@ -3249,6 +3249,81 @@ err_out:
  				       aq_ret);
  }
  
@@ -106,7 +104,7 @@ index b7325d0..0542c92 100644
  /**
   * i40e_vc_config_queues_msg
   * @vf: pointer to the VF info
-@@ -5065,6 +5140,9 @@ int i40e_vc_process_vf_msg(struct i40e_pf *pf, s16 vf_id, u32 v_opcode,
+@@ -5331,6 +5406,9 @@ int i40e_vc_process_vf_msg(struct i40e_pf *pf, s16 vf_id, u32 v_opcode,
  	case VIRTCHNL_OP_REQUEST_QUEUES:
  		ret = i40e_vc_request_queues_msg(vf, msg);
  		break;
@@ -117,17 +115,17 @@ index b7325d0..0542c92 100644
  	case VIRTCHNL_OP_ENABLE_CHANNELS:
  		ret = i40e_vc_add_qch_msg(vf, msg);
 diff --git a/src/virtchnl.h b/src/virtchnl.h
-index 4db8bf4..b72f679 100644
+index e72daf5130de..07f6d8a88db9 100644
 --- a/src/virtchnl.h
 +++ b/src/virtchnl.h
-@@ -132,6 +132,7 @@ enum virtchnl_ops {
- 	/* opcodes 39, 40, 41, 42 and 43 are reserved */
- 	/* opcode 44 is reserved */
- 	/* opcode 45, 46, 47, 48 and 49 are reserved */
+@@ -150,6 +150,7 @@ enum virtchnl_ops {
+ 	VIRTCHNL_OP_ENABLE_QUEUES_V2 = 107,
+ 	VIRTCHNL_OP_DISABLE_QUEUES_V2 = 108,
+ 	VIRTCHNL_OP_MAP_QUEUE_VECTOR = 111,
 +	VIRTCHNL_OP_GET_LINK_STAT = 0x101,
  	VIRTCHNL_OP_MAX,
  };
  
 -- 
-1.8.3.1
+2.29.2
 

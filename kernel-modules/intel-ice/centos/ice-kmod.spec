@@ -7,7 +7,7 @@
 %define kmod_name ice
 
 Name: 		%{kmod_name}-kmod%{?bt_ext}
-Version:	1.2.1
+Version:	1.6.7
 Release:	0%{?_tis_dist}.%{tis_patch_ver}
 Group:		System Environment/Kernel
 License:	GPL-2.0
@@ -30,6 +30,7 @@ Source0: %{kmod_name}-%{version}.tar.gz
 Source11: modules-load.conf
 
 
+Patch1: 0001-ice_xsk-Avoid-dependency-on-napi_busy_loop-with-PREE.patch
 
 %define kversion %(rpm -q kernel%{?bt_ext}-devel | sort --version-sort | tail -1 | sed 's/kernel%{?bt_ext}-devel-//')
 %define find() %(for f in %*; do if [ -e $f ]; then echo $f; break; fi; done)

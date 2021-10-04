@@ -1,9 +1,9 @@
 dpdk-20.05.tar.gz#dpdk-20.05#https://fast.dpdk.org/rel/dpdk-20.05.tar.gz#http##
 drbd-8.4.11-1.tar.gz#drbd-8.4.11-1#http://www.linbit.com/downloads/drbd/8.4/drbd-8.4.11-1.tar.gz#http##
 e1000e-3.6.0.tar.gz#e1000e-3.6.0#https://sourceforge.net/projects/e1000/files/e1000e%20stable/3.6.0/e1000e-3.6.0.tar.gz#http##
-i40e-2.14.13.tar.gz#i40e-2.14.13#https://sourceforge.net/projects/e1000/files/i40e%20stable/2.14.13/i40e-2.14.13.tar.gz/download#http##
-iavf-4.0.1.tar.gz#iavf-4.0.1#https://sourceforge.net/projects/e1000/files/iavf%20stable/4.0.1/iavf-4.0.1.tar.gz/download#http##
-ice-1.2.1.tar.gz#ice-1.2.1#https://sourceforge.net/projects/e1000/files/ice%20stable/1.2.1/ice-1.2.1.tar.gz/download#http##
+i40e-2.16.11.tar.gz#i40e-2.16.11#https://sourceforge.net/projects/e1000/files/i40e%20stable/2.16.11/i40e-2.16.11.tar.gz/download#https##
+iavf-4.2.7.tar.gz#iavf-4.2.7#https://sourceforge.net/projects/e1000/files/iavf%20stable/4.2.7/iavf-4.2.7.tar.gz/download#https##
+ice-1.6.7.tar.gz#ice-1.6.7#https://sourceforge.net/projects/e1000/files/ice%20stable/1.6.7/ice-1.6.7.tar.gz/download#https##
 ixgbe-5.6.5.tar.gz#ixgbe-5.6.5#https://sourceforge.net/projects/e1000/files/ixgbe%20stable/5.6.5/ixgbe-5.6.5.tar.gz/download#http##
 ixgbevf-4.6.3.tar.gz#ixgbevf-4.6.3#https://sourceforge.net/projects/e1000/files/ixgbevf%20stable/4.6.3/ixgbevf-4.6.3.tar.gz/download#http##
 !kernel-rt-4.18.0-147.3.1.rt24.96.el8_1.src.rpm#kernel-rt#https://git.centos.org/rpms/kernel-rt#http_script#327ec52423c67051249291f131ec7f6fff44a828#post-dl-script/kernel-rt.sh

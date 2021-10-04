@@ -1,6 +1,6 @@
 COPY_LIST=" \
   $PKG_BASE/files/* \
-  $STX_BASE/downloads/ice-1.2.1.tar.gz"
+  $STX_BASE/downloads/ice-1.6.7.tar.gz"
 OPT_DEP_LIST_FOR_BUILD_TYPE[std]=$GIT_BASE/kernel-std
 OPT_DEP_LIST_FOR_BUILD_TYPE[rt]=$GIT_BASE/kernel-rt
 BASE_SRCREV_FOR_PATH[$GIT_BASE/kernel-std]=b34c955b48fb99542644e4fe8ae4d49cb2f8bb28
