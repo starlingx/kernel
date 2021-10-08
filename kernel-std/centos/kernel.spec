@@ -557,6 +557,10 @@ BuildRequires:  devtoolset-8-make
 %endif
 %if 0%{?fedora} || 0%{?rhel} >= 8
 BuildRequires: dwarves
+%else
+%if 0%{?rhel} == 7
+BuildRequires: dwarves >= 1.16
+%endif
 %endif
 # Used to mangle unversioned shebangs to be Python 3
 BuildRequires: python2-devel
