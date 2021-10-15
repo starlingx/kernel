@@ -786,6 +786,7 @@ Patch6: 0007-turn-off-write-same-in-smartqpi-driver.patch
 Patch7: 0008-Allow-dmar-quirks-for-broken-bioses.patch
 Patch8: 0009-tpm-ignore-burstcount-to-improve-tpm_tis-send-perfor.patch
 Patch9: 0010-restrict-iSCSI-kthreads-to-CPUs-in-cpu_kthread_mask.patch
+Patch10: 0011-scsi-smartpqi-Enable-sas_address-sysfs-for-SATA-dev.patch
 
 # END OF PATCH DEFINITIONS
 %endif
