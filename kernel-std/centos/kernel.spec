@@ -818,6 +818,7 @@ Patch5: 0006-intel-iommu-allow-ignoring-Ethernet-device-RMRR-with.patch
 Patch6: 0007-turn-off-write-same-in-smartqpi-driver.patch
 Patch7: 0008-Allow-dmar-quirks-for-broken-bioses.patch
 Patch8: 0009-tpm-ignore-burstcount-to-improve-tpm_tis-send-perfor.patch
+Patch9: 0010-bpf-cgroups-Fix-cgroup-v2-fallback-on-v1-v2-mixed-mo.patch
 
 # END OF PATCH DEFINITIONS
 %endif
