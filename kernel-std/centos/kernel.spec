@@ -820,6 +820,7 @@ Patch7: 0008-Allow-dmar-quirks-for-broken-bioses.patch
 Patch8: 0009-tpm-ignore-burstcount-to-improve-tpm_tis-send-perfor.patch
 Patch9: 0010-bpf-cgroups-Fix-cgroup-v2-fallback-on-v1-v2-mixed-mo.patch
 Patch10: 0011-scsi-smartpqi-Enable-sas_address-sysfs-for-SATA-dev.patch
+Patch11: 0012-workqueue-Affine-rescuer-threads-and-unbound-wqs.patch
 
 # END OF PATCH DEFINITIONS
 %endif
