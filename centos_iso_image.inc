@@ -9,6 +9,7 @@ kernel-tools
 kernel-tools-libs
 kernel-headers
 kernel-devel
+bpftool
 perf
 python-perf
 
