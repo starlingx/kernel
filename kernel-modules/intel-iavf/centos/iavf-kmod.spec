@@ -8,7 +8,7 @@
 %define kmod_name iavf
 
 Name:    %{kmod_name}-kmod%{?bt_ext}
-Version: 4.2.7
+Version: 4.3.19
 Release: 0%{?_tis_dist}.%{tis_patch_ver}
 Group:   System Environment/Kernel
 License: GPLv2

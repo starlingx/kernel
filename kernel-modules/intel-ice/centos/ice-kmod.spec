@@ -7,7 +7,7 @@
 %define kmod_name ice
 
 Name: 		%{kmod_name}-kmod%{?bt_ext}
-Version:	1.6.7
+Version:	1.7.16
 Release:	0%{?_tis_dist}.%{tis_patch_ver}
 Group:		System Environment/Kernel
 License:	GPL-2.0
@@ -66,6 +66,8 @@ source scl_source enable devtoolset-8 || :
 %endif
 %{__install} -d %{buildroot}/lib/modules/%{kversion}/extra/%{kmod_name}/
 %{__install} src/%{kmod_name}.ko %{buildroot}/lib/modules/%{kversion}/extra/%{kmod_name}/
+# The auxiliary bus was introduced in kernel 5.11.  Older kernels need the backported module of it.
+%{__install} src/auxiliary.ko %{buildroot}/lib/modules/%{kversion}/extra/%{kmod_name}/
 %{__install} -d %{buildroot}%{_defaultdocdir}/kmod-%{kmod_name}-%{version}/
 %{__install} COPYING %{buildroot}%{_defaultdocdir}/kmod-%{kmod_name}-%{version}/
 %{__install} pci.updates %{buildroot}%{_defaultdocdir}/kmod-%{kmod_name}-%{version}/
