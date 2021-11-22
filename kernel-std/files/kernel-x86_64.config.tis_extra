@@ -116,7 +116,6 @@ CONFIG_DP83640_PHY=y
 # CONFIG_PANIC_ON_OOPS is not set
 # CONFIG_SOUND is not set
 # CONFIG_FIREWIRE is not set
-# CONFIG_KPROBES is not set
 # CONFIG_XEN is not set
 # CONFIG_BT is not set
 # CONFIG_USB_USBNET is not set
@@ -1594,7 +1593,3 @@ CONFIG_SERIAL_8250_LPSS=y
 CONFIG_ZRAM_WRITEBACK=y
 CONFIG_PCI_REALLOC_ENABLE_AUTO=y
 # CONFIG_CMA is not set
-#
-# IEEE 1394 (FireWire) support
-#
-# CONFIG_NET_TEAM is not set
