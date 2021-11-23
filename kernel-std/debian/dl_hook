@@ -1,0 +1,59 @@
+#!/bin/bash
+
+# The only parameter is the name of the folder where the source code
+# is extracted to. Pay attention to that the extracted package should
+# be put at the same path where this script is located.
+# Tools needed: wget/tar/md5sum
+
+KERNEL_HEAD_COMMIT=9e84a42af61ff9c6feb89ab8d61ee5f25fb35c72
+KERNEL_MD5SUM=58ed543af9eb3767a7c576a603c5eb94
+
+DEBIAN_DL_PATH=http://snapshot.debian.org/archive/debian/20210410T143728Z/pool/main/l/linux/
+DEBIAN_FILE=linux_5.10.28-1.debian.tar.xz
+DEBIAN_MD5SUM=de03a25a5c7e12ec1e559b6b0ce8889f
+
+if [ ! -f "./linux-yocto-${KERNEL_HEAD_COMMIT}.tar.gz" ]
+then
+    wget https://git.yoctoproject.org/cgit/cgit.cgi/linux-yocto/snapshot/linux-yocto-${KERNEL_HEAD_COMMIT}.tar.gz
+    if [ $? -ne 0 ]
+    then
+        echo "wget failed: linux-yocto source!"
+        exit 1
+    fi
+fi
+
+md5sum ./linux-yocto-${KERNEL_HEAD_COMMIT}.tar.gz | grep ${KERNEL_MD5SUM}
+if [ $? -ne 0 ]
+then
+    echo "Wrong md5sum: linux-yocto source!"
+    exit 1
+fi
+tar xvf linux-yocto-${KERNEL_HEAD_COMMIT}.tar.gz
+if [ $? -ne 0 ]
+then
+    echo "tar failed: linux-yocto source!"
+    exit 1
+fi
+mv linux-yocto-${KERNEL_HEAD_COMMIT} $1
+
+cd $1
+wget ${DEBIAN_DL_PATH}${DEBIAN_FILE}
+if [ $? -ne 0 ]
+then
+    echo "wget failed: debian folder for kernel!"
+    exit 1
+fi
+
+md5sum ./${DEBIAN_FILE} | grep ${DEBIAN_MD5SUM}
+if [ $? -ne 0 ]
+then
+    echo "Wrong md5sum: debian folder for kernel!"
+    exit 1
+fi
+tar xvf ${DEBIAN_FILE}
+if [ $? -ne 0 ]
+then
+    echo "tar failed: debian folder for kernel!"
+    exit 1
+fi
+rm ${DEBIAN_FILE}

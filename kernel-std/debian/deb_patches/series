@@ -1,0 +1,4 @@
+0001-kernel-std-Remove-the-old-changelog-file.patch
+0002-kernel-std-Add-a-new-changelog-file-for-linux-yocto-.patch
+0003-kernel-std-Add-a-kernel-config-file-for-stx-debian.patch
+0004-kernel-std-Adapt-the-debian-folder-for-building-linu.patch

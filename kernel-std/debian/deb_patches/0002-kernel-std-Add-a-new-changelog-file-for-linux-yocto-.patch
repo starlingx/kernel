@@ -1,0 +1,31 @@
+From 9576d9ffaaa5af945ae375ebbd8b855a1165ff3b Mon Sep 17 00:00:00 2001
+From: Li Zhou <li.zhou@windriver.com>
+Date: Tue, 23 Nov 2021 10:53:44 +0800
+Subject: [PATCH 2/4] kernel-std: Add a new changelog file for linux-yocto
+ source code
+
+Don't list the commits logs and only give out the link for checking
+about the git history of this source code.
+
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+---
+ debian/changelog | 7 +++++++
+ 1 file changed, 7 insertions(+)
+ create mode 100644 debian/changelog
+
+diff --git a/debian/changelog b/debian/changelog
+new file mode 100644
+index 0000000..c64e51a
+--- /dev/null
++++ b/debian/changelog
+@@ -0,0 +1,7 @@
++linux (5.10.74-1) stable; urgency=medium
++
++  * New upstream stable update:
++    https://git.yoctoproject.org/cgit/cgit.cgi/linux-yocto/log/?h=v5.10%2Fstandard%2Fbase&qt=range&q=9e84a42af61ff9c6feb89ab8d61ee5f25fb35c72
++
++ -- Li Zhou <li.zhou@windriver.com>  Tue Nov  9 11:23:35 CST 2021
++
+-- 
+2.17.1
+
