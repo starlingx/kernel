@@ -1,0 +1,18 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+
+Upstream-Name: dpdk-kmods
+Upstream-Contact: dev@dpdk.org
+Source: https://git.dpdk.org/dpdk-kmods/
+Files: *
+Copyright: (C) 2021 https://git.dpdk.org/dpdk-kmods/
+License: BSD-3-Clause or GPL-2.0
+ The BSD-3-Clause license can be found at:
+ https://opensource.org/licenses/BSD-3-Clause
+ On Debian-based systems the full text of the GNU General Public License
+ version 2 license can be found in `/usr/share/common-licenses/GPL-2'.
+
+Files: debian/extra/dpdk-devbind.py
+Copyright: (c) 2010-2014 Intel Corporation
+License: BSD-3-Clause
+ The BSD-3-Clause license can be found at:
+ https://opensource.org/licenses/BSD-3-Clause

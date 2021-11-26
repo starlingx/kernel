@@ -1,0 +1,11 @@
+---
+debver: 21.02
+debname: igb-uio
+dl_path:
+  name: dpdk-kmods-2a9f0f72a2d926382634cf8f1de10e1acf57542b.tar.gz
+  url: "https://git.dpdk.org/dpdk-kmods/snapshot/\
+    dpdk-kmods-2a9f0f72a2d926382634cf8f1de10e1acf57542b.tar.gz"
+  md5sum: 1ae270026cda66789eb7e92aa236a489
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true
