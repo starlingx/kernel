@@ -788,6 +788,8 @@ Patch8: 0009-tpm-ignore-burstcount-to-improve-tpm_tis-send-perfor.patch
 Patch9: 0010-restrict-iSCSI-kthreads-to-CPUs-in-cpu_kthread_mask.patch
 Patch10: 0011-scsi-smartpqi-Enable-sas_address-sysfs-for-SATA-dev.patch
 Patch11: 0012-workqueue-Affine-rescuer-threads-and-unbound-wqs.patch
+Patch12: 0013-rcu-Mark-accesses-to-rcu_state.n_force_qs.patch
+Patch13: 0014-rcu-Tighten-rcu_advance_cbs_nowake-checks.patch
 
 # END OF PATCH DEFINITIONS
 %endif
