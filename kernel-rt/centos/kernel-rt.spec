@@ -2932,6 +2932,7 @@ fi
 %{expand:%%files -f kernel-%{?3:%{3}-}core.list %{?1:-f kernel-%{?3:%{3}-}ldsoconf.list} %{?3:%{3}-}core}\
 %exclude /lib/modules/%{KVERREL}%{?3:+%{3}}/kernel/arch/x86/kvm\
 %exclude /lib/modules/%{KVERREL}%{?3:+%{3}}/kernel/drivers/gpu/drm/i915/gvt\
+%exclude /lib/modules/%{KVERREL}%{?3:+%{3}}/modules.kvm\
 %{!?_licensedir:%global license %%doc}\
 %license linux-%{KVERREL}/COPYING-%{version}-%{release}\
 /lib/modules/%{KVERREL}%{?3:+%{3}}/%{?-k:%{-k*}}%{!?-k:vmlinuz}\
