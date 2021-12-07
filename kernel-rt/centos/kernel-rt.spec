@@ -790,6 +790,8 @@ Patch10: 0011-scsi-smartpqi-Enable-sas_address-sysfs-for-SATA-dev.patch
 Patch11: 0012-workqueue-Affine-rescuer-threads-and-unbound-wqs.patch
 Patch12: 0013-rcu-Mark-accesses-to-rcu_state.n_force_qs.patch
 Patch13: 0014-rcu-Tighten-rcu_advance_cbs_nowake-checks.patch
+Patch14: 0015-Revert-scsi-sd-Inline-sd_probe_part2.patch
+Patch15: 0016-Revert-commit-f049cf1a7b.patch
 
 # END OF PATCH DEFINITIONS
 %endif
