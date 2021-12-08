@@ -1,0 +1,11 @@
+0001-Notification-of-death-of-arbitrary-processes.patch
+0002-PCI-Add-ACS-quirk-for-Intel-Fortville-NICs.patch
+0003-affine-compute-kernel-threads.patch
+0004-Affine-irqs-and-workqueues-with-kthread_cpus.patch
+0005-Make-kernel-start-eth-devices-at-offset.patch
+0006-intel-iommu-ignoring-RMRR-with-IOMMU-passthrough.patch
+0007-turn-off-write-same-in-smartqpi-driver.patch
+0008-Allow-dmar-quirks-for-broken-bioses.patch
+0009-tpm-ignore-burstcount-to-improve-performance.patch
+0010-restrict-iSCSI-kthreads-to-CPUs-in-cpu_kthread_mask.patch
+0011-scsi-smartpqi-Enable-sas_address-sysfs-for-SATA.patch

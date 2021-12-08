@@ -1,0 +1,79 @@
+From 5bfa2de45bd3c7ea524f9cc5f77608f91b0d3267 Mon Sep 17 00:00:00 2001
+From: Jim Somerville <Jim.Somerville@windriver.com>
+Date: Wed, 29 Jan 2020 14:19:22 -0500
+Subject: [PATCH 08/11] Allow dmar quirks for broken bioses
+
+Problem:
+Broken bios creates inaccurate DMAR tables,
+reporting some bridges as having endpoint types.
+This causes IOMMU initialization to bail
+out early with an error code, the result of
+which is vfio not working correctly.
+This is seen on some Skylake based Wolfpass
+server platforms with up-to-date bios installed.
+
+Solution:
+Instead of just bailing out of IOMMU
+initialization when such a condition is found,
+we report it and continue.  The IOMMU ends
+up successfully initialized anyway.  We do this
+only on platforms that have the Skylake bridges
+where this issue has been seen.
+
+This change is inspired by a similar one posted by
+Lu Baolu of Intel Corp to lkml
+
+https://lkml.org/lkml/2019/12/24/15
+
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ drivers/iommu/intel/dmar.c | 25 ++++++++++++++++++++++++-
+ 1 file changed, 24 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/iommu/intel/dmar.c b/drivers/iommu/intel/dmar.c
+index b8d0b56a7..84b8d6e3e 100644
+--- a/drivers/iommu/intel/dmar.c
++++ b/drivers/iommu/intel/dmar.c
+@@ -66,6 +66,26 @@ static void free_iommu(struct intel_iommu *iommu);
+ 
+ extern const struct iommu_ops intel_iommu_ops;
+ 
++static int scope_mismatch_quirk;
++static void quirk_dmar_scope_mismatch(struct pci_dev *dev)
++{
++	pci_info(dev, "scope mismatch ignored\n");
++	scope_mismatch_quirk = 1;
++}
++
++/*
++ * We expect devices with endpoint scope to have normal PCI
++ * headers, and devices with bridge scope to have bridge PCI
++ * headers.  However some PCI devices may be listed in the
++ * DMAR table with bridge scope, even though they have a
++ * normal PCI header and vice versa. We don't declare a
++ * scope mismatch for the special cases below, even though
++ * the bios creates broken tables.
++ */
++/* Sky Lake-E PCI Express Root Port A */
++DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_INTEL, 0x2030,
++			quirk_dmar_scope_mismatch);
++
+ static void dmar_register_drhd_unit(struct dmar_drhd_unit *drhd)
+ {
+ 	/*
+@@ -255,7 +275,10 @@ int dmar_insert_dev_scope(struct dmar_pci_notify_info *info,
+ 		      info->dev->class >> 16 != PCI_BASE_CLASS_BRIDGE))) {
+ 			pr_warn("Device scope type does not match for %s\n",
+ 				pci_name(info->dev));
+-			return -EINVAL;
++			if (!scope_mismatch_quirk)
++				return -EINVAL;
++			else
++				pr_warn("but continuing anyway\n");
+ 		}
+ 
+ 		for_each_dev_scope(devices, devices_cnt, i, tmp)
+-- 
+2.17.1
+
