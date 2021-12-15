@@ -2682,6 +2682,7 @@ fi\
 %endif\
 %endif\
 /bin/kernel-install add %{KVERREL}%{?1:+%{1}} /lib/modules/%{KVERREL}%{?1:+%{1}}/vmlinuz || exit $?\
+/usr/sbin/grub2-set-default 0 || :\
 %{nil}
 
 #
