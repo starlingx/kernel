@@ -825,6 +825,9 @@ Patch12: 0013-rcu-Mark-accesses-to-rcu_state.n_force_qs.patch
 Patch13: 0014-rcu-Tighten-rcu_advance_cbs_nowake-checks.patch
 Patch14: 0015-Revert-scsi-sd-Inline-sd_probe_part2.patch
 Patch15: 0016-Revert-commit-f049cf1a7b.patch
+Patch16: 0017-genirq-Export-affinity-setter-for-modules.patch
+Patch17: 0018-genirq-Provide-new-interfaces-for-affinity-hints.patch
+Patch18: 0019-ixgbe-Use-irq_update_affinity_hint.patch
 
 # END OF PATCH DEFINITIONS
 %endif
