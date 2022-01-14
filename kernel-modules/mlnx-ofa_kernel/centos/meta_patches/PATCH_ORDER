@@ -1,3 +1,4 @@
 Support-TiS-system.patch
 Introduce-devtoolset-8.patch
 Fix-compile-issues-when-using-kernel-5.10.57.patch
+mlx5-pci_irq-Use-irq_update_affinity_hint.patch

@@ -32,6 +32,7 @@ Source11: modules-load.conf
 
 
 Patch1: 0001-ice_xsk-Avoid-dependency-on-napi_busy_loop-with-PREE.patch
+Patch2: 0002-ice_main-ice_lib-Use-irq_update_affinity_hint.patch
 
 %define kversion %(rpm -q kernel%{?bt_ext}-devel | sort --version-sort | tail -1 | sed 's/kernel%{?bt_ext}-devel-//')
 %define find() %(for f in %*; do if [ -e $f ]; then echo $f; break; fi; done)

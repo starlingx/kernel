@@ -30,6 +30,8 @@ Source0:  %{kmod_name}-%{version}.tar.gz
 Source5:  GPL-v2.0.txt
 Source11: modules-load.conf
 
+Patch01: iavf_main-Use-irq_update_affinity_hint.patch
+
 %define kversion %(rpm -q kernel%{?bt_ext}-devel | sort --version-sort | tail -1 | sed 's/kernel%{?bt_ext}-devel-//')
 
 %package       -n kmod-iavf%{?bt_ext}
