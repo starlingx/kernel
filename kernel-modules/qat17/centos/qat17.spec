@@ -50,10 +50,6 @@ Patch2: qat17-build-Do-not-override-KERNELVERSION-with-build-machi.patch
 Intel(r) QuickAssist Technology API
 
 %prep
-%if 0%{?rhel} == 7
-source scl_source enable devtoolset-8 || :
-source scl_source enable llvm-toolset-7.0 || :
-%endif
 rm -rf %{qat_unpack_dir}
 mkdir -p %{qat_unpack_dir}
 cd %{qat_unpack_dir}
@@ -69,7 +65,6 @@ fi
 %build
 %if 0%{?rhel} == 7
 source scl_source enable devtoolset-8 || :
-source scl_source enable llvm-toolset-7.0 || :
 %endif
 
 ICP_ROOT=%{qat_src_dir}
@@ -89,7 +84,6 @@ make -C %{qat_src_dir}/ sample-all
 %install
 %if 0%{?rhel} == 7
 source scl_source enable devtoolset-8 || :
-source scl_source enable llvm-toolset-7.0 || :
 %endif
 
 %{__install} -d %{buildroot}%{_sysconfdir}/default

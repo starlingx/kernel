@@ -1,15 +1,16 @@
-From a7bc4a9dedb707f7d89019b3662141d0b94945c4 Mon Sep 17 00:00:00 2001
+From 35822528861b4eaca115a1484284d925db6bb28e Mon Sep 17 00:00:00 2001
 From: Jiping Ma <jiping.ma2@windriver.com>
 Date: Tue, 20 Apr 2021 21:13:43 -0400
 Subject: [PATCH] Support TiS system
 
 Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+Signed-off-by: M. Vefa Bicakci <vefa.bicakci@windriver.com>
 ---
- mlnx-ofa_kernel.spec | 40 ++++++++++++++++++++++++----------------
+ SPECS/mlnx-ofa_kernel.spec | 40 +++++++++++++++++++++++---------------
  1 file changed, 24 insertions(+), 16 deletions(-)
 
 diff --git a/SPECS/mlnx-ofa_kernel.spec b/SPECS/mlnx-ofa_kernel.spec
-index 254dd4c..e187ff5 100644
+index 254dd4ca974e..e187ff550a56 100644
 --- a/SPECS/mlnx-ofa_kernel.spec
 +++ b/SPECS/mlnx-ofa_kernel.spec
 @@ -27,8 +27,14 @@

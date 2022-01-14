@@ -50,16 +50,11 @@ This package provides the Intel(R) Ethernet Connection E800 Series Linux Driver,
 ice, built for the Linux kernel using the %{_target_cpu} family of processors.
 
 %prep
-%if 0%{?rhel} == 7
-source scl_source enable devtoolset-8 || :
-source scl_source enable llvm-toolset-7.0 || :
-%endif
 %autosetup -p 1 -n %{kmod_name}-%{version}
 
 %build
 %if 0%{?rhel} == 7
 source scl_source enable devtoolset-8 || :
-source scl_source enable llvm-toolset-7.0 || :
 %endif
 pushd src >/dev/null
 %{__make} KSRC=%{_usrsrc}/kernels/%{kversion}
@@ -68,7 +63,6 @@ popd >/dev/null
 %install
 %if 0%{?rhel} == 7
 source scl_source enable devtoolset-8 || :
-source scl_source enable llvm-toolset-7.0 || :
 %endif
 %{__install} -d %{buildroot}/lib/modules/%{kversion}/extra/%{kmod_name}/
 %{__install} src/%{kmod_name}.ko %{buildroot}/lib/modules/%{kversion}/extra/%{kmod_name}/

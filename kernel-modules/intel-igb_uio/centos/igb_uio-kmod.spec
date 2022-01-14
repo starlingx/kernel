@@ -87,7 +87,6 @@ of the same variant of the Linux kernel and not on any one specific build.
 %build
 %if 0%{?rhel} == 7
 source scl_source enable devtoolset-8 || :
-source scl_source enable llvm-toolset-7.0 || :
 %endif
 
 cd linux/igb_uio

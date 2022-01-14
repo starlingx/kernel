@@ -1,16 +1,16 @@
-From ca7da3a87d1533596ed8eaad5770eadfdf3e0337 Mon Sep 17 00:00:00 2001
+From f5e73edb620e7bc8c7122093bc1c1a7880fc9779 Mon Sep 17 00:00:00 2001
 From: Jiping Ma <jiping.ma2@windriver.com>
 Date: Mon, 23 Aug 2021 20:25:48 -0700
 Subject: [PATCH] Fix compile issues when using kernel 5.10.57.
 
-
 Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+Signed-off-by: M. Vefa Bicakci <vefa.bicakci@windriver.com>
 ---
- mlnx-ofa_kernel.spec | 3 +++
+ SPECS/mlnx-ofa_kernel.spec | 3 +++
  1 file changed, 3 insertions(+)
 
-diff --git a/mlnx-ofa_kernel.spec b/mlnx-ofa_kernel.spec
-index d4d3f19..d890dfb 100644
+diff --git a/SPECS/mlnx-ofa_kernel.spec b/SPECS/mlnx-ofa_kernel.spec
+index 98763936e135..0dde85950881 100644
 --- a/SPECS/mlnx-ofa_kernel.spec
 +++ b/SPECS/mlnx-ofa_kernel.spec
 @@ -109,6 +109,7 @@ Url: http://www.mellanox.com/
@@ -21,7 +21,7 @@ index d4d3f19..d890dfb 100644
  BuildRoot: %{?build_root:%{build_root}}%{!?build_root:/var/tmp/OFED}
  Vendor: Mellanox Technologies
  Obsoletes: kernel-ib
-@@ -303,6 +304,8 @@ sed -s -i -e '1s|python\>|python3|' `grep -rl '^#!.*python' source/ofed_scripts`
+@@ -299,6 +300,8 @@ sed -s -i -e '1s|python\>|python3|' `grep -rl '^#!.*python' source/ofed_scripts`
  %endif
  mkdir obj
  
@@ -31,5 +31,5 @@ index d4d3f19..d890dfb 100644
  %if 0%{?rhel} == 7
  source scl_source enable devtoolset-8 || :
 -- 
-2.31.1
+2.29.2
 

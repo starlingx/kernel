@@ -1,15 +1,16 @@
-From 70669797bbce2b74a78fb777d7acb87d93fee752 Mon Sep 17 00:00:00 2001
+From 13a3b91f211ae9f8a965edcf47ae27992a472c23 Mon Sep 17 00:00:00 2001
 From: Jiping Ma <jiping.ma2@windriver.com>
 Date: Sun, 27 Jun 2021 23:52:04 -0700
-Subject: [PATCH 2/2] Fix build issues
+Subject: [PATCH] Fix build issues
 
 Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+Signed-off-by: M. Vefa Bicakci <vefa.bicakci@windriver.com>
 ---
- opae-intel-fpga-driver.spec | 4 ++++
- 1 file changed, 4 insertions(+)
+ SPECS/opae-intel-fpga-driver.spec | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
 
 diff --git a/SPECS/opae-intel-fpga-driver.spec b/SPECS/opae-intel-fpga-driver.spec
-index 48f0590..3701475 100755
+index 6cf186ef8853..193f14950ef3 100755
 --- a/SPECS/opae-intel-fpga-driver.spec
 +++ b/SPECS/opae-intel-fpga-driver.spec
 @@ -42,6 +42,8 @@ BuildRequires: kernel%{?bt_ext}-devel
@@ -21,32 +22,32 @@ index 48f0590..3701475 100755
  
  %package -n kmod-opae-fpga-driver%{?bt_ext}
  Summary: OPAE modules files
-@@ -74,6 +76,8 @@ source scl_source enable devtoolset-8 || :
- source scl_source enable llvm-toolset-7.0 || :
- %endif
+@@ -70,6 +72,8 @@ Source for the OPAE Drivers for common kernels
+ 
+ %prep
  %setup -q -n %{kmod_name}-%{version}
 +%patch0001 -p1
 +%patch0002 -p1
  
  %description
  OPAE Driver
-@@ -240,13 +244,15 @@ rm -rf $RPM_BUILD_ROOT
-
+@@ -234,13 +238,15 @@ rm -rf $RPM_BUILD_ROOT
+ 
  %files -n kmod-opae-fpga-driver%{?bt_ext}
  %defattr(-,root,root)
 -/usr/src/%{kmod_name}-%{version}-%{_release}
 +/lib/modules
 +/etc/udev
-
+ 
  %files -n kmod-opae-fpga-driver%{?bt_ext}-devel
  #/usr/include/*
-
+ 
  %files -n kmod-opae-fpga-driver%{?bt_ext}-prebuilt
  %defattr(-,root,root)
 +/usr/src/%{kmod_name}-%{version}-%{_release}
  /lib/modules
  /etc/udev
-
+ 
 -- 
-2.31.1
+2.29.2
 

@@ -1,19 +1,20 @@
-From 0bafdeac82f1f1544b73c5d55521e694cfa2a4ac Mon Sep 17 00:00:00 2001
+From 81f0f0db2b5444abee5ad58f3079f980db8b3f8d Mon Sep 17 00:00:00 2001
 From: Jiping Ma <jiping.ma2@windriver.com>
 Date: Tue, 22 Jun 2021 23:40:36 -0700
-Subject: [PATCH 1/2] Support-TiS-system and devtoolset-8
+Subject: [PATCH] Support-TiS-system and devtoolset-8
 
 Support-TiS-system and build with devtoolset-8, also
 change package name from opae-intel-fpga-driver to
 kmod-opae-fpga-driver.
 
 Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+Signed-off-by: M. Vefa Bicakci <vefa.bicakci@windriver.com>
 ---
- opae-intel-fpga-driver.spec | 157 ++++++++++++++++++++++--------------
- 1 file changed, 97 insertions(+), 60 deletions(-)
+ SPECS/opae-intel-fpga-driver.spec | 151 ++++++++++++++++++------------
+ 1 file changed, 91 insertions(+), 60 deletions(-)
 
 diff --git a/SPECS/opae-intel-fpga-driver.spec b/SPECS/opae-intel-fpga-driver.spec
-index c8374d8..48f0590 100755
+index c8374d89c3ca..6cf186ef8853 100755
 --- a/SPECS/opae-intel-fpga-driver.spec
 +++ b/SPECS/opae-intel-fpga-driver.spec
 @@ -1,19 +1,35 @@
@@ -57,7 +58,7 @@ index c8374d8..48f0590 100755
  #BuildRequires: osv-linux4.14-devel
  #BuildRequires: osv-linux4.16-devel
  #BuildRequires: osv-linux4.19-devel
-@@ -21,40 +37,58 @@ BuildRequires: kernel-headers, kernel-devel, tar, gcc, make
+@@ -21,40 +37,52 @@ BuildRequires: kernel-headers, kernel-devel, tar, gcc, make
  BuildRequires: kernel-default-devel
  %else
  %if %{?_vendor} != "clr"
@@ -102,10 +103,6 @@ index c8374d8..48f0590 100755
  
  %prep
 -%setup -q
-+%if 0%{?rhel} == 7
-+source scl_source enable devtoolset-8 || :
-+source scl_source enable llvm-toolset-7.0 || :
-+%endif
 +%setup -q -n %{kmod_name}-%{version}
  
  %description
@@ -114,18 +111,16 @@ index c8374d8..48f0590 100755
  %build
 +%if 0%{?rhel} == 7
 +source scl_source enable devtoolset-8 || :
-+source scl_source enable llvm-toolset-7.0 || :
 +%endif
  
  %install
 +%if 0%{?rhel} == 7
 +source scl_source enable devtoolset-8 || :
-+source scl_source enable llvm-toolset-7.0 || :
 +%endif
  
  FILES_TO_COPY=`ls | grep -v '^build-' | grep -v debian | grep -v spec`
  
-@@ -74,12 +108,6 @@ do
+@@ -74,12 +102,6 @@ do
  	if [ -f $kern/Module.symvers ]
  	then
  		kernname=`basename $kern`
@@ -138,7 +133,7 @@ index c8374d8..48f0590 100755
  		if ! grep -q "CONFIG_REGMAP=y" $kern/include/config/auto.conf ; then
  			continue
  		fi
-@@ -95,57 +123,66 @@ done
+@@ -95,57 +117,66 @@ done
  # Remove the depmod related file we will not be including
  rm -f $RPM_BUILD_ROOT/lib/modules/*/modules.*
  
@@ -235,7 +230,7 @@ index c8374d8..48f0590 100755
  
  elif [ `uname -r | grep -c "BOOT"` -gt 0 ]; then
    echo -e ""
-@@ -162,8 +199,8 @@ exit 0
+@@ -162,8 +193,8 @@ exit 0
  
  %preun
  echo -e
@@ -246,7 +241,7 @@ index c8374d8..48f0590 100755
  if [ "$1" -eq "0" ]
  then
  	find /lib/modules -type f \( -name spi-nor-mod.ko* \
-@@ -179,7 +216,7 @@ echo -e "Force regeneration of new initramfs"
+@@ -179,7 +210,7 @@ echo -e "Force regeneration of new initramfs"
  dracut --force /boot/initramfs-$(uname -r).img $(uname -r)
  exit 0
  
@@ -255,7 +250,7 @@ index c8374d8..48f0590 100755
  depmod=/sbin/depmod
  if [ -x /usr/sbin/depmod ]
  then
-@@ -201,22 +238,22 @@ done
+@@ -201,22 +232,22 @@ done
  %clean
  rm -rf $RPM_BUILD_ROOT
  
@@ -286,5 +281,5 @@ index c8374d8..48f0590 100755
 +* %(date "+%a %b %d %Y") %{version}-%{_release}
  -OPAE Intel FPGA Driver Build
 -- 
-2.31.1
+2.29.2
 

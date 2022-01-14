@@ -79,17 +79,12 @@ It is built to depend upon the specific ABI provided by a range of releases
 of the same variant of the Linux kernel and not on any one specific build.
 
 %prep
-%if 0%{?rhel} == 7
-source scl_source enable devtoolset-8 || :
-source scl_source enable llvm-toolset-7.0 || :
-%endif
 %autosetup -p 1 -n %{kmod_name}-%{version}
 %{__gzip} %{kmod_name}.7
 
 %build
 %if 0%{?rhel} == 7
 source scl_source enable devtoolset-8 || :
-source scl_source enable llvm-toolset-7.0 || :
 %endif
 pushd src >/dev/null
 %{__make} KSRC=%{_usrsrc}/kernels/%{kversion}
@@ -98,7 +93,6 @@ popd >/dev/null
 %install
 %if 0%{?rhel} == 7
 source scl_source enable devtoolset-8 || :
-source scl_source enable llvm-toolset-7.0 || :
 %endif
 %{__install} -d %{buildroot}/lib/modules/%{kversion}/extra/%{kmod_name}/
 %{__install} src/%{kmod_name}.ko %{buildroot}/lib/modules/%{kversion}/extra/%{kmod_name}/
