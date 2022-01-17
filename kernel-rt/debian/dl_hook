@@ -1,0 +1,95 @@
+#!/bin/bash
+#
+# Copyright (c) 2021 Wind River Systems, Inc.
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements. The ASF licenses this
+# file to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#  http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+# The only parameter is the name of the new directory that will contain
+# the extracted source code. Be aware that this new directory will be
+# created in the same directory as where this script is located when
+# building.
+# Tools needed: wget/tar/md5sum/sed
+
+KERNEL_HEAD_COMMIT=8048444fc7e44c6fc04a5e0b35d6117fe51c17fc
+KERNEL_MD5SUM=ed39ae794109417f7ab54a0a3f58b64e
+
+DEBIAN_DL_PATH=http://snapshot.debian.org/archive/debian/20210410T143728Z/pool/main/l/linux/
+DEBIAN_FILE=linux_5.10.28-1.debian.tar.xz
+DEBIAN_MD5SUM=de03a25a5c7e12ec1e559b6b0ce8889f
+
+if [ ! -f "./linux-yocto-${KERNEL_HEAD_COMMIT}.tar.gz" ]
+then
+    wget https://git.yoctoproject.org/cgit/cgit.cgi/linux-yocto/snapshot/linux-yocto-${KERNEL_HEAD_COMMIT}.tar.gz
+    if [ $? -ne 0 ]
+    then
+        echo "wget failed: linux-yocto source!"
+        exit 1
+    fi
+fi
+
+md5sum ./linux-yocto-${KERNEL_HEAD_COMMIT}.tar.gz | grep ${KERNEL_MD5SUM}
+if [ $? -ne 0 ]
+then
+    echo "Wrong md5sum: linux-yocto source!"
+    exit 1
+fi
+tar xvf linux-yocto-${KERNEL_HEAD_COMMIT}.tar.gz
+if [ $? -ne 0 ]
+then
+    echo "tar failed: linux-yocto source!"
+    exit 1
+fi
+mv linux-yocto-${KERNEL_HEAD_COMMIT} $1
+
+cd $1
+wget ${DEBIAN_DL_PATH}${DEBIAN_FILE}
+if [ $? -ne 0 ]
+then
+    echo "wget failed: debian folder for kernel!"
+    exit 1
+fi
+
+md5sum ./${DEBIAN_FILE} | grep ${DEBIAN_MD5SUM}
+if [ $? -ne 0 ]
+then
+    echo "Wrong md5sum: debian folder for kernel!"
+    exit 1
+fi
+tar xvf ${DEBIAN_FILE}
+if [ $? -ne 0 ]
+then
+    echo "tar failed: debian folder for kernel!"
+    exit 1
+fi
+rm ${DEBIAN_FILE}
+
+# The debian folder is written to build "linux". If use this folder
+# to build similar things for kernel-rt, all the packages are renamed
+# from "linux-xxx" to "linux-rt-xxx". Here replace those packages'
+# name in those files of the debian folder which will affect building.
+SED_LIST=" ./debian/bin ./debian/rules.d/tools/perf ./debian/rules ./debian/rules.real ./debian/signing_templates ./debian/templates"
+sed -i "s/linux-headers/linux-rt-headers/g" `grep -rl "linux-headers" $SED_LIST`
+sed -i "s/linux-image/linux-rt-image/g" `grep -rl "linux-image" $SED_LIST`
+sed -i "s/linux-perf/linux-rt-perf/g" `grep -rl "linux-perf" $SED_LIST`
+sed -i "s/linux-config/linux-rt-config/g" `grep -rl "linux-config" $SED_LIST`
+sed -i "s/linux-kbuild/linux-rt-kbuild/g" `grep -rl "linux-kbuild" $SED_LIST`
+sed -i "s/linux-libc-dev/linux-rt-libc-dev/g" `grep -rl "linux-libc-dev" $SED_LIST`
+sed -i "s/linux-source/linux-rt-source/g" `grep -rl "linux-source" $SED_LIST`
+sed -i "s/linux-support/linux-rt-support/g" `grep -rl "linux-support" $SED_LIST`
+# This is the only file name that involves renaming in debian
+# folder.
+mv debian/linux-image.NEWS debian/linux-rt-image.NEWS
