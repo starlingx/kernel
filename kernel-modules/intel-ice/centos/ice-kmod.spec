@@ -27,6 +27,7 @@ BuildRequires:  devtoolset-8-make
 %define kernel_module_package_buildreqs kernel%{?bt_ext}-devel
 
 Source0: %{kmod_name}-%{version}.tar.gz
+Source1: ice_comms-1.3.31.0.zip
 Source11: modules-load.conf
 
 
@@ -51,6 +52,7 @@ ice, built for the Linux kernel using the %{_target_cpu} family of processors.
 
 %prep
 %autosetup -p 1 -n %{kmod_name}-%{version}
+unzip %{SOURCE1} -d ice_comms
 
 %build
 %if 0%{?rhel} == 7
@@ -78,11 +80,10 @@ source scl_source enable devtoolset-8 || :
 %{__install} -m 644 %{SOURCE11} %{buildroot}%{_sysconfdir}/modules-load.d/ice.conf
 
 %{__install} -d %{buildroot}/lib/firmware/updates/intel/ice/ddp/
-%{__install} ddp/README %{buildroot}/lib/firmware/updates/intel/ice/ddp/README
-%{__install} ddp/LICENSE %{buildroot}/lib/firmware/updates/intel/ice/ddp/LICENSE
-%{__install} ddp/ice-*.pkg %{buildroot}/lib/firmware/updates/intel/ice/ddp/
+%{__install} -m 644 ice_comms/*.txt %{buildroot}/lib/firmware/updates/intel/ice/ddp/
+%{__install} -m 644 ice_comms/ice_comms*.pkg %{buildroot}/lib/firmware/updates/intel/ice/ddp/
 mkdir -p %{buildroot}//lib/firmware/intel/ice/ddp/
-ln -frs %{buildroot}/lib/firmware/updates/intel/ice/ddp/ice-*.pkg %{buildroot}//lib/firmware/intel/ice/ddp/ice.pkg
+ln -frs %{buildroot}/lib/firmware/updates/intel/ice/ddp/ice_comms*.pkg %{buildroot}//lib/firmware/intel/ice/ddp/ice.pkg
 
 # Strip the modules(s).
 find %{buildroot} -type f -name \*.ko -exec %{__strip} --strip-debug \{\} \;
