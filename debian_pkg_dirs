@@ -1,0 +1,9 @@
+kernel-std
+kernel-modules/intel-i40e
+kernel-modules/intel-iavf
+kernel-modules/intel-ice
+kernel-modules/intel-igb_uio
+kernel-modules/intel-opae-fpga
+kernel-modules/mlnx-ofa_kernel
+kernel-modules/qat17
+userspace/mellanox/rdma-core
