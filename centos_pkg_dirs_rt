@@ -7,6 +7,7 @@ kernel-modules/intel-ice
 kernel-modules/intel-igb_uio
 kernel-modules/qat17
 kernel-modules/intel-opae-fpga
+userspace/broadcom/libbnxt_re
 userspace/mellanox/rdma-core
 userspace/mellanox/mlnx-tools
 userspace/mellanox/mstflint

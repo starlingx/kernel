@@ -64,3 +64,4 @@ mstflint
 # Broadcom device driver
 kmod-bnxt_en
 kmod-bnxt_en-rt
+libbnxt_re
