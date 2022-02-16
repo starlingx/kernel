@@ -1,0 +1,117 @@
+From b4de4f0d87331a3df820ca78a7196b41a5ee74d5 Mon Sep 17 00:00:00 2001
+From: "M. Vefa Bicakci" <vefa.bicakci@windriver.com>
+Date: Fri, 4 Feb 2022 18:27:53 -0500
+Subject: [PATCH] bnxt_re/Makefile: Adapt to mlnx-ofa_kernel for StarlingX
+
+This patch adapts the bnxt_re kernel module's Makefile to
+mlnx-ofa_kernel for StarlingX.
+
+Here is a summary of the changes:
+
+- $(shell uname -r) is replaced with $(KVER) to ensure that the target
+  kernel version is selected instead of the build host's kernel version.
+
+- To target Mellanox's OFED distribution instead of compat-rdma, the
+  references to "/usr/src/compat-rdma" are replaced with
+  "/usr/src/ofa_kernel".
+
+- Mellanox's OFED distribution has version numbers in the form 5.x, so
+  the Makefile version match patterns are adjusted.
+
+- "AUTOCONF_H += -include $(LINUXSRC)/include/linux/kconfig.h" line is
+  added avoid the following kernel module build errors indicating that
+  IS_ENABLED is unintendedly undefined:
+
+  include/asm-generic/bitops/instrumented-non-atomic.h: In function \
+      '__instrument_read_write_bitop':
+  include/asm-generic/bitops/instrumented-non-atomic.h:63:6: error: \
+      implicit declaration of function 'IS_ENABLED' \
+      [-Werror=implicit-function-declaration]
+    if (IS_ENABLED(CONFIG_KCSAN_ASSUME_PLAIN_WRITES_ATOMIC)) {
+        ^~~~~~~~~~
+
+- The line that reads
+    "KBUILD_EXTRA_SYMBOLS := $(BNXT_PEER_MEM_INC)/Module.symvers"
+  is guarded to avoid the following build warning, which is encountered
+  as BNXT_PEER_MEM_INC is not defined by default:
+    WARNING: Symbol version dump "/Module.symvers" is missing.
+
+- OFA_BUILD_PATH and OFA_KERNEL_PATH are adjusted to refer to the kernel
+  source code belonging to the target kernel version in
+  "/usr/src/kernels/", because StarlingX's build environment does not
+  populate /lib/modules/<kver>/ with symbolic links for kernel source
+  and build trees.
+
+Signed-off-by: M. Vefa Bicakci <vefa.bicakci@windriver.com>
+---
+ bnxt_re-220.0.12.0/Makefile | 30 ++++++++++++++++++------------
+ 1 file changed, 18 insertions(+), 12 deletions(-)
+
+diff --git a/bnxt_re-220.0.12.0/Makefile b/bnxt_re-220.0.12.0/Makefile
+index 532fb8025465..d13a61379acb 100644
+--- a/bnxt_re-220.0.12.0/Makefile
++++ b/bnxt_re-220.0.12.0/Makefile
+@@ -32,7 +32,7 @@ ifeq ($(shell ls /lib/modules/$(KVER)/build > /dev/null 2>&1 && echo build),)
+ # SuSE source RPMs
+   _KVER=$(shell echo $(KVER) | cut -d "-" -f1,2)
+   _KFLA=$(shell echo $(KVER) | cut -d "-" -f3)
+-  _ARCH=$(shell file -b /lib/modules/$(shell uname -r)/build | cut -d "/" -f5)
++  _ARCH=$(shell file -b /lib/modules/$(KVER)/build | cut -d "/" -f5)
+   ifeq ($(_ARCH),)
+     _ARCH=$(__ARCH)
+   endif
+@@ -90,34 +90,40 @@ ifeq ($(OFED_VERSION), )
+ endif
+ 
+ #find OFED version and compat-includes
+-ofed_major=$(filter OFED-3.% OFED-4.%, $(OFED_VERSION))
++ofed_major=$(filter OFED-3.% OFED-4.% 5.%, $(OFED_VERSION))
+ ifneq ($(ofed_major), )
+-exists=$(shell if [ -e /usr/src/compat-rdma$(OFED_VERSION) ];\
++exists=$(shell if [ -e /usr/src/ofa_kernel-$(OFED_VERSION) ];\
+                 then echo y; fi)
+ ifeq ($(exists), )
+-$(shell ln -s /usr/src/compat-rdma\
+-         /usr/src/compat-rdma$(OFED_VERSION))
++$(shell ln -s /usr/src/ofa_kernel\
++         /usr/src/ofa_kernel-$(OFED_VERSION))
+ endif
+-OFA_BUILD_PATH=/usr/src/compat-rdma$(OFED_VERSION)
+-OFA_KERNEL_PATH=/usr/src/compat-rdma$(OFED_VERSION)
++OFA_BUILD_PATH=/usr/src/ofa_kernel/default
++OFA_KERNEL_PATH=/usr/src/ofa_kernel-$(OFED_VERSION)/source
+ EXTRA_CFLAGS += -DOFED_3_x
+-ofed_4_17_x=$(filter OFED-4.17%, $(ofed_major))
++ofed_4_17_x=$(filter OFED-4.17% 5.%, $(ofed_major))
+ ifneq ($(ofed_4_17_x), )
+ EXTRA_CFLAGS += -D__OFED_BUILD__
+ endif
+ EXTRA_CFLAGS += -include $(OFA_KERNEL_PATH)/include/linux/compat-2.6.h
+ 
+ AUTOCONF_H = -include $(shell /bin/ls -1 $(LINUX)/include/*/autoconf.h 2> /dev/null | head -1)
++AUTOCONF_H += -include $(LINUXSRC)/include/linux/kconfig.h
+ endif #end non 3.x OFED
++
++ifneq ($(BNXT_PEER_MEM_INC),)
+ KBUILD_EXTRA_SYMBOLS := $(BNXT_PEER_MEM_INC)/Module.symvers
++else
++KBUILD_EXTRA_SYMBOLS :=
++endif
+ 
+ ifeq (OFED-NATIVE, $(findstring OFED-NATIVE, $(OFED_VERSION)))
+ ifeq ($(KERNELRELEASE),)
+-OFA_BUILD_PATH =/lib/modules/`uname -r`/build/
+-OFA_KERNEL_PATH=/lib/modules/`uname -r`/source/
++OFA_BUILD_PATH=/usr/src/kernels/$(KVER)/
++OFA_KERNEL_PATH=/usr/src/kernels/$(KVER)/
+ else
+-OFA_BUILD_PATH =/lib/modules/$(KERNELRELEASE)/build/
+-OFA_KERNEL_PATH=/lib/modules/$(KERNELRELEASE)/source/
++OFA_BUILD_PATH=/usr/src/kernels/$(KERNELRELEASE)/
++OFA_KERNEL_PATH=/usr/src/kernels/$(KERNELRELEASE)/
+ endif
+ else
+ # Add OFED symbols only if external OFED is used
+-- 
+2.29.2
+

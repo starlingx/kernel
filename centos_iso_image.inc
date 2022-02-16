@@ -60,3 +60,7 @@ rdma-core
 
 # mellanox firmware tool
 mstflint
+
+# Broadcom device driver
+kmod-bnxt_en
+kmod-bnxt_en-rt
