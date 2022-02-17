@@ -828,6 +828,15 @@ Patch15: 0016-Revert-commit-f049cf1a7b.patch
 Patch16: 0017-genirq-Export-affinity-setter-for-modules.patch
 Patch17: 0018-genirq-Provide-new-interfaces-for-affinity-hints.patch
 Patch18: 0019-ixgbe-Use-irq_update_affinity_hint.patch
+Patch19: 0020-Add-auxiliary-bus-support.patch
+Patch20: 0021-driver-core-auxiliary-bus-move-slab.h-from-include-f.patch
+Patch21: 0022-driver-core-auxiliary-bus-make-remove-function-retur.patch
+Patch22: 0023-driver-core-auxiliary-bus-minor-coding-style-tweaks.patch
+Patch23: 0024-driver-core-auxiliary-bus-Fix-auxiliary-bus-shutdown.patch
+Patch24: 0025-driver-core-auxiliary-bus-Fix-calling-stage-for-auxi.patch
+Patch25: 0026-driver-core-auxiliary-bus-Remove-unneeded-module-bit.patch
+Patch26: 0027-driver-core-auxiliary-bus-Fix-memory-leak-when-drive.patch
+Patch27: 0028-driver-core-auxiliary-bus-Enable-by-default.patch
 
 # END OF PATCH DEFINITIONS
 %endif
