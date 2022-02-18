@@ -2,6 +2,19 @@
 debver: 5.10.74
 debname: linux
 dl_hook: dl_hook
+dl_files:
+  linux-yocto-9e84a42af61ff9c6feb89ab8d61ee5f25fb35c72.tar.gz:
+    topdir: null
+    url:
+      "https://git.yoctoproject.org/cgit/cgit.cgi/linux-yocto/snapshot/\
+       linux-yocto-9e84a42af61ff9c6feb89ab8d61ee5f25fb35c72.tar.gz"
+    md5sum: 58ed543af9eb3767a7c576a603c5eb94
+  linux_5.10.28-1.debian.tar.xz:
+    topdir: null
+    url:
+      "http://snapshot.debian.org/archive/debian/20210410T143728Z/pool/main/\
+       l/linux/linux_5.10.28-1.debian.tar.xz"
+    md5sum: de03a25a5c7e12ec1e559b6b0ce8889f
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true
