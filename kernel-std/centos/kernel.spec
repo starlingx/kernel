@@ -835,6 +835,7 @@ Patch24: 0025-driver-core-auxiliary-bus-Fix-calling-stage-for-auxi.patch
 Patch25: 0026-driver-core-auxiliary-bus-Remove-unneeded-module-bit.patch
 Patch26: 0027-driver-core-auxiliary-bus-Fix-memory-leak-when-drive.patch
 Patch27: 0028-driver-core-auxiliary-bus-Enable-by-default.patch
+Patch28: 0029-Enable-CONFIG_PAGE_POOL-by-default.patch
 
 # END OF PATCH DEFINITIONS
 %endif
