@@ -1,3 +1,0 @@
-Add-build-dependency.patch
-upversion-with-release-num.patch
-fix-build-failures-due-to-unwanted-sgid-bit.patch

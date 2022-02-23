@@ -1,35 +1,37 @@
-From a2cd8e1c28d9231611e738487ae9e1904942b094 Mon Sep 17 00:00:00 2001
-From: "M. Vefa Bicakci" <vefa.bicakci@windriver.com>
-Date: Fri, 14 Jan 2022 17:05:36 -0500
+From 839816cfbe2151508e567b1a2244c07a3b592377 Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Sun, 20 Feb 2022 23:32:45 -0800
 Subject: [PATCH] mlx5: pci_irq: Use irq_update_affinity_hint
 
 (Please see the patch file for a description.)
 
 Signed-off-by: M. Vefa Bicakci <vefa.bicakci@windriver.com>
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
 ---
- SPECS/mlnx-ofa_kernel.spec | 2 ++
- 1 file changed, 2 insertions(+)
+ mlnx-ofa_kernel.spec | 3 +++
+ 1 file changed, 3 insertions(+)
 
 diff --git a/SPECS/mlnx-ofa_kernel.spec b/SPECS/mlnx-ofa_kernel.spec
-index 0dde85950881..446edacf92f5 100644
+index 3e0d564..38ae4a5 100644
 --- a/SPECS/mlnx-ofa_kernel.spec
 +++ b/SPECS/mlnx-ofa_kernel.spec
-@@ -110,6 +110,7 @@ Group: System Environment/Base
+@@ -90,6 +90,7 @@ Url: http://www.mellanox.com/
+ Group: System Environment/Base
  Source: %{_basename}-%{_version}.tgz
  Source100: modules-load.conf
- Patch01: 0001-implicit-declaration-of-function-__is_constexpr.patch
-+Patch02: 0002-mlx5-pci_irq-Use-irq_update_affinity_hint.patch
++Patch01: 0001-mlx5-pci_irq-Use-irq_update_affinity_hint.patch
  BuildRoot: %{?build_root:%{build_root}}%{!?build_root:/var/tmp/OFED}
  Vendor: Mellanox Technologies
  Obsoletes: kernel-ib
-@@ -301,6 +302,7 @@ sed -s -i -e '1s|python\>|python3|' `grep -rl '^#!.*python' source/ofed_scripts`
+@@ -269,6 +270,8 @@ mkdir source
+ mv "$@" source/
  mkdir obj
  
- %patch01 -p1
-+%patch02 -p1
- 
++%patch01 -p1
++
  %build
  %if 0%{?rhel} == 7
+ source scl_source enable devtoolset-8 || :
 -- 
-2.29.2
+2.31.1
 

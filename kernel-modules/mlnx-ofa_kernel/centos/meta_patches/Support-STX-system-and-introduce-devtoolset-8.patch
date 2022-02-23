@@ -1,35 +1,39 @@
-From 35822528861b4eaca115a1484284d925db6bb28e Mon Sep 17 00:00:00 2001
+From 24a7530968184bd133432e1f8dfccebef772bc7e Mon Sep 17 00:00:00 2001
 From: Jiping Ma <jiping.ma2@windriver.com>
-Date: Tue, 20 Apr 2021 21:13:43 -0400
-Subject: [PATCH] Support TiS system
+Date: Fri, 28 Jan 2022 23:28:18 -0800
+Subject: [PATCH] Support STX system and introduce devtoolset-8
 
 Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
-Signed-off-by: M. Vefa Bicakci <vefa.bicakci@windriver.com>
 ---
- SPECS/mlnx-ofa_kernel.spec | 40 +++++++++++++++++++++++---------------
- 1 file changed, 24 insertions(+), 16 deletions(-)
+ mlnx-ofa_kernel.spec | 46 ++++++++++++++++++++++++++++++++------------
+ 1 file changed, 34 insertions(+), 12 deletions(-)
 
 diff --git a/SPECS/mlnx-ofa_kernel.spec b/SPECS/mlnx-ofa_kernel.spec
-index 254dd4ca974e..e187ff550a56 100644
+index 6a6cde0..3e0d564 100644
 --- a/SPECS/mlnx-ofa_kernel.spec
 +++ b/SPECS/mlnx-ofa_kernel.spec
-@@ -27,8 +27,14 @@
+@@ -25,10 +25,19 @@
+ # and/or other materials provided with the distribution.
  #
- 
- # KMP is disabled by default
--%{!?KMP: %global KMP 0}
+ #
 +%if "%{_tis_build_type}" == "rt"
 +%define bt_ext -rt
 +%else
 +%undefine bt_ext
 +%endif
  
-+%{!?KMP: %global KMP 0}
+ # KMP is disabled by default
+ %{!?KMP: %global KMP 0}
+-
 +BuildRequires: kernel%{?bt_ext}-devel, openssl
++BuildRequires:  devtoolset-8-build
++BuildRequires:  devtoolset-8-binutils
++BuildRequires:  devtoolset-8-gcc
++BuildRequires:  devtoolset-8-make
  %global WITH_SYSTEMD %(if ( test -d "%{_unitdir}" > /dev/null); then echo -n '1'; else echo -n '0'; fi)
  
  %{!?configure_options: %global configure_options --with-core-mod --with-user_mad-mod --with-user_access-mod --with-addr_trans-mod --with-mlx5-mod --with-mlxfw-mod --with-ipoib-mod}
-@@ -56,12 +62,11 @@
+@@ -43,11 +52,11 @@
  
  %global IS_RHEL_VENDOR "%{_vendor}" == "redhat" || ("%{_vendor}" == "bclinux") || ("%{_vendor}" == "openEuler")
  
@@ -39,27 +43,26 @@ index 254dd4ca974e..e187ff550a56 100644
  %global krelver %(echo -n %{KVERSION} | sed -e 's/-/_/g')
  # take path to kernel sources if provided, otherwise look in default location (for non KMP rpms).
 -%{!?K_SRC: %global K_SRC /lib/modules/%{KVERSION}/build}
--
 +%{!?K_SRC: %global K_SRC /usr/src/kernels/%{KVERSION}}
+ 
  # Select packages to build
  
- # Kernel module packages to be included into kernel-ib
-@@ -75,7 +80,8 @@
+@@ -62,7 +71,8 @@
  
  %{!?KERNEL_SOURCES: %global KERNEL_SOURCES /lib/modules/%{KVERSION}/source}
  
 -%{!?_name: %global _name mlnx-ofa_kernel}
 +%define _basename mlnx-ofa_kernel
 +%define _name %{_basename}%{?bt_ext}
- %{!?_version: %global _version 5.3}
- %{!?_release: %global _release OFED.5.3.1.0.0.1}
+ %{!?_version: %global _version 5.5}
+ %{!?_release: %global _release OFED.5.5.1.0.3.1}
  %global _kmp_rel %{_release}%{?_kmp_build_num}%{?_dist}
-@@ -93,11 +99,12 @@
+@@ -74,11 +84,12 @@
  Summary: Infiniband HCA Driver
  Name: %{_name}
  Version: %{_version}
 -Release: %{_release}%{?_dist}
-+Release: %{_release}%{?_tis_dist}.%{tis_patch_ver}
++Release: %{_release}%{?_dist}%{?_tis_dist}.%{tis_patch_ver}
  License: GPLv2
  Url: http://www.mellanox.com/
  Group: System Environment/Base
@@ -69,15 +72,7 @@ index 254dd4ca974e..e187ff550a56 100644
  BuildRoot: %{?build_root:%{build_root}}%{!?build_root:/var/tmp/OFED}
  Vendor: Mellanox Technologies
  Obsoletes: kernel-ib
-@@ -154,7 +161,6 @@ EOF)
- %global kernel_release() %{KVERSION}
- %global flavors_to_build default
- %package -n %{non_kmp_pname}
--Requires: %{utils_pname}
- Requires: coreutils
- Requires: pciutils
- Requires: grep
-@@ -182,7 +188,7 @@ Obsoletes: mlnx-en-debuginfo
+@@ -148,7 +159,7 @@ Obsoletes: mlnx-en-debuginfo
  Obsoletes: mlnx-en-sources
  Obsoletes: mlnx-rdma-rxe
  Version: %{_version}
@@ -86,39 +81,16 @@ index 254dd4ca974e..e187ff550a56 100644
  Summary: Infiniband Driver and ULPs kernel modules
  Group: System Environment/Libraries
  %description -n %{non_kmp_pname}
-@@ -194,7 +200,7 @@ The driver sources are located at: http://www.mellanox.com/downloads/ofed/mlnx-o
- %package -n %{devel_pname}
- Version: %{_version}
- # build KMP rpms?
--Release: %{_release}%{?_dist}
-+Release: %{_release}%{?_dist}%{?_tis_dist}.%{tis_patch_ver}
+@@ -163,7 +174,7 @@ Version: %{_version}
+ %if "%{KMP}" == "1"
+ Release: %{_release}%{?_dist}
+ %else
+-Release: %{_release}.kver.%{krelver}
++Release: %{_release}%{?_tis_dist}.%{tis_patch_ver}
+ %endif
  Obsoletes: kernel-ib-devel
- Obsoletes: compat-rdma-devel
  Obsoletes: kernel-ib
-@@ -232,13 +238,12 @@ The driver sources are located at: http://www.mellanox.com/downloads/ofed/mlnx-o
- 	else \
- 		echo -n '0'; fi)
- 
--%if "%{WITH_MOD_SIGN}" == "1"
- # call module sign script
- %global __modsign_install_post \
-     %{_builddir}/$NAME-$VERSION/source/ofed_scripts/tools/sign-modules %{buildroot}/lib/modules/ %{kernel_source default} || exit 1 \
- %{nil}
- 
--%global __debug_package 1
-+%define debug_package %{nil}
- %global buildsubdir %{_name}-%{version}
- # Disgusting hack alert! We need to ensure we sign modules *after* all
- # invocations of strip occur, which is in __debug_install_post if
-@@ -251,7 +256,6 @@ The driver sources are located at: http://www.mellanox.com/downloads/ofed/mlnx-o
-   %{__modsign_install_post} \
- %{nil}
- 
--%endif # end of setup module sign scripts
- #
- %if "%{_vendor}" == "suse"
- %debug_package
-@@ -282,7 +286,7 @@ The driver sources are located at: http://www.mellanox.com/downloads/ofed/mlnx-o
+@@ -252,13 +263,16 @@ drivers against it.
  %{!?install_mod_dir: %global install_mod_dir updates}
  
  %prep
@@ -127,15 +99,22 @@ index 254dd4ca974e..e187ff550a56 100644
  set -- *
  mkdir source
  mv "$@" source/
-@@ -306,7 +310,6 @@ for flavor in %flavors_to_build; do
- 	find compat -type f -exec touch -t 200012201010 '{}' \; || true
- 	./configure --build-dummy-mods --prefix=%{_prefix} --kernel-version $KVERSION --kernel-sources $KSRC --modules-dir $LIB_MOD_DIR $CONF_OPTIONS %{?_smp_mflags}
- 	make %{?_smp_mflags} kernel
--	make build_py_scripts
- 	cd -
+ mkdir obj
+ 
+ %build
++%if 0%{?rhel} == 7
++source scl_source enable devtoolset-8 || :
++%endif
+ export EXTRA_CFLAGS='-DVERSION=\"%version\"'
+ export INSTALL_MOD_DIR=%{install_mod_dir}
+ export CONF_OPTIONS="%{configure_options}"
+@@ -277,12 +291,17 @@ for flavor in %flavors_to_build; do
  done
  
-@@ -315,9 +318,11 @@ touch ofed-files
+ %install
++%if 0%{?rhel} == 7
++source scl_source enable devtoolset-8 || :
++%endif
  export RECORD_PY_FILES=1
  export INSTALL_MOD_PATH=%{buildroot}
  export INSTALL_MOD_DIR=%{install_mod_dir}
@@ -145,10 +124,10 @@ index 254dd4ca974e..e187ff550a56 100644
  export PREFIX=%{_prefix}
 +export MODULE_SIGN_PRIV_KEY=/usr/src/kernels/%{KVERSION}/signing_key.pem
 +export MODULE_SIGN_PUB_KEY=/usr/src/kernels/%{KVERSION}/signing_key.x509
- %{mlnx_python_env}
  for flavor in %flavors_to_build; do 
  	export KSRC=%{kernel_source $flavor}
-@@ -367,6 +372,8 @@ echo "override ${mod_name} * weak-updates/%{_name}${mod_path}" >> %{buildroot}%{
+ 	export KVERSION=%{kernel_release $KSRC}
+@@ -327,14 +346,16 @@ echo "override ${mod_name} * weak-updates/%{_name}${mod_path}" >> %{buildroot}%{
  echo "override ${mod_name} * extra/%{_name}${mod_path}" >> %{buildroot}%{_sysconfdir}/depmod.d/zz01-%{_name}-${mod_name}.conf
  done
  %endif
@@ -157,7 +136,17 @@ index 254dd4ca974e..e187ff550a56 100644
  %endif
  
  # copy sources
-@@ -696,6 +703,7 @@ fi
+ mkdir -p %{buildroot}/%{_prefix}/src/ofa_kernel-%{version}
+ mkdir -p %{buildroot}/%{_prefix}/src/ofa_kernel/%{_arch}
+-cp -a %{_builddir}/%{name}-%{version}/source %{buildroot}/%{_prefix}/src/ofa_kernel-%{version}/source
++cp -a %{_builddir}/%{_basename}-%{version}/source %{buildroot}/%{_prefix}/src/ofa_kernel-%{version}/source
+ ln -s ofa_kernel-%{version}/source %{buildroot}/%{_prefix}/src/mlnx-ofa_kernel-%{version}
+-cp -a %{_builddir}/src/%{name}/* %{buildroot}/%{_prefix}/src/ofa_kernel/%{_arch}/%{KVERSION}
++cp -a %{_builddir}/src/%{_basename}/* %{buildroot}/%{_prefix}/src/ofa_kernel/%{_arch}/%{KVERSION}
+ # Fix path of BACKPORT_INCLUDES
+ sed -i -e "s@=-I.*backport_includes@=-I/usr/src/ofa_kernel-$VERSION/backport_includes@" %{buildroot}/%{_prefix}/src/ofa_kernel/%{_arch}/%{KVERSION}/configure.mk.kernel || true
+ rm -rf %{_builddir}/src
+@@ -681,6 +702,7 @@ update-alternatives --remove \
  %config(noreplace) %{_sysconfdir}/depmod.d/zz01-%{_name}-*.conf
  %endif
  %endif
@@ -166,5 +155,5 @@ index 254dd4ca974e..e187ff550a56 100644
  
  %files -n %{devel_pname}
 -- 
-2.29.2
+2.31.1
 
