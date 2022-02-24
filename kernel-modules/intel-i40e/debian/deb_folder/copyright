@@ -2,9 +2,9 @@ Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 
 Upstream-Name: i40e
 Upstream-Contact: Intel Corporation
-Source: https://sourceforge.net/projects/e1000/files/i40e%20stable/2.16.11/i40e-2.16.11.tar.gz/download
+Source: https://sourceforge.net/projects/e1000/files/i40e%20stable/2.17.4/i40e-2.17.4.tar.gz/download
 Files: *
-Copyright: (c) 2014 - 2021 Intel Corporation.
+Copyright: (c) 2014 - 2022 Intel Corporation.
 License: GPL-2
 
  This program is free software; you can redistribute it and/or modify it under

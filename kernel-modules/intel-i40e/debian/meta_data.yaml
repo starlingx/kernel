@@ -1,11 +1,11 @@
 ---
-debver: 2.16.11
+debver: 2.17.4
 debname: i40e
 dl_path:
-  name: i40e-2.16.11.tar.gz
+  name: i40e-2.17.4.tar.gz
   url: "https://sourceforge.net/projects/e1000/files/i40e%20stable/\
-    2.16.11/i40e-2.16.11.tar.gz/download"
-  md5sum: 60cdb7d87d448a4d4259528d09d7636a
+    2.17.4/i40e-2.17.4.tar.gz/download"
+  md5sum: 25101f2fa1fdb7264b5e7add8ff70917
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true

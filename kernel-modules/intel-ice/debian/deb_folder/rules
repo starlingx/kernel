@@ -44,6 +44,7 @@ endif
 
 override_dh_auto_install:
 	dh_install src/$(kmod_name).ko /lib/modules/$(kversion)/extra/$(kmod_name)/
+	dh_install src/auxiliary.ko /lib/modules/$(kversion)/extra/$(kmod_name)/
 	dh_install pci.updates $(_defaultdocdir)/kmod-$(kmod_name)-$(version)/
 	dh_install README $(_defaultdocdir)/kmod-$(kmod_name)-$(version)/
 	dh_install $(kmod_name).7 $(_mandir)/man7/

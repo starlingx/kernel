@@ -1,11 +1,11 @@
 ---
-debver: 4.2.7
+debver: 4.3.19
 debname: iavf
 dl_path:
-  name: iavf-4.2.7.tar.gz
+  name: iavf-4.3.19.tar.gz
   url: "https://sourceforge.net/projects/e1000/files/iavf%20stable/\
-    4.2.7/iavf-4.2.7.tar.gz/download"
-  md5sum: 95052de96ae2084922ef681e30f18e22
+    4.3.19/iavf-4.3.19.tar.gz/download"
+  md5sum: c1c47a0183a56a6f0ae05791df6cfc82
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true

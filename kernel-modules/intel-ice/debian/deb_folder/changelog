@@ -1,3 +1,9 @@
+ice (1.7.16-1) unstable; urgency=medium
+
+  * Initial release
+
+ -- Jim Somerville <jim.somerville@windriver.com>  Fri, 25 Feb 2022 16:01:39 -0500
+
 ice (1.6.7-1) unstable; urgency=medium
 
   * Initial release

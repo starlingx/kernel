@@ -2,9 +2,9 @@ Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 
 Upstream-Name: iavf
 Upstream-Contact: Intel Corporation
-Source: https://sourceforge.net/projects/e1000/files/iavf%20stable/4.2.7/iavf-4.2.7.tar.gz/download
+Source: https://sourceforge.net/projects/e1000/files/iavf%20stable/4.3.19/iavf-4.3.19.tar.gz/download
 Files: *
-Copyright: (c) 2018 - 2021 Intel Corporation.
+Copyright: (c) 2018 - 2022 Intel Corporation.
 License: GPL-2
 
  This program is free software; you can redistribute it and/or modify it under
