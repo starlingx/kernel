@@ -1,0 +1,36 @@
+From fc5a6b7d5332b3ef8b81fbfb37c179fe7d0d6f1c Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Sat, 29 Jan 2022 02:05:24 -0800
+Subject: [PATCH] Support STX system
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ mstflint.spec | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/SPECS/mstflint.spec b/SPECS/mstflint.spec
+index bc7f89b..bcf69cf 100644
+--- a/SPECS/mstflint.spec
++++ b/SPECS/mstflint.spec
+@@ -1,3 +1,9 @@
++%if "%{_tis_build_type}" == "rt"
++%define bt_ext -rt
++%else
++%undefine bt_ext
++%endif
++
+ %{!?ibmadlib: %define ibmadlib libibmad-devel}
+ %{!?name: %define name mstflint}
+ %{!?version: %define version 4.16.0}
+@@ -20,7 +26,7 @@
+ Summary: Mellanox firmware burning application
+ Name: %{name}
+ Version: 4.16.0
+-Release: 1.55103
++Release: 1.55103%{?_tis_dist}.%{tis_patch_ver}
+ License: GPL/BSD
+ Url: http://openfabrics.org
+ Group: System Environment/Base
+-- 
+2.31.1
+

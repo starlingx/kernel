@@ -8,3 +8,4 @@ kernel-modules/intel-opae-fpga
 kernel-modules/mlnx-ofa_kernel
 userspace/mellanox/rdma-core
 userspace/mellanox/mlnx-tools
+userspace/mellanox/mstflint

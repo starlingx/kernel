@@ -57,3 +57,6 @@ kmod-opae-fpga-driver-rt
 mlnx-ofa_kernel-modules
 mlnx-ofa_kernel-rt-modules
 rdma-core
+
+# mellanox firmware tool
+mstflint
