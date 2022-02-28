@@ -1,11 +1,11 @@
 ---
-debver: 1.6.7
+debver: 1.7.16
 debname: ice
 dl_path:
-  name: ice-1.6.7.tar.gz
+  name: ice-1.7.16.tar.gz
   url: "https://sourceforge.net/projects/e1000/files/ice%20stable/\
-    1.6.7/ice-1.6.7.tar.gz"
-  md5sum: 37d46b3cc4c9bef7bd80f2fc36879905
+    1.7.16/ice-1.7.16.tar.gz"
+  md5sum: ee6880350a799f0337914c33f1b5c8c0
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true
