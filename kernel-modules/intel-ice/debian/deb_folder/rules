@@ -49,11 +49,10 @@ override_dh_auto_install:
 	dh_install README $(_defaultdocdir)/kmod-$(kmod_name)-$(version)/
 	dh_install $(kmod_name).7 $(_mandir)/man7/
 	dh_install debian/extra/ice.conf $(_sysconfdir)/modules-load.d/
-	dh_install ddp/README /lib/firmware/updates/intel/ice/ddp/
-	dh_install ddp/LICENSE /lib/firmware/updates/intel/ice/ddp/
-	dh_install ddp/ice-*.pkg /lib/firmware/updates/intel/ice/ddp/
+	dh_install ice_comms/*.txt /lib/firmware/updates/intel/ice/ddp/
+	dh_install ice_comms/ice_comms*.pkg /lib/firmware/updates/intel/ice/ddp/
 	mkdir -p debian/$(kmod_name)/lib/firmware/intel/ice/ddp/
-	ln -frs debian/$(kmod_name)/lib/firmware/updates/intel/ice/ddp/ice-*.pkg debian/$(kmod_name)/lib/firmware/intel/ice/ddp/ice.pkg
+	ln -frs debian/$(kmod_name)/lib/firmware/updates/intel/ice/ddp/ice_comms*.pkg debian/$(kmod_name)/lib/firmware/intel/ice/ddp/ice.pkg
 
 override_dh_strip:
 	dh_strip
@@ -65,4 +64,6 @@ ifeq ($(WITH_MOD_SIGN),1)
 endif
 
 override_dh_auto_build:
+	unzip *.zip
+	unzip -d ice_comms ice_comms*.zip
 	dh_auto_build -D ./src
