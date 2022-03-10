@@ -218,6 +218,8 @@ Summary: The Linux kernel
 %define with_kernel_abi_whitelists 0
 %define with_kabidw_base 0
 %define with_kabidwchk 0
+%define with_perf 0
+%define with_bpftool 0
 %endif
 
 %if %{with_verbose}
