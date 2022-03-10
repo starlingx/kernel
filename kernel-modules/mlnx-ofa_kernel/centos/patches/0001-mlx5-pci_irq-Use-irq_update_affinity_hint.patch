@@ -1,6 +1,6 @@
-From e5d69db1083481aef4ea64b504c294929c7422d9 Mon Sep 17 00:00:00 2001
-From: "M. Vefa Bicakci" <vefa.bicakci@windriver.com>
-Date: Fri, 14 Jan 2022 16:26:29 -0500
+From 88b2e22f1006dd802d44c1cdd901220e36ffd3ee Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Wed, 2 Mar 2022 03:44:53 +0000
 Subject: [PATCH] mlx5: pci_irq: Use irq_update_affinity_hint
 
 This commit applies a patch that modifies the mlx5 driver so that it
@@ -15,20 +15,21 @@ by the mlx5 device driver.
 (Please see the description of the applied patch for more information.)
 
 Signed-off-by: M. Vefa Bicakci <vefa.bicakci@windriver.com>
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
 ---
- ...pci_irq-Use-irq_update_affinity_hint.patch | 60 +++++++++++++++++++
- 1 file changed, 60 insertions(+)
+ ...pci_irq-Use-irq_update_affinity_hint.patch | 59 +++++++++++++++++++
+ 1 file changed, 59 insertions(+)
  create mode 100644 source/backports/1000-mlx5-pci_irq-Use-irq_update_affinity_hint.patch
 
 diff --git a/source/backports/1000-mlx5-pci_irq-Use-irq_update_affinity_hint.patch b/source/backports/1000-mlx5-pci_irq-Use-irq_update_affinity_hint.patch
 new file mode 100644
-index 000000000000..f1122af264eb
+index 0000000..6b3d7bf
 --- /dev/null
 +++ b/source/backports/1000-mlx5-pci_irq-Use-irq_update_affinity_hint.patch
-@@ -0,0 +1,60 @@
-+From 3884feaf05e9b1003ab83ab76fbfdf9a188c4a19 Mon Sep 17 00:00:00 2001
-+From: "M. Vefa Bicakci" <vefa.bicakci@windriver.com>
-+Date: Fri, 14 Jan 2022 16:26:29 -0500
+@@ -0,0 +1,59 @@
++From 73bb521a587baf042d5e79aa2ff4b5e973c64a7b Mon Sep 17 00:00:00 2001
++From: Jiping Ma <jiping.ma2@windriver.com>
++Date: Tue, 1 Mar 2022 18:42:47 -0800
 +Subject: [PATCH] mlx5: pci_irq: Use irq_update_affinity_hint
 +
 +The StarlingX kernel was patched to deprecate irq_set_affinity_hint
@@ -55,36 +56,35 @@ index 000000000000..f1122af264eb
 +  https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=7451e9ea8e2055af39afe7ff39a5f68d8ec6b98d
 +
 +Signed-off-by: M. Vefa Bicakci <vefa.bicakci@windriver.com>
++Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
 +---
-+ drivers/net/ethernet/mellanox/mlx5/core/pci_irq.c | 6 +++---
-+ 1 file changed, 3 insertions(+), 3 deletions(-)
++ drivers/net/ethernet/mellanox/mlx5/core/pci_irq.c | 4 ++--
++ 1 file changed, 2 insertions(+), 2 deletions(-)
 +
 +diff --git a/drivers/net/ethernet/mellanox/mlx5/core/pci_irq.c b/drivers/net/ethernet/mellanox/mlx5/core/pci_irq.c
-+index 09d0ce8061f3..db7472d10fb6 100644
++index 06ea6fc..dd97f89 100644
 +--- a/drivers/net/ethernet/mellanox/mlx5/core/pci_irq.c
 ++++ b/drivers/net/ethernet/mellanox/mlx5/core/pci_irq.c
-+@@ -237,8 +237,8 @@ static int set_comp_irq_affinity_hint(struct mlx5_core_dev *mdev, int i)
-+ 	cpumask_set_cpu(cpumask_local_spread(i, mdev->priv.numa_node),
-+ 			irq->mask);
-+ 	if (IS_ENABLED(CONFIG_SMP) &&
-+-	    irq_set_affinity_hint(irqn, irq->mask))
-+-		mlx5_core_warn(mdev, "irq_set_affinity_hint failed, irq 0x%.4x",
-++	    irq_update_affinity_hint(irqn, irq->mask))
-++		mlx5_core_warn(mdev, "irq_update_affinity_hint failed, irq 0x%.4x",
-+ 			       irqn);
-+ 
-+ 	return 0;
-+@@ -261,7 +261,7 @@ static void clear_comp_irq_affinity_hint(struct mlx5_core_dev *mdev, int i)
-+ 		msix = priv->msix_arr;
-+ 		irqn                 = msix[vecidx].vector;
-+ #endif
-+-	irq_set_affinity_hint(irqn, NULL);
-++	irq_update_affinity_hint(irqn, NULL);
++@@ -175,7 +175,7 @@ static void irq_release(struct kref *kref)
++ 	 * before calling it. This is why there is asymmetry with set_rmap
++ 	 * which should be called after alloc_irq but before request_irq.
++ 	 */
++-	irq_set_affinity_hint(irq->irqn, NULL);
+++	irq_update_affinity_hint(irq->irqn, NULL);
 + 	free_cpumask_var(irq->mask);
-+ }
-+ 
++ 	free_irq(irq->irqn, &irq->nh);
++ 	kfree(irq);
++@@ -276,7 +276,7 @@ static struct mlx5_irq *irq_request(struct mlx5_irq_pool *pool, int i,
++ 		goto err_xa;
++ 	}
++ 	affinity_copy(irq, affinity, mlx5_irq_table_get(dev));
++-	irq_set_affinity_hint(irq->irqn, irq->mask);
+++	irq_update_affinity_hint(irq->irqn, irq->mask);
++ 	cpu_get(mlx5_irq_table_get(dev), irq->mask);
++ 	return irq;
++ err_xa:
 +-- 
-+2.29.2
++2.31.1
 +
 -- 
 2.29.2

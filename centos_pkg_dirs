@@ -6,5 +6,5 @@ kernel-modules/intel-igb_uio
 kernel-modules/qat17
 kernel-modules/intel-opae-fpga
 kernel-modules/mlnx-ofa_kernel
-userspace/mellanox/libibverbs
 userspace/mellanox/rdma-core
+userspace/mellanox/mlnx-tools
