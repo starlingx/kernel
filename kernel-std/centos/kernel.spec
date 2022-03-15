@@ -93,7 +93,7 @@ Summary: The Linux kernel
 %if 0%{?released_kernel}
 
 # Do we have a -stable update to apply?
-%define stable_update 74
+%define stable_update 99
 # Set rpm version accordingly
 %if 0%{?stable_update}
 %define stablerev %{stable_update}
@@ -821,8 +821,6 @@ Patch8: 0009-tpm-ignore-burstcount-to-improve-tpm_tis-send-perfor.patch
 Patch9: 0010-bpf-cgroups-Fix-cgroup-v2-fallback-on-v1-v2-mixed-mo.patch
 Patch10: 0011-scsi-smartpqi-Enable-sas_address-sysfs-for-SATA-dev.patch
 Patch11: 0012-workqueue-Affine-rescuer-threads-and-unbound-wqs.patch
-Patch12: 0013-rcu-Mark-accesses-to-rcu_state.n_force_qs.patch
-Patch13: 0014-rcu-Tighten-rcu_advance_cbs_nowake-checks.patch
 Patch14: 0015-Revert-scsi-sd-Inline-sd_probe_part2.patch
 Patch15: 0016-Revert-commit-f049cf1a7b.patch
 Patch16: 0017-genirq-Export-affinity-setter-for-modules.patch
