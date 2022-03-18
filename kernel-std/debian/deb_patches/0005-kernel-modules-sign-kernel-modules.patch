@@ -1,0 +1,50 @@
+From d222b4474a1d8944b0b4d8978d8e9fe6b1ee80db Mon Sep 17 00:00:00 2001
+From: Li Zhou <li.zhou@windriver.com>
+Date: Thu, 17 Feb 2022 10:08:13 +0800
+Subject: [PATCH] kernel-modules: sign kernel-modules
+
+Sign kernel-modules by the keys created by kernel.
+Put the keys into linux-kbuild-5.10 package and they will be used
+to sign the out of tree kernel modules.
+
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+---
+ debian/config/amd64/none/config | 11 +++++++++++
+ debian/rules.real               |  2 ++
+ 2 files changed, 13 insertions(+)
+
+diff --git a/debian/config/amd64/none/config b/debian/config/amd64/none/config
+index a12e291..771a68b 100644
+--- a/debian/config/amd64/none/config
++++ b/debian/config/amd64/none/config
+@@ -6497,3 +6497,14 @@ CONFIG_RUNTIME_TESTING_MENU=y
+ # CONFIG_HYPERV_TESTING is not set
+ # end of Kernel Testing and Coverage
+ # end of Kernel hacking
++
++##
++## file: init/Kconfig
++##
++CONFIG_MODULE_SIG_ALL=y
++# CONFIG_MODULE_SIG_FORCE is not set
++
++##
++## file: certs/Kconfig
++##
++CONFIG_MODULE_SIG_KEY="certs/signing_key.pem"
+diff --git a/debian/rules.real b/debian/rules.real
+index 3304579..552fcf0 100644
+--- a/debian/rules.real
++++ b/debian/rules.real
+@@ -664,6 +664,8 @@ install-kbuild: build-kbuild
+ 	$(call make-tools,scripts) install DESTDIR=$(DIR) prefix=$(PREFIX_DIR)
+ 	$(call make-tools,tools/objtool) install DESTDIR=$(DIR) prefix=$(PREFIX_DIR)
+ 	dh_link $(PREFIX_DIR) /usr/src/$(PACKAGE_NAME)
++	dh_install $(BUILD_DIR)/*/certs/signing_key.pem /usr/src/kernels/$(ABINAME)-$(ARCH)/
++	dh_install $(BUILD_DIR)/*/certs/signing_key.x509 /usr/src/kernels/$(ABINAME)-$(ARCH)/
+ 	dh_installchangelogs
+ ifeq (,$(filter nodoc,$(DEB_BUILD_PROFILES)))
+ 	dh_installdocs
+-- 
+2.17.1
+

@@ -1,4 +1,4 @@
-From 01c5670a853dcadd67722c737455c623a0471813 Mon Sep 17 00:00:00 2001
+From 03f743455b29b3be08d5158ab7358dff524644aa Mon Sep 17 00:00:00 2001
 From: Li Zhou <li.zhou@windriver.com>
 Date: Sun, 26 Sep 2021 06:22:38 +0000
 Subject: [PATCH] mlnx-ofa_kernel: adapt the debian folder for starlingX
@@ -14,8 +14,8 @@ Signed-off-by: Li Zhou <li.zhou@windriver.com>
 ---
  debian/control         | 21 ++++++---------------
  debian/extra/mlnx.conf | 19 +++++++++++++++++++
- debian/rules           | 20 +++++++++++++++++---
- 3 files changed, 42 insertions(+), 18 deletions(-)
+ debian/rules           | 22 ++++++++++++++++++----
+ 3 files changed, 43 insertions(+), 19 deletions(-)
  create mode 100644 debian/extra/mlnx.conf
 
 diff --git a/debian/control b/debian/control
@@ -81,7 +81,7 @@ index 0000000..d6ced47
 +svcrdma
 +xprtrdma
 diff --git a/debian/rules b/debian/rules
-index cd95a6b..82fddfb 100755
+index cd95a6b..3c0727c 100755
 --- a/debian/rules
 +++ b/debian/rules
 @@ -15,8 +15,20 @@
@@ -89,8 +89,9 @@ index cd95a6b..82fddfb 100755
  #export DH_VERBOSE=1
  
 -WITH_DKMS ?= 1
+-WITH_MOD_SIGN ?= 0
 +WITH_DKMS ?= 0
- WITH_MOD_SIGN ?= 0
++WITH_MOD_SIGN ?= 1
 +
 +#Here kernelver should be the one this package depends on,
 +#while "uname -r" got the building machine's os release number.
@@ -99,7 +100,7 @@ index cd95a6b..82fddfb 100755
 +
 +ifeq ($(WITH_MOD_SIGN),1)
 +_keydir ?= /usr/src/kernels/$(kernelver)/
-+export MODULE_SIGN_PRIV_KEY=$(_keydir)/signing_key.priv
++export MODULE_SIGN_PRIV_KEY=$(_keydir)/signing_key.pem
 +export MODULE_SIGN_PUB_KEY=$(_keydir)/signing_key.x509
 +endif
 +
