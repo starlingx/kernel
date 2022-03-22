@@ -1,0 +1,49 @@
+From 4d13d151ad85f7b0e47a518f5f8867511b8208f3 Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Tue, 22 Mar 2022 00:20:08 -0700
+Subject: [PATCH] Ensure that modules are signed
+
+Always sign the modules for StarlingX by enabling WITH_MOD_SIGN.
+
+Also, change the definition of buildsubdir from "%{_name}-%{version}"
+to "%{_basename}-%{version}" to fix the rt module build issue after
+enabling WITH_MOD_SIGN, because there is no mlnx-ofa_kernel-rt-5.5
+directory. It should be mlnx-ofa_kernel-5.5.
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ mlnx-ofa_kernel.spec | 10 +++-------
+ 1 file changed, 3 insertions(+), 7 deletions(-)
+
+diff --git a/SPECS/mlnx-ofa_kernel.spec b/SPECS/mlnx-ofa_kernel.spec
+index 38ae4a5..2a1b956 100644
+--- a/SPECS/mlnx-ofa_kernel.spec
++++ b/SPECS/mlnx-ofa_kernel.spec
+@@ -211,13 +211,9 @@ sourecs of driver. Use the -devel package if you want to build other
+ drivers against it.
+ 
+ #
+-# setup module sign scripts if paths to the keys are given
++# Always Sign the modules(s).
+ #
+-%global WITH_MOD_SIGN %(if ( test -f "$MODULE_SIGN_PRIV_KEY" && test -f "$MODULE_SIGN_PUB_KEY" ); \
+-	then \
+-		echo -n '1'; \
+-	else \
+-		echo -n '0'; fi)
++%global WITH_MOD_SIGN 1
+ 
+ %if "%{WITH_MOD_SIGN}" == "1"
+ # call module sign script
+@@ -226,7 +222,7 @@ drivers against it.
+ %{nil}
+ 
+ %global __debug_package 1
+-%global buildsubdir %{_name}-%{version}
++%global buildsubdir %{_basename}-%{version}
+ # Disgusting hack alert! We need to ensure we sign modules *after* all
+ # invocations of strip occur, which is in __debug_install_post if
+ # find-debuginfo.sh runs, and __os_install_post if not.
+-- 
+2.31.1
+
