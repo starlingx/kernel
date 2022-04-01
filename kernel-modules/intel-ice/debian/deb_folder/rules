@@ -26,11 +26,12 @@
 
 WITH_MOD_SIGN ?= 0
 
-kheaders_name=$(shell ls /usr/src | grep linux-headers | grep amd64)
+kheaders_name=$(shell ls /usr/src | grep linux@KERNEL_TYPE@-headers | grep amd64)
 export KSRC=/usr/src/$(kheaders_name)
-kversion=$(shell echo $(kheaders_name) | sed 's/linux-headers-//g')
+kversion=$(shell echo $(kheaders_name) | sed 's/linux@KERNEL_TYPE@-headers-//g')
 kmod_name=ice
 version=$(shell dpkg-parsechangelog | sed -n 's/^Version: *\([^-]\+\)-.\+/\1/p')
+pkg_name=ice@KERNEL_TYPE@
 
 _sysconfdir=/etc
 _defaultdocdir=/usr/share/doc
@@ -51,16 +52,16 @@ override_dh_auto_install:
 	dh_install debian/extra/ice.conf $(_sysconfdir)/modules-load.d/
 	dh_install ice_comms/*.txt /lib/firmware/updates/intel/ice/ddp/
 	dh_install ice_comms/ice_comms*.pkg /lib/firmware/updates/intel/ice/ddp/
-	mkdir -p debian/$(kmod_name)/lib/firmware/intel/ice/ddp/
-	ln -frs debian/$(kmod_name)/lib/firmware/updates/intel/ice/ddp/ice_comms*.pkg debian/$(kmod_name)/lib/firmware/intel/ice/ddp/ice.pkg
+	mkdir -p debian/$(pkg_name)/lib/firmware/intel/ice/ddp/
+	ln -frs debian/$(pkg_name)/lib/firmware/updates/intel/ice/ddp/ice_comms*.pkg debian/$(pkg_name)/lib/firmware/intel/ice/ddp/ice.pkg
 
 override_dh_strip:
 	dh_strip
 	find debian -name '*.ko' | xargs strip -g
 ifeq ($(WITH_MOD_SIGN),1)
 	@echo "Sign the modules!"
-	/usr/lib/linux-kbuild-*/scripts/sign-file sha256 $(privkey) $(pubkey) \
-		./debian/$(kmod_name)/lib/modules/$(kversion)/extra/$(kmod_name)/*.ko
+	/usr/lib/linux@KERNEL_TYPE@-kbuild-*/scripts/sign-file sha256 $(privkey) $(pubkey) \
+		./debian/$(pkg_name)/lib/modules/$(kversion)/extra/$(kmod_name)/*.ko
 endif
 
 override_dh_auto_build:

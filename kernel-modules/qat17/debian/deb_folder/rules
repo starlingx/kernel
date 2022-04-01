@@ -26,10 +26,10 @@
 
 WITH_MOD_SIGN ?= 0
 
-kheaders_name=$(shell ls /usr/src | grep linux-headers | grep amd64)
+kheaders_name=$(shell ls /usr/src | grep linux@KERNEL_TYPE@-headers | grep amd64)
 export KERNEL_SOURCE_ROOT=/usr/src/$(kheaders_name)
-kernel_version=$(shell echo $(kheaders_name) | sed 's/linux-headers-//g')
-pkg_name=qat1.7.l
+kernel_version=$(shell echo $(kheaders_name) | sed 's/linux@KERNEL_TYPE@-headers-//g')
+pkg_name=qat1.7.l@KERNEL_TYPE@
 
 qat_src_dir=./
 _sysconfdir=/etc/

@@ -26,10 +26,14 @@
 
 WITH_MOD_SIGN ?= 0
 
-kheaders_name=$(shell ls /usr/src | grep linux-headers | grep amd64)
+kheaders_name=$(shell ls /usr/src | grep linux@KERNEL_TYPE@-headers | grep amd64)
 export KERNELDIR=/usr/src/$(kheaders_name)
-kversion=$(shell echo $(kheaders_name) | sed 's/linux-headers-//g')
+kversion=$(shell echo $(kheaders_name) | sed 's/linux@KERNEL_TYPE@-headers-//g')
 kmod_name=opae-intel-fpga-driver
+
+ifeq ($(WITH_MOD_SIGN),1)
+pkg_name=kmod-opae-fpga-driver@KERNEL_TYPE@
+endif
 
 _defaultdocdir=/usr/share/doc
 
@@ -48,5 +52,5 @@ override_dh_strip:
 	find debian -name '*.ko' | xargs strip -g
 ifeq ($(WITH_MOD_SIGN),1)
 	@echo "Sign the modules!"
-	./debian/sign_modules ./debian/kmod-opae-fpga-driver/lib/modules/$(kversion)/extra/$(kmod_name)/ $(privkey) $(pubkey)
+	./debian/sign_modules ./debian/$(pkg_name)/lib/modules/$(kversion)/extra/$(kmod_name)/ $(privkey) $(pubkey)
 endif

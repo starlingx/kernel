@@ -1,0 +1,65 @@
+From 936b50bcc4d970a118712cdf8059f06256dd9309 Mon Sep 17 00:00:00 2001
+From: Li Zhou <li.zhou@windriver.com>
+Date: Fri, 10 Dec 2021 16:56:54 +0800
+Subject: [PATCH] mlnx-ofa_kernel: add support for kernel-rt
+
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+---
+ debian/control | 6 +++---
+ debian/rules   | 8 ++++----
+ 2 files changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/debian/control b/debian/control
+index 176d36f..9849247 100644
+--- a/debian/control
++++ b/debian/control
+@@ -2,16 +2,16 @@ Source: mlnx-ofed-kernel
+ Section: net
+ Priority: optional
+ Maintainer: Vladimir Sokolovsky <vlad@mellanox.com>
+-Build-Depends: debhelper (>= 8.0.0), autotools-dev, bzip2, dkms, python3-distutils | python, linux-headers-5.10.0-6-amd64, linux-kbuild-5.10
++Build-Depends: debhelper (>= 8.0.0), autotools-dev, bzip2, dkms, python3-distutils | python, linux@KERNEL_TYPE@-headers-5.10.0-6-amd64, linux@KERNEL_TYPE@-kbuild-5.10
+ Standards-Version: 3.9.2
+ Homepage: http://www.mellanox.com/page/products_dyn?product_family=26&mtag=linux_sw_drivers
+ 
+-Package: mlnx-ofed-kernel-utils
++Package: mlnx-ofed-kernel-utils@KERNEL_TYPE@
+ Architecture: any
+ Depends: ${misc:Depends}, coreutils, pciutils, grep, procps, module-init-tools | kmod, lsof
+ Description: Userspace tools to restart and tune mlnx-ofed kernel modules
+ 
+-Package: mlnx-ofed-kernel-modules
++Package: mlnx-ofed-kernel-modules@KERNEL_TYPE@
+ Architecture: any
+ Depends: ${shlibs:Depends}, ${misc:Depends}
+ Description: ofed kernel modules
+diff --git a/debian/rules b/debian/rules
+index 82fddfb..2af2132 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -20,8 +20,8 @@ WITH_MOD_SIGN ?= 0
+ 
+ #Here kernelver should be the one this package depends on,
+ #while "uname -r" got the building machine's os release number.
+-kheaders_name = $(shell ls /usr/src | grep linux-headers | grep amd64)
+-kernelver = $(shell echo $(kheaders_name) | sed 's/linux-headers-//g')
++kheaders_name = $(shell ls /usr/src | grep linux@KERNEL_TYPE@-headers | grep amd64)
++kernelver = $(shell echo $(kheaders_name) | sed 's/linux@KERNEL_TYPE@-headers-//g')
+ 
+ ifeq ($(WITH_MOD_SIGN),1)
+ _keydir ?= /usr/src/kernels/$(kernelver)/
+@@ -39,9 +39,9 @@ psource:=$(pname)-source
+ ifeq ($(WITH_DKMS),1)
+ pdkms:=$(pname)-dkms
+ else
+-pdkms:=$(pname)-modules
++pdkms:=$(pname)-modules@KERNEL_TYPE@
+ endif
+-putils:=$(pname)-utils
++putils:=$(pname)-utils@KERNEL_TYPE@
+ 
+ pversion := $(shell dpkg-parsechangelog | sed -n 's/^Version: *\([^-]\+\)-.\+/\1/p')
+ prel := $(shell dpkg-parsechangelog | sed -n 's/^Version: *\([^-]\+\)-\(.\+\)/\2/p')
+-- 
+2.17.1
+
