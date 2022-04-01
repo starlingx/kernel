@@ -24,7 +24,7 @@
 %:
 	dh $@
 
-WITH_MOD_SIGN ?= 0
+WITH_MOD_SIGN ?= 1
 
 kheaders_name=$(shell ls /usr/src | grep linux@KERNEL_TYPE@-headers | grep amd64)
 export KSRC=/usr/src/$(kheaders_name)
@@ -39,7 +39,7 @@ _defaultdocdir=/usr/share/doc/
 
 ifeq ($(WITH_MOD_SIGN),1)
 _keydir ?= /usr/src/kernels/$(kversion)/
-privkey ?= $(_keydir)/signing_key.priv
+privkey ?= $(_keydir)/signing_key.pem
 pubkey ?= $(_keydir)/signing_key.x509
 endif
 
@@ -55,7 +55,7 @@ override_dh_strip:
 ifeq ($(WITH_MOD_SIGN),1)
 	@echo "Sign the modules!"
 	/usr/lib/linux@KERNEL_TYPE@-kbuild-*/scripts/sign-file sha256 $(privkey) $(pubkey) \
-		./debian/$(pkg_name)/lib/modules/$(kversion)/extra/$(kmod_name)/*.ko
+		./debian/$(pkg_name)/lib/modules/$(kversion)/extra/$(kmod_name)/$(kmod_name).ko
 endif
 
 override_dh_auto_build:
