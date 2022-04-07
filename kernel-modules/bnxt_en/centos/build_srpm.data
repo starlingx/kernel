@@ -1,5 +1,6 @@
 COPY_LIST=" \
   $PATCHES_BASE/* \
+  $PKG_BASE/files/modprobe.conf \
   $STX_BASE/downloads/netxtreme-bnxt_en-1.10.2-220.0.13.0.tar.gz \
   "
 

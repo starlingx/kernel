@@ -38,6 +38,7 @@ Requires(post):   /usr/sbin/depmod
 Requires(postun): /usr/sbin/depmod
 
 Source0: netxtreme-%{kmod_name}-%{version}-%{upstream_release}.tar.gz
+Source1: modprobe.conf
 
 Patch0001: 0001-bnxt_re-Makefile-Adapt-to-mlnx-ofa_kernel-for-Starli.patch
 Patch0002: 0002-bnxt_en-bnxt_compat.h-Fix-up-a-build-failure.patch
@@ -104,6 +105,9 @@ mkdir -p ${dest_dir_bnxt_re}
 install -m 744 ${src_dir_bnxt_en} ${dest_dir_bnxt_en}
 install -m 744 ${src_dir_bnxt_re} ${dest_dir_bnxt_re}
 
+install -d %{buildroot}%{_sysconfdir}/modprobe.d
+install -m 644 %{SOURCE1} %{buildroot}%{_sysconfdir}/modprobe.d/bnxt.conf
+
 ### Adapted from i40e
 # Strip the modules(s).
 find %{buildroot} -type f -name \*.ko -exec %{__strip} --strip-debug \{\} \;
@@ -120,6 +124,7 @@ done
 %files
 %defattr(644,root,root,755)
 /lib/modules/%{kversion}/extra/%{kmod_name}/
+%{_sysconfdir}/modprobe.d/bnxt.conf
 
 %post
 if [ -e "/boot/System.map-%{kversion}" ]; then
