@@ -3,3 +3,4 @@
 0003-kernel-std-Add-a-kernel-config-file-for-stx-debian.patch
 0004-kernel-std-Adapt-the-debian-folder-for-building-linu.patch
 0005-kernel-modules-sign-kernel-modules.patch
+0006-Debian-align-config-file-with-stx-centos.patch

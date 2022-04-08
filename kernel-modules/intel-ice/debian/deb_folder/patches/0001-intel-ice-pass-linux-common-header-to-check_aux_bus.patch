@@ -1,0 +1,39 @@
+From 3e23e587e91eaa7425dd0f24e9edc783182a485a Mon Sep 17 00:00:00 2001
+From: Li Zhou <li.zhou@windriver.com>
+Date: Thu, 7 Apr 2022 11:42:47 +0800
+Subject: [PATCH] intel-ice: pass linux common header to check_aux_bus
+
+For debian, there are two header pkgs, e.g. linux-headers-5.10.0-6-amd64
+and linux-headers-5.10.0-6-common. linux-headers-5.10.0-6-amd64 is
+enough before check_aux_bus is added. But check_aux_bus need files
+in linux-headers-5.10.0-6-common. So pass linux-headers-5.10.0-6-common
+path as the KSRC for check_aux_bus when KSRC_COMMON is exported in
+debian rules.
+
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+---
+ src/common.mk | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/src/common.mk b/src/common.mk
+index 80f30ab..8cf8bab 100644
+--- a/src/common.mk
++++ b/src/common.mk
+@@ -372,8 +372,13 @@ export INSTALL_MOD_DIR ?= updates/drivers/net/ethernet/intel/${DRIVER}
+ # If the check_aux_bus script exists, then this driver depends on the
+ # auxiliary module. Run the script to determine if we need to include
+ # auxiliary files with this build.
++ifeq (${KSRC_COMMON},)
++KSRC_AUX := ${KSRC}
++else
++KSRC_AUX := ${KSRC_COMMON}
++endif
+ ifneq ($(call test_file,../scripts/check_aux_bus),)
+-NEED_AUX_BUS := $(shell ../scripts/check_aux_bus --ksrc="${KSRC}" --build-kernel="${BUILD_KERNEL}" >/dev/null 2>&1; echo $$?)
++NEED_AUX_BUS := $(shell ../scripts/check_aux_bus --ksrc="${KSRC_AUX}" --build-kernel="${BUILD_KERNEL}" >/dev/null 2>&1; echo $$?)
+ endif # check_aux_bus exists
+ 
+ # The out-of-tree auxiliary module we ship should be moved into this
+-- 
+2.17.1
+
