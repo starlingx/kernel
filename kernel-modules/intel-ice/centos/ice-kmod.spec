@@ -7,8 +7,8 @@
 %define kmod_name ice
 
 Name: 		%{kmod_name}-kmod%{?bt_ext}
-Version:	1.7.16
-Release:	0%{?_tis_dist}.%{tis_patch_ver}
+Version:	1.8.3
+Release:	1%{?_tis_dist}.%{tis_patch_ver}
 Group:		System Environment/Kernel
 License:	GPL-2.0
 Summary:	Intel(R) Ethernet Connection E800 Series Linux Driver
@@ -27,12 +27,11 @@ BuildRequires:  devtoolset-8-make
 %define kernel_module_package_buildreqs kernel%{?bt_ext}-devel
 
 Source0: %{kmod_name}-%{version}.tar.gz
-Source1: ice_comms-1.3.31.0.zip
+Source1: ice_comms-1.3.35.0.zip
 Source11: modules-load.conf
 
 
-Patch1: 0001-ice_xsk-Avoid-dependency-on-napi_busy_loop-with-PREE.patch
-Patch2: 0002-ice_main-ice_lib-Use-irq_update_affinity_hint.patch
+Patch1: 0001-ice_main-ice_lib-Use-irq_update_affinity_hint.patch
 
 %define kversion %(rpm -q kernel%{?bt_ext}-devel | sort --version-sort | tail -1 | sed 's/kernel%{?bt_ext}-devel-//')
 %define find() %(for f in %*; do if [ -e $f ]; then echo $f; break; fi; done)
