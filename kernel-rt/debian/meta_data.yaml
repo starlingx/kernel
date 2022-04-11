@@ -1,20 +1,20 @@
 ---
-debver: 5.10.74
+debver: 5.10.99
 debname: linux-rt
 dl_hook: dl_hook
 dl_files:
-  linux-yocto-8048444fc7e44c6fc04a5e0b35d6117fe51c17fc.tar.gz:
+  linux-yocto-53a27dc510c8d9152ffa4d2d95b888db7d3d97b6.tar.gz:
     topdir: null
     url:
       "https://git.yoctoproject.org/cgit/cgit.cgi/linux-yocto/snapshot/\
-       linux-yocto-8048444fc7e44c6fc04a5e0b35d6117fe51c17fc.tar.gz"
-    md5sum: ed39ae794109417f7ab54a0a3f58b64e
+       linux-yocto-53a27dc510c8d9152ffa4d2d95b888db7d3d97b6.tar.gz"
+    sha256sum: eeec7743dfb64b6840cab0b2110818ed639829cc03cac695111701b18323b100
   linux_5.10.28-1.debian.tar.xz:
     topdir: null
     url:
       "http://snapshot.debian.org/archive/debian/20210410T143728Z/pool/main/\
        l/linux/linux_5.10.28-1.debian.tar.xz"
-    md5sum: de03a25a5c7e12ec1e559b6b0ce8889f
+    sha256sum: 1367a40724054a540c4d9c92f0ea6f73e9e50b2a99e46b59a987be15bdc4c4b7
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true

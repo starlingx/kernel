@@ -10,8 +10,6 @@
 0010-bpf-cgroups-Fix-cgroup-v2-fallback-on-v1-v2-mixed-mo.patch
 0011-scsi-smartpqi-Enable-sas_address-sysfs-for-SATA-dev.patch
 0012-workqueue-Affine-rescuer-threads-and-unbound-wqs.patch
-0013-rcu-Mark-accesses-to-rcu_state.n_force_qs.patch
-0014-rcu-Tighten-rcu_advance_cbs_nowake-checks.patch
 0015-Revert-scsi-sd-Inline-sd_probe_part2.patch
 0016-Revert-commit-f049cf1a7b.patch
 0017-genirq-Export-affinity-setter-for-modules.patch

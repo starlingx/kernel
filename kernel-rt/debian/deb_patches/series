@@ -4,3 +4,4 @@
 0004-kernel-rt-Adapt-the-debian-folder-for-new-source.patch
 0005-kernel-modules-sign-kernel-modules.patch
 0006-Debian-align-config-file-with-stx-centos.patch
+0007-Debian-update-5.10-Kernel-to-5.10.99.patch

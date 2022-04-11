@@ -1,0 +1,53 @@
+From 5c4cf6c9765ee8d83bd3f7dcddebf2a5d45a3fec Mon Sep 17 00:00:00 2001
+From: Li Zhou <li.zhou@windriver.com>
+Date: Mon, 11 Apr 2022 16:05:02 +0800
+Subject: [PATCH] Debian: update 5.10 Kernel to 5.10.99
+
+Update debian/changelog.
+Add new configs:
+CONFIG_BPF_UNPRIV_DEFAULT_OFF
+CONFIG_FRAMEBUFFER_CONSOLE_LEGACY_ACCELERATION
+
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+---
+ debian/changelog                | 11 +++++++++--
+ debian/config/amd64/none/config |  6 ++++++
+ 2 files changed, 15 insertions(+), 2 deletions(-)
+
+diff --git a/debian/changelog b/debian/changelog
+index c64e51a..5a2b6bb 100644
+--- a/debian/changelog
++++ b/debian/changelog
+@@ -1,6 +1,13 @@
+-linux (5.10.74-1) stable; urgency=medium
++linux (5.10.99-1) unstable; urgency=medium
+ 
+-  * New upstream stable update:
++  * New upstream update:
++    https://git.yoctoproject.org/cgit/cgit.cgi/linux-yocto/log/?h=v5.10%2Fstandard%2Fbase&qt=range&q=84f6a75f64961e59d61bf3d70ab17e8bb430386b
++
++ -- Li Zhou <li.zhou@windriver.com>  Wed Apr 13 11:37:52 CST 2022
++
++linux (5.10.74-1) unstable; urgency=medium
++
++  * New upstream update:
+     https://git.yoctoproject.org/cgit/cgit.cgi/linux-yocto/log/?h=v5.10%2Fstandard%2Fbase&qt=range&q=9e84a42af61ff9c6feb89ab8d61ee5f25fb35c72
+ 
+  -- Li Zhou <li.zhou@windriver.com>  Tue Nov  9 11:23:35 CST 2021
+diff --git a/debian/config/amd64/none/config b/debian/config/amd64/none/config
+index 1f00698..a5dadc7 100644
+--- a/debian/config/amd64/none/config
++++ b/debian/config/amd64/none/config
+@@ -6398,3 +6398,9 @@ CONFIG_MODULE_SIG_ALL=y
+ ## file: certs/Kconfig
+ ##
+ CONFIG_MODULE_SIG_KEY="certs/signing_key.pem"
++
++#
++# Upgrade to 5.10.99
++#
++# CONFIG_BPF_UNPRIV_DEFAULT_OFF is not set
++# CONFIG_FRAMEBUFFER_CONSOLE_LEGACY_ACCELERATION is not set
+-- 
+2.17.1
+
