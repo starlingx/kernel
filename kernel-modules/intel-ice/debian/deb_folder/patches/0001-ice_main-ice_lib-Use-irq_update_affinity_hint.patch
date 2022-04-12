@@ -1,4 +1,4 @@
-From 2c0df5cef9bfdeb934102d18df38e4024381298f Mon Sep 17 00:00:00 2001
+From 722c51d207ea30388dfc63cec635e1d3e7d9d681 Mon Sep 17 00:00:00 2001
 From: "M. Vefa Bicakci" <vefa.bicakci@windriver.com>
 Date: Fri, 14 Jan 2022 17:50:39 -0500
 Subject: [PATCH] ice_main, ice_lib: Use irq_update_affinity_hint
@@ -23,16 +23,18 @@ And the i40e and iavf patches are accessible at:
   https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=0f9744f4ed539f2e847d7ed41993b243e3ba5cff
 
 Signed-off-by: M. Vefa Bicakci <vefa.bicakci@windriver.com>
+[jm: Adapted the patch for context changes.]
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
 ---
  src/ice_lib.c  | 2 +-
  src/ice_main.c | 6 +++---
  2 files changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/src/ice_lib.c b/src/ice_lib.c
-index 889972052be7..6e50a9dc9ef4 100644
+index 034a064..313273f 100644
 --- a/src/ice_lib.c
 +++ b/src/ice_lib.c
-@@ -2883,7 +2883,7 @@ void ice_vsi_free_irq(struct ice_vsi *vsi)
+@@ -2900,7 +2900,7 @@ void ice_vsi_free_irq(struct ice_vsi *vsi)
  		irq_set_affinity_notifier(irq_num, NULL);
  
  		/* clear the affinity_mask in the IRQ descriptor */
@@ -42,10 +44,10 @@ index 889972052be7..6e50a9dc9ef4 100644
  		devm_free_irq(ice_pf_to_dev(pf), irq_num, vsi->q_vectors[i]);
  	}
 diff --git a/src/ice_main.c b/src/ice_main.c
-index 97e754bc5e11..802d4912a574 100644
+index e00d7f8..ca761bd 100644
 --- a/src/ice_main.c
 +++ b/src/ice_main.c
-@@ -3384,8 +3384,8 @@ static int ice_vsi_req_irq_msix(struct ice_vsi *vsi, char *basename)
+@@ -3417,8 +3417,8 @@ static int ice_vsi_req_irq_msix(struct ice_vsi *vsi, char *basename)
  			irq_set_affinity_notifier(irq_num, affinity_notify);
  		}
  
@@ -56,8 +58,8 @@ index 97e754bc5e11..802d4912a574 100644
  	}
  
  	vsi->irqs_ready = true;
-@@ -3397,7 +3397,7 @@ free_q_irqs:
- 		irq_num = pf->msix_entries[base + vector].vector;
+@@ -3430,7 +3430,7 @@ free_q_irqs:
+ 		irq_num = ice_get_irq_num(pf, base + vector);
  		if (!IS_ENABLED(CONFIG_RFS_ACCEL))
  			irq_set_affinity_notifier(irq_num, NULL);
 -		irq_set_affinity_hint(irq_num, NULL);
@@ -66,5 +68,5 @@ index 97e754bc5e11..802d4912a574 100644
  	}
  	return err;
 -- 
-2.29.2
+2.31.1
 

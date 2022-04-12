@@ -1,3 +1,2 @@
-0001-ice_xsk-Avoid-dependency-on-napi_busy_loop-with-PREE.patch
-0002-ice_main-ice_lib-Use-irq_update_affinity_hint.patch
+0001-ice_main-ice_lib-Use-irq_update_affinity_hint.patch
 0001-intel-ice-pass-linux-common-header-to-check_aux_bus.patch

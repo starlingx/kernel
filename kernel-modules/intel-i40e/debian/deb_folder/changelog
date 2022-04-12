@@ -1,3 +1,10 @@
+i40e (2.18.9-1) unstable; urgency=medium
+
+  * Update iavf driver to 4.4.2, and that dictates the upgrade of the i40e
+    driver. We select the version 2.18.9-1 that comes from bundle 27.1.
+
+ -- Jiping Ma <jiping.ma2@windriver.com>  Tue, 12 Apr 2022 13:09:50 +0800
+
 i40e (2.17.4-1) unstable; urgency=medium
 
   * Initial release
