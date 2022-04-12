@@ -1,6 +1,6 @@
-From 03f743455b29b3be08d5158ab7358dff524644aa Mon Sep 17 00:00:00 2001
-From: Li Zhou <li.zhou@windriver.com>
-Date: Sun, 26 Sep 2021 06:22:38 +0000
+From 216846310710ed1d1e2c7d3440275dad5b2f71ef Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Wed, 23 Mar 2022 22:59:40 -0700
 Subject: [PATCH] mlnx-ofa_kernel: adapt the debian folder for starlingX
 
 Adapt the upstream debian folder for starlingX:
@@ -9,36 +9,57 @@ Adapt the upstream debian folder for starlingX:
 - add the building configuration <--build-dummy-mods> and install
   mlnx.conf to keep aligned with starlingX;
 - adapt the kernelver to make the building work.
+- add support for kernel-rt.
+- add postinst, prerm files for rt build that are copied from the original
+  files postinst, prerm. For example, mlnx-ofed-kernel-modules-rt.prerm is
+  copied from mlnx-ofed-kernel-modules.prerm.
 
 Signed-off-by: Li Zhou <li.zhou@windriver.com>
+[jm: Adapted the patch for context change, and added postinst,
+prerm files for rt build.]
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
 ---
- debian/control         | 21 ++++++---------------
- debian/extra/mlnx.conf | 19 +++++++++++++++++++
- debian/rules           | 22 ++++++++++++++++++----
- 3 files changed, 43 insertions(+), 19 deletions(-)
+ debian/control                              | 23 ++++-------
+ debian/extra/mlnx.conf                      | 19 +++++++++
+ debian/mlnx-ofed-kernel-modules-rt.postinst | 17 ++++++++
+ debian/mlnx-ofed-kernel-modules-rt.prerm    | 10 +++++
+ debian/mlnx-ofed-kernel-utils-rt.postinst   | 46 +++++++++++++++++++++
+ debian/mlnx-ofed-kernel-utils-rt.postrm     | 13 ++++++
+ debian/mlnx-ofed-kernel-utils-rt.prerm      | 22 ++++++++++
+ debian/rules                                | 26 +++++++++---
+ 8 files changed, 154 insertions(+), 22 deletions(-)
  create mode 100644 debian/extra/mlnx.conf
+ create mode 100755 debian/mlnx-ofed-kernel-modules-rt.postinst
+ create mode 100755 debian/mlnx-ofed-kernel-modules-rt.prerm
+ create mode 100755 debian/mlnx-ofed-kernel-utils-rt.postinst
+ create mode 100755 debian/mlnx-ofed-kernel-utils-rt.postrm
+ create mode 100755 debian/mlnx-ofed-kernel-utils-rt.prerm
 
 diff --git a/debian/control b/debian/control
-index e9c2285..176d36f 100644
+index 2ed05f9..9abdfad 100644
 --- a/debian/control
 +++ b/debian/control
-@@ -2,7 +2,7 @@ Source: mlnx-ofed-kernel
+@@ -2,29 +2,20 @@ Source: mlnx-ofed-kernel
  Section: net
  Priority: optional
  Maintainer: Vladimir Sokolovsky <vlad@mellanox.com>
--Build-Depends: debhelper (>= 8.0.0), autotools-dev, bzip2, dkms, python3-distutils | python
-+Build-Depends: debhelper (>= 8.0.0), autotools-dev, bzip2, dkms, python3-distutils | python, linux-headers-5.10.0-6-amd64, linux-kbuild-5.10
+-Build-Depends: debhelper (>= 8.0.0), autotools-dev, bzip2, dkms,
++Build-Depends: debhelper (>= 8.0.0), autotools-dev, bzip2, dkms, linux@KERNEL_TYPE@-headers-5.10.0-6-amd64, linux@KERNEL_TYPE@-kbuild-5.10
  Standards-Version: 3.9.2
  Homepage: http://www.mellanox.com/page/products_dyn?product_family=26&mtag=linux_sw_drivers
  
-@@ -11,18 +11,9 @@ Architecture: any
- Depends: ${misc:Depends}, coreutils, pciutils, grep, procps, module-init-tools | kmod, lsof
+-Package: mlnx-ofed-kernel-utils
++Package: mlnx-ofed-kernel-utils@KERNEL_TYPE@
+ Architecture: any
+ Depends: ${misc:Depends}, coreutils, pciutils, grep, procps, module-init-tools | kmod, lsof,
+  mlnx-tools (>= 5.2.0),
+ Conflicts: mlnx-en-utils
  Description: Userspace tools to restart and tune mlnx-ofed kernel modules
  
 -Package: mlnx-ofed-kernel-dkms
 -Section: kernel
 -Architecture: all
--Depends: dkms, make, ${misc:Depends}, coreutils, pciutils, grep, procps, module-init-tools | kmod, lsof, mlnx-ofed-kernel-utils, python3-distutils | python
+-Depends: dkms, make, ${misc:Depends}, coreutils, pciutils, grep, procps, module-init-tools | kmod, lsof, mlnx-ofed-kernel-utils,
 -Recommends: linux-headers-arm64 | linux-headers-powerpc | linux-headers-ppc64 | linux-headers-ppc64le | linux-headers-amd64 | linux-headers-generic | linux-headers
 -Provides: mlnx-rdma-rxe-dkms
 -Conflicts: mlnx-rdma-rxe-dkms
@@ -47,7 +68,7 @@ index e9c2285..176d36f 100644
 - This package provides integration with the DKMS infrastructure for
 - automatically building out of tree kernel modules.
 - .
-+Package: mlnx-ofed-kernel-modules
++Package: mlnx-ofed-kernel-modules@KERNEL_TYPE@
 +Architecture: any
 +Depends: ${shlibs:Depends}, ${misc:Depends}
 +Description: ofed kernel modules
@@ -80,13 +101,151 @@ index 0000000..d6ced47
 +rpcrdma
 +svcrdma
 +xprtrdma
+diff --git a/debian/mlnx-ofed-kernel-modules-rt.postinst b/debian/mlnx-ofed-kernel-modules-rt.postinst
+new file mode 100755
+index 0000000..a67c0c4
+--- /dev/null
++++ b/debian/mlnx-ofed-kernel-modules-rt.postinst
+@@ -0,0 +1,17 @@
++#!/bin/bash
++
++symlink="/usr/src/ofa_kernel/default"
++if [ "$1" = "configure" ]; then
++	if [ -L "$symlink" ] && \
++		! update-alternatives --list ofa_kernel_headers >/dev/null 2>&1;
++	then
++		rm -f "$symlink"
++	fi
++	mkdir -p /usr/src/ofa_kernel
++	update-alternatives --install "$symlink" ofa_kernel_headers \
++	  /usr/src/ofa_kernel/@ARCH@/@KVER@ 30
++fi
++
++#DEBHELPER#
++
++exit 0
+diff --git a/debian/mlnx-ofed-kernel-modules-rt.prerm b/debian/mlnx-ofed-kernel-modules-rt.prerm
+new file mode 100755
+index 0000000..6f1b1df
+--- /dev/null
++++ b/debian/mlnx-ofed-kernel-modules-rt.prerm
+@@ -0,0 +1,10 @@
++#!/bin/sh
++
++set -e
++
++if [ "$1" = remove ]; then
++    update-alternatives --remove ofa_kernel_headers \
++      /usr/src/ofa_kernel/@ARCH@/@KVER@
++fi
++
++#DEBHELPER#
+diff --git a/debian/mlnx-ofed-kernel-utils-rt.postinst b/debian/mlnx-ofed-kernel-utils-rt.postinst
+new file mode 100755
+index 0000000..4e7ade8
+--- /dev/null
++++ b/debian/mlnx-ofed-kernel-utils-rt.postinst
+@@ -0,0 +1,46 @@
++#!/bin/bash
++
++dist=`lsb_release -s -i | tr '[:upper:]' '[:lower:]'`
++dist_ver=`lsb_release -s -r`
++
++if [ "X$dist" != "Xubuntu" ]; then
++	/usr/sbin/update-rc.d openibd defaults > /dev/null 2>&1
++fi
++
++if (systemctl 2>/dev/null | grep -qw "\\-\.mount" 2>/dev/null); then
++	systemctl daemon-reload >/dev/null 2>&1 || true
++	systemctl enable openibd >/dev/null  2>&1 || true
++	cat /proc/sys/kernel/random/boot_id 2>/dev/null | sed -e 's/-//g' > /var/run/openibd.bootid || true
++	test -s /var/run/openibd.bootid || echo manual > /var/run/openibd.bootid || true
++fi
++
++# set specific module parameter for Ubuntu
++echo "options ib_ipoib send_queue_size=128 recv_queue_size=128" >> /etc/modprobe.d/ib_ipoib.conf
++
++# Update limits.conf (but not for Containers)
++if [ ! -e "/.dockerenv" ] && ! (grep -q docker /proc/self/cgroup 2>/dev/null); then
++	if [ -e /etc/security/limits.conf ]; then
++		LIMITS_UPDATED=0
++		if ! (grep -qE "soft.*memlock" /etc/security/limits.conf 2>/dev/null); then
++			echo "* soft memlock unlimited" >> /etc/security/limits.conf
++			LIMITS_UPDATED=1
++		fi
++		if ! (grep -qE "hard.*memlock" /etc/security/limits.conf 2>/dev/null); then
++			echo "* hard memlock unlimited" >> /etc/security/limits.conf
++			LIMITS_UPDATED=1
++		fi
++		if [ $LIMITS_UPDATED -eq 1 ]; then
++			echo "Configured /etc/security/limits.conf"
++		fi
++	fi
++fi
++
++for old_udev in \
++	/etc/udev/rules.d/82-net-setup-link.rules \
++	/etc/udev/rules.d/83-net-setup-link.rules \
++	/etc/udev/rules.d/90-ib \
++; do
++	dpkg-maintscript-helper rm_conffile $old_udev 5.4-OFED.5.4.0.4.9 -- "$@"
++done
++
++exit 0
+diff --git a/debian/mlnx-ofed-kernel-utils-rt.postrm b/debian/mlnx-ofed-kernel-utils-rt.postrm
+new file mode 100755
+index 0000000..53a9430
+--- /dev/null
++++ b/debian/mlnx-ofed-kernel-utils-rt.postrm
+@@ -0,0 +1,13 @@
++#!/bin/sh
++
++set -e
++
++for old_udev in \
++	/etc/udev/rules.d/82-net-setup-link.rules \
++	/etc/udev/rules.d/83-net-setup-link.rules \
++	/etc/udev/rules.d/90-ib \
++; do
++	dpkg-maintscript-helper rm_conffile $old_udev 5.4-OFED.5.4.0.4.9 -- "$@"
++done
++
++#DEBHELPER#
+diff --git a/debian/mlnx-ofed-kernel-utils-rt.prerm b/debian/mlnx-ofed-kernel-utils-rt.prerm
+new file mode 100755
+index 0000000..27f697b
+--- /dev/null
++++ b/debian/mlnx-ofed-kernel-utils-rt.prerm
+@@ -0,0 +1,22 @@
++#!/bin/bash
++
++dist=`lsb_release -s -i | tr '[:upper:]' '[:lower:]'`
++dist_ver=`lsb_release -s -r`
++
++if [ "X$dist" != "Xubuntu" ]; then
++	/usr/sbin/update-rc.d -f openibd remove > /dev/null 2>&1
++fi
++
++if (systemctl 2>/dev/null | grep -qw "\\-\.mount" 2>/dev/null); then
++	systemctl disable openibd >/dev/null  2>&1 || true
++fi
++
++for old_udev in \
++	/etc/udev/rules.d/82-net-setup-link.rules \
++	/etc/udev/rules.d/83-net-setup-link.rules \
++	/etc/udev/rules.d/90-ib \
++; do
++	dpkg-maintscript-helper rm_conffile $old_udev 5.4-OFED.5.4.0.4.9 -- "$@"
++done
++
++exit 0
 diff --git a/debian/rules b/debian/rules
-index cd95a6b..3c0727c 100755
+index db99d8c..84b8d80 100755
 --- a/debian/rules
 +++ b/debian/rules
-@@ -15,8 +15,20 @@
- # Uncomment this to turn on verbose mode.
- #export DH_VERBOSE=1
+@@ -17,8 +17,20 @@
+ 
+ -include /usr/share/dpkg/architecture.mk
  
 -WITH_DKMS ?= 1
 -WITH_MOD_SIGN ?= 0
@@ -95,8 +254,8 @@ index cd95a6b..3c0727c 100755
 +
 +#Here kernelver should be the one this package depends on,
 +#while "uname -r" got the building machine's os release number.
-+kheaders_name = $(shell ls /usr/src | grep linux-headers | grep amd64)
-+kernelver = $(shell echo $(kheaders_name) | sed 's/linux-headers-//g')
++kheaders_name = $(shell ls /usr/src | grep linux@KERNEL_TYPE@-headers | grep amd64)
++kernelver = $(shell echo $(kheaders_name) | sed 's/linux@KERNEL_TYPE@-headers-//g')
 +
 +ifeq ($(WITH_MOD_SIGN),1)
 +_keydir ?= /usr/src/kernels/$(kernelver)/
@@ -107,6 +266,18 @@ index cd95a6b..3c0727c 100755
  MLXNUMC = $(shell grep ^processor /proc/cpuinfo | wc -l)
  NJOBS ?= $(shell if [ $(MLXNUMC) -lt 16 ]; then echo $(MLXNUMC); else echo 16; fi)
  
+@@ -27,9 +39,9 @@ psource:=$(pname)-source
+ ifeq ($(WITH_DKMS),1)
+ pdkms:=$(pname)-dkms
+ else
+-pdkms:=$(pname)-modules
++pdkms:=$(pname)-modules@KERNEL_TYPE@
+ endif
+-putils:=$(pname)-utils
++putils:=$(pname)-utils@KERNEL_TYPE@
+ 
+ pversion := $(shell dpkg-parsechangelog | sed -n 's/^Version: *\([^-]\+\)-.\+/\1/p')
+ prel := $(shell dpkg-parsechangelog | sed -n 's/^Version: *\([^-]\+\)-\(.\+\)/\2/p')
 @@ -40,7 +52,6 @@ export INSTALL_MOD_PATH:=$(CURDIR)/debian/$(pdkms)
  DIST_NAME := $(shell lsb_release -si)
  DIST_RELEASE := $(DIST_NAME)/$(shell lsb_release -sc)
@@ -114,8 +285,8 @@ index cd95a6b..3c0727c 100755
 -kernelver ?= $(shell uname -r)
  kernelver1 = $(shell echo $(kernelver) | sed -e 's/_/-/g')
  kernel_source_dir ?= "/lib/modules/$(kernelver)/build"
- 
-@@ -61,7 +72,7 @@ override_dh_auto_configure:
+ deb_arch = $(shell uname -m)
+@@ -62,7 +73,7 @@ override_dh_auto_configure:
  ifneq ($(WITH_DKMS),1)
  	@echo Building for $(kernelver)
  	find compat -type f -exec touch -t 200012201010 '{}' \; || true
@@ -123,10 +294,10 @@ index cd95a6b..3c0727c 100755
 +	$(CURDIR)/configure --kernel-version=$(kernelver) --kernel-sources=$(kernel_source_dir) $(shell $(CURDIR)/ofed_scripts/dkms_ofed $(kernelver) $(kernel_source_dir) get-config) --with-njobs=$(NJOBS) --build-dummy-mods
  endif
  
- override_dh_auto_build:
-@@ -190,6 +201,9 @@ endif
- 
- 	cd ofed_scripts/utils;	$(PYTHON) ./setup.py install --install-layout=deb --root=../../debian/$(putils)
+ mod_dev_dir = /usr/src/ofa_kernel/$(deb_arch)/$(kernelver)
+@@ -181,6 +192,9 @@ endif
+ 	install -m 0755 source/ofed_scripts/odp_stat.sh			debian/$(putils)/usr/sbin
+ 	install -m 0755 ofed_scripts/mlnx_bf_assign_ct_cores.sh		debian/$(putils)/usr/share/mlnx_ofed
  
 +	dh_installdirs -p$(pdkms) /etc/modules-load.d/
 +	install -m 644  debian/extra/mlnx.conf debian/$(pdkms)/etc/modules-load.d/
@@ -135,5 +306,5 @@ index cd95a6b..3c0727c 100755
  
  
 -- 
-2.17.1
+2.35.1
 

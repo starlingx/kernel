@@ -1,0 +1,34 @@
+From 6a0f5be8d7e5fa84b37a6dacce4a412f51681e6c Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Thu, 7 Apr 2022 02:31:29 -0700
+Subject: [PATCH] mstflint: Fix the build errors.
+
+This adds the dependence libibmad-devel, zlib1g-dev, libssl-dev
+to fix the following errors.
+"configure: error: cannot find infiniband/mad.h . Use
+--disable-inband to remove this dependaency
+conftest.c:13:10: fatal error: ac_nonexistent.h:
+No such file or directory
+...cannot find openssl/sha.h"
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ debian/control | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/debian/control b/debian/control
+index 65bf6c3..0075a1d 100644
+--- a/debian/control
++++ b/debian/control
+@@ -2,7 +2,7 @@ Source: mstflint
+ Section: net
+ Priority: extra
+ Maintainer: Gal Sivan <gsivan@unknown>
+-Build-Depends: debhelper (>= 8.0.0), autotools-dev
++Build-Depends: debhelper (>= 8.0.0), autotools-dev, libibmad-devel, zlib1g-dev, libssl-dev
+ Standards-Version: 3.9.2
+ Homepage: http://www.mellanox.com
+ #Vcs-Git: git://git.debian.org/collab-maint/mstflint.git
+-- 
+2.35.1
+

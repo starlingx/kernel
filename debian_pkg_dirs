@@ -7,3 +7,5 @@ kernel-modules/intel-opae-fpga
 kernel-modules/mlnx-ofa_kernel
 kernel-modules/qat17
 userspace/mellanox/rdma-core
+userspace/mellanox/mstflint
+userspace/mellanox/mlnx-tools
