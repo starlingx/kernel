@@ -1,0 +1,4 @@
+0001-bnxt_re-Makefile-Adapt-to-mlnx-ofa_kernel-for-Starli.patch
+0002-bnxt_en-bnxt_compat.h-Fix-up-a-build-failure.patch
+0003-bnxt_en-bnxt_re-Use-irq_update_affinity_hint.patch
+0004-bnxt_en-Makefile-Allow-parallelized-build.patch

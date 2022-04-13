@@ -1,0 +1,14 @@
+Source: bnxt-en
+Section: net
+Priority: optional
+Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
+Build-Depends: debhelper-compat (= 13), linux@KERNEL_TYPE@-headers-5.10.0-6-amd64, linux@KERNEL_TYPE@-kbuild-5.10, mlnx-ofed-kernel-modules@KERNEL_TYPE@
+Standards-Version: 4.5.1
+Rules-Requires-Root: no
+
+Package: bnxt-en@KERNEL_TYPE@
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: This package provides the bnxt_en and bnxt_re kernel modules.
+ This package provides the bnxt_en and bnxt_re kernel modules built
+ for the Linux kernel using the amd64 processors.

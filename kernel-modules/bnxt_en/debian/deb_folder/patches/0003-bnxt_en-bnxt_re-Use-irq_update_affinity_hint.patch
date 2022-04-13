@@ -1,0 +1,134 @@
+From ad51050d13b3cae78140b1acc507d792646f8503 Mon Sep 17 00:00:00 2001
+From: "M. Vefa Bicakci" <vefa.bicakci@windriver.com>
+Date: Wed, 2 Mar 2022 14:14:12 -0500
+Subject: [PATCH] bnxt_en, bnxt_re: Use irq_update_affinity_hint
+
+This commit updates the bnxt_en and bnxt_re device drivers to use the
+irq_update_affinity_hint function instead of the irq_set_affinity_hint
+function, so that StarlingX's CPU affinity requirements for interrupts
+are met. (Note that the StarlingX kernel has been patched to add the
+irq_update_affinity_hint API function, which originally did not exist in
+kernel version 5.10.)
+
+irq_set_affinity_hint sets the IRQ affinity hint as well as the actual
+IRQ affinity, which causes the IRQ affinity to not align with the value
+of the irqaffinity= command line option.
+
+StarlingX's user-space initialization scripts set the IRQ affinities
+too, but if a network interface is initialized after the completion of
+the initialization scripts, then the network adapter's preferred IRQ
+affinity passed to irq_set_affinity_hint takes effect. The latter is
+undesirable if the CPU affinity of an interrupt includes CPUs that are
+in the set of isolated CPUs configured by StarlingX, as isolated CPUs
+should not service unrelated interrupts.
+
+To resolve the aforementioned issues, this patch updates the bnxt_en and
+bnxt_re drivers to use irq_update_affinity_hint, which only sets the IRQ
+affinity hint, and not the actual IRQ affinity. This allows interrupts
+to be affined to the CPUs listed in the irqaffinity= command line
+argument by default, and eliminates the need to set the IRQ affinities
+after the initialization of network interfaces.
+
+Finally, please note that the changes in bnxt_en were confirmed to not
+be compiled with StarlingX's 5.10-based kernel, because of the following
+conditional compilation pre-processor directives that are above the
+irq_set_affinity_hint/irq_update_affinity_hint call site:
+
+  #if (!defined(CONFIG_GENERIC_IRQ_MATRIX_ALLOCATOR) ||		\
+	KERNEL_VERSION(4, 15, 0) > LINUX_VERSION_CODE) &&	\
+	(defined(HAVE_CPUMASK_LOCAL_FIRST) ||			\
+	 defined(HAVE_CPUMASK_LOCAL_SPREAD))
+
+	/* ... */
+	cpumask_set_cpu(cpumask_local_spread(i, numa_node),
+			irq->cpu_mask);
+	/* ... */
+	rc = irq_update_affinity_hint(irq->vector, irq->cpu_mask);
+	/* ... */
+
+The IRQ matrix allocator is enabled in StarlingX's kernel, which also
+has a version greater than 4.15. 4.15 happens to be the kernel version
+with which the IRQ matrix allocator was introduced. In other words, the
+call site in question is not compiled at all with the out-of-tree
+bnxt_en driver. The in-tree version of bnxt_en does not have conditional
+compilation directives around the same code (i.e., the code is always
+compiled in).
+
+Our imperfect understanding of the intent is that the out-of-tree
+bnxt_en driver's authors decided to rely on the IRQ matrix allocator's
+default IRQ vector distribution behaviour (which appears to occur at a
+lower level) instead of setting the IRQ affinity hints explicitly.
+
+Thankfully, the lack of a call irq_update_affinity_hint does not prevent
+the irqaffinity= command line argument from taking effect for such
+interrupts. This was confirmed with a virtual machine and the e1000e
+driver, which also manages multiple MSI-X interrupts and which also does
+not explicitly set the IRQ affinities nor affinity hints. In our
+experiments, the IRQ affinities of the emulated Intel network adapter
+correctly matched the CPU list set by the irqaffinity= command line
+argument.
+
+Despite what is discussed above, the code changes in bnxt_en are kept
+for completeness.
+
+Signed-off-by: M. Vefa Bicakci <vefa.bicakci@windriver.com>
+---
+ bnxt_en-1.10.2-220.0.13.0/bnxt.c | 6 +++---
+ bnxt_re-220.0.12.0/qplib_fp.c    | 6 +++---
+ 2 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/bnxt_en-1.10.2-220.0.13.0/bnxt.c b/bnxt_en-1.10.2-220.0.13.0/bnxt.c
+index b0b99338c425..a2f55dfcd0c3 100644
+--- a/bnxt_en-1.10.2-220.0.13.0/bnxt.c
++++ b/bnxt_en-1.10.2-220.0.13.0/bnxt.c
+@@ -10716,7 +10716,7 @@ static void bnxt_free_irq(struct bnxt *bp)
+ 	(defined(HAVE_CPUMASK_LOCAL_FIRST) ||				\
+ 	 defined(HAVE_CPUMASK_LOCAL_SPREAD))
+ 			if (irq->have_cpumask) {
+-				irq_set_affinity_hint(irq->vector, NULL);
++				irq_update_affinity_hint(irq->vector, NULL);
+ 				free_cpumask_var(irq->cpu_mask);
+ 				irq->have_cpumask = 0;
+ 			}
+@@ -10787,10 +10787,10 @@ static int bnxt_request_irq(struct bnxt *bp)
+ 				break;
+ 			}
+ #endif
+-			rc = irq_set_affinity_hint(irq->vector, irq->cpu_mask);
++			rc = irq_update_affinity_hint(irq->vector, irq->cpu_mask);
+ 			if (rc) {
+ 				netdev_warn(bp->dev,
+-					    "Set affinity failed, IRQ = %d\n",
++					    "Update affinity failed, IRQ = %d\n",
+ 					    irq->vector);
+ 				break;
+ 			}
+diff --git a/bnxt_re-220.0.12.0/qplib_fp.c b/bnxt_re-220.0.12.0/qplib_fp.c
+index ef5f279fcb79..60d2eda3727d 100644
+--- a/bnxt_re-220.0.12.0/qplib_fp.c
++++ b/bnxt_re-220.0.12.0/qplib_fp.c
+@@ -492,7 +492,7 @@ void bnxt_qplib_nq_stop_irq(struct bnxt_qplib_nq *nq, bool kill)
+ 	bnxt_qplib_ring_nq_db(&nq->nq_db.dbinfo, res->cctx, false);
+ 	/* Sync with last running IRQ handler */
+ 	synchronize_irq(nq->msix_vec);
+-	irq_set_affinity_hint(nq->msix_vec, NULL);
++	irq_update_affinity_hint(nq->msix_vec, NULL);
+ 	free_irq(nq->msix_vec, nq);
+ 
+ 	/* Cleanup Tasklet */
+@@ -546,10 +546,10 @@ int bnxt_qplib_nq_start_irq(struct bnxt_qplib_nq *nq, int nq_indx,
+ 
+ 	cpumask_clear(&nq->mask);
+ 	cpumask_set_cpu(nq_indx, &nq->mask);
+-	rc = irq_set_affinity_hint(nq->msix_vec, &nq->mask);
++	rc = irq_update_affinity_hint(nq->msix_vec, &nq->mask);
+ 	if (rc)
+ 		dev_warn(&res->pdev->dev,
+-			 "QPLIB: set affinity failed; vector: %d nq_idx: %d\n",
++			 "QPLIB: update affinity failed; vector: %d nq_idx: %d\n",
+ 			 nq->msix_vec, nq_indx);
+         nq->requested = true;
+ 	bnxt_qplib_ring_nq_db(&nq->nq_db.dbinfo, res->cctx, true);
+-- 
+2.25.1
+

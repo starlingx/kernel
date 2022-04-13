@@ -1,0 +1,39 @@
+From 8f317b2da82820b4f8e4c40470cb1f4e5f6c1703 Mon Sep 17 00:00:00 2001
+From: "M. Vefa Bicakci" <vefa.bicakci@windriver.com>
+Date: Thu, 21 Apr 2022 02:06:11 +0000
+Subject: [PATCH] Debian: Disable CONFIG_BNXT*
+
+This commit disables the CONFIG_BNXT* options, because StarlingX ships
+with an out-of-tree version of the bnxt_en kernel module. The
+aforementioned configuration options enable the in-tree version of the
+same module.
+
+Signed-off-by: M. Vefa Bicakci <vefa.bicakci@windriver.com>
+---
+ debian/config/amd64/none/config | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/debian/config/amd64/none/config b/debian/config/amd64/none/config
+index bd5b621476ca..840ecee6120d 100644
+--- a/debian/config/amd64/none/config
++++ b/debian/config/amd64/none/config
+@@ -2442,11 +2442,11 @@ CONFIG_TIGON3_HWMON=y
+ CONFIG_BNX2X=m
+ CONFIG_BNX2X_SRIOV=y
+ # CONFIG_SYSTEMPORT is not set
+-CONFIG_BNXT=m
+-CONFIG_BNXT_SRIOV=y
+-CONFIG_BNXT_FLOWER_OFFLOAD=y
+-CONFIG_BNXT_DCB=y
+-CONFIG_BNXT_HWMON=y
++# CONFIG_BNXT is not set
++# CONFIG_BNXT_SRIOV is not set
++# CONFIG_BNXT_FLOWER_OFFLOAD is not set
++# CONFIG_BNXT_DCB is not set
++# CONFIG_BNXT_HWMON is not set
+ CONFIG_NET_VENDOR_BROCADE=y
+ # CONFIG_BNA is not set
+ CONFIG_NET_VENDOR_CADENCE=y
+-- 
+2.25.1
+

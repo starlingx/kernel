@@ -24,3 +24,4 @@
 0026-driver-core-auxiliary-bus-Remove-unneeded-module-bit.patch
 0027-driver-core-auxiliary-bus-Fix-memory-leak-when-drive.patch
 0028-driver-core-auxiliary-bus-Enable-by-default.patch
+0029-Enable-CONFIG_PAGE_POOL-by-default.patch

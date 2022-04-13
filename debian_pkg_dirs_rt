@@ -1,4 +1,5 @@
 kernel-rt
+kernel-modules/bnxt_en
 kernel-modules/intel-i40e
 kernel-modules/intel-iavf
 kernel-modules/intel-ice
