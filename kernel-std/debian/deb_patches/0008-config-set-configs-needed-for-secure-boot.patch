@@ -1,0 +1,36 @@
+From 816d9085688975fa3c2ed130ca3bb96f4818d2c5 Mon Sep 17 00:00:00 2001
+From: Li Zhou <li.zhou@windriver.com>
+Date: Fri, 15 Apr 2022 16:01:44 +0800
+Subject: [PATCH] config: set configs needed for secure boot
+
+In the debian patch
+[efi: Lock down the kernel if booted in secure boot mode], the config
+"CONFIG_LOCK_DOWN_IN_EFI_SECURE_BOOT" depends on SECURITY_LOCKDOWN_LSM
+and selects SECURITY_LOCKDOWN_LSM_EARLY.
+Set those 2 configs correctly to enable
+CONFIG_LOCK_DOWN_IN_EFI_SECURE_BOOT.
+So that unsigned / missigned kernel modules will be rejected when
+secure boot is enabled and CONFIG_MODULE_SIG_FORCE is not set.
+
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+---
+ debian/config/amd64/none/config | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/debian/config/amd64/none/config b/debian/config/amd64/none/config
+index a5dadc7..df018e4 100644
+--- a/debian/config/amd64/none/config
++++ b/debian/config/amd64/none/config
+@@ -5683,7 +5683,8 @@ CONFIG_SECURITY_SELINUX_SID2STR_CACHE_SIZE=256
+ # CONFIG_SECURITY_LOADPIN is not set
+ CONFIG_SECURITY_YAMA=y
+ # CONFIG_SECURITY_SAFESETID is not set
+-# CONFIG_SECURITY_LOCKDOWN_LSM is not set
++CONFIG_SECURITY_LOCKDOWN_LSM_EARLY=y
++CONFIG_SECURITY_LOCKDOWN_LSM=y
+ # CONFIG_INTEGRITY is not set
+ # CONFIG_IMA_SECURE_AND_OR_TRUSTED_BOOT is not set
+ CONFIG_DEFAULT_SECURITY_SELINUX=y
+-- 
+2.17.1
+

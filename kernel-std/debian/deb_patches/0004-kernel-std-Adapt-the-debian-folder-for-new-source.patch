@@ -1,50 +1,35 @@
-From 73e38923ca6bad9469141c5fd0279dc4f5a7ef13 Mon Sep 17 00:00:00 2001
+From 7c6b99658dc1eaa6467fcb2a4df09705c391f2d6 Mon Sep 17 00:00:00 2001
 From: Li Zhou <li.zhou@windriver.com>
 Date: Thu, 11 Nov 2021 17:24:01 +0800
-Subject: [PATCH 4/4] kernel-std: Adapt the debian folder for building
- linux-yocto source
+Subject: [PATCH 4/4] kernel-std: Adapt the debian folder for new source
 
 Below are the changes on DEBIAN's kernel release's "debian" folder
 for building linux-yocto kernel source 5.10.74, besides kernel configs
 and the debian/changelog file:
 
--Remove the checking about CONFIG_LOCK_DOWN_IN_EFI_SECURE_BOOT which
- is only defined in DEBIAN patches;
 -Update debian/config/amd64/none/defines to disable debian cloud image
- building, which isn't in use here;
+ build, which isn't in use here;
 -Update debian/config/defines to disable rt/docs/installer packages'
- building to make kernel-rt independent and avoid some building errors
+ build to make kernel-rt independent and avoid some build errors
  caused by docs and installer, which aren't in use here;
 -Update debian/lib/python/debian_linux/debian.py to remove an
  unimportant format check for changelog because it conflicts with the
- new building system;
+ new build system;
 -Update debian/patches/series to only keep the patches to support
- package building system, which are from DEBIAN release.
--Update debian/rules to solve the issue that building paused after
+ package build system and the lockdown feature, which are from
+ DEBIAN release.
+-Update debian/rules to solve the issue that build paused after
  gencontrol.
 
 Signed-off-by: Li Zhou <li.zhou@windriver.com>
 ---
- debian/bin/gencontrol_signed.py          |   1 -
  debian/config/amd64/none/defines         |   7 --
  debian/config/defines                    |   7 +-
  debian/lib/python/debian_linux/debian.py |  23 +++--
- debian/patches/series                    | 116 -----------------------
+ debian/patches/series                    | 108 -----------------------
  debian/rules                             |   9 +-
- 6 files changed, 18 insertions(+), 145 deletions(-)
+ 5 files changed, 18 insertions(+), 136 deletions(-)
 
-diff --git a/debian/bin/gencontrol_signed.py b/debian/bin/gencontrol_signed.py
-index 75d9112..b984cf3 100755
---- a/debian/bin/gencontrol_signed.py
-+++ b/debian/bin/gencontrol_signed.py
-@@ -188,7 +188,6 @@ class Gencontrol(Base):
-                   (image_package_name, image_suffix)) as f:
-             kconfig = f.readlines()
-         assert 'CONFIG_EFI_STUB=y\n' in kconfig
--        assert 'CONFIG_LOCK_DOWN_IN_EFI_SECURE_BOOT=y\n' in kconfig
-         cert_re = re.compile(r'CONFIG_SYSTEM_TRUSTED_KEYS="(.*)"$')
-         cert_file_name = None
-         for line in kconfig:
 diff --git a/debian/config/amd64/none/defines b/debian/config/amd64/none/defines
 index ada2355..090dc41 100644
 --- a/debian/config/amd64/none/defines
@@ -124,7 +109,7 @@ index 6fb2618..2e0fed9 100644
  
  class Version(object):
 diff --git a/debian/patches/series b/debian/patches/series
-index 56d1700..bdb60da 100644
+index 56d1700..163943a 100644
 --- a/debian/patches/series
 +++ b/debian/patches/series
 @@ -1,13 +1,3 @@
@@ -141,11 +126,10 @@ index 56d1700..bdb60da 100644
  # Changes to support package build system
  debian/version.patch
  debian/uname-version-timestamp.patch
-@@ -25,109 +15,3 @@ debian/android-enable-building-ashmem-and-binder-as-modules.patch
- debian/documentation-drop-sphinx-version-check.patch
+@@ -26,68 +16,6 @@ debian/documentation-drop-sphinx-version-check.patch
  debian/perf-traceevent-support-asciidoctor-for-documentatio.patch
  debian/kbuild-look-for-module.lds-under-arch-directory-too.patch
--
+ 
 -# Fixes/improvements to firmware loading
 -features/all/drivers-media-dvb-usb-af9005-request_firmware.patch
 -debian/iwlwifi-do-not-request-unreleased-firmware.patch
@@ -208,13 +192,13 @@ index 56d1700..bdb60da 100644
 -debian/makefile-do-not-check-for-libelf-when-building-oot-module.patch
 -bugfix/all/partially-revert-net-socket-implement-64-bit-timestamps.patch
 -
--# Miscellaneous features
--
--# Lockdown missing pieces
--features/all/lockdown/efi-add-an-efi_secure_boot-flag-to-indicate-secure-b.patch
--features/all/lockdown/efi-lock-down-the-kernel-if-booted-in-secure-boot-mo.patch
--features/all/lockdown/mtd-disable-slram-and-phram-when-locked-down.patch
--features/all/lockdown/arm64-add-kernel-config-option-to-lock-down-when.patch
+ # Miscellaneous features
+ 
+ # Lockdown missing pieces
+@@ -95,39 +23,3 @@ features/all/lockdown/efi-add-an-efi_secure_boot-flag-to-indicate-secure-b.patch
+ features/all/lockdown/efi-lock-down-the-kernel-if-booted-in-secure-boot-mo.patch
+ features/all/lockdown/mtd-disable-slram-and-phram-when-locked-down.patch
+ features/all/lockdown/arm64-add-kernel-config-option-to-lock-down-when.patch
 -
 -# Improve integrity platform keyring for kernel modules verification
 -features/all/db-mok-keyring/0001-MODSIGN-do-not-load-mok-when-secure-boot-disabled.patch
