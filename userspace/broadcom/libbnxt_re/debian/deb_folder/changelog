@@ -1,0 +1,7 @@
+libbnxt-re (220.0.5.0-1) unstable; urgency=medium
+
+  * Initial release of the libbnxt_re Infiniband verbs library for StarlingX.
+    This library corresponds to "libbnxt_re-220.0.5.0.tar.gz" in Broadcom's
+    "bcm_220.0.83.0" release.
+
+ -- M. Vefa Bicakci <vefa.bicakci@windriver.com>  Mon, 18 Apr 2022 20:07:24 +0000
