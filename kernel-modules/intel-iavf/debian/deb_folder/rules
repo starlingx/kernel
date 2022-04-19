@@ -27,7 +27,9 @@
 WITH_MOD_SIGN ?= 1
 
 kheaders_name=$(shell ls /usr/src | grep linux@KERNEL_TYPE@-headers | grep amd64)
+kheaders_common=$(shell ls /usr/src | grep linux@KERNEL_TYPE@-headers | grep common)
 export KSRC=/usr/src/$(kheaders_name)
+export KSRC_COMMON=/usr/src/$(kheaders_common)
 kversion=$(shell echo $(kheaders_name) | sed 's/linux@KERNEL_TYPE@-headers-//g')
 kmod_name=iavf
 version=$(shell dpkg-parsechangelog | sed -n 's/^Version: *\([^-]\+\)-.\+/\1/p')

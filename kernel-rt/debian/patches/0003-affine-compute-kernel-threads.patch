@@ -1,7 +1,7 @@
-From 3cc07f73b18833769e4b907734740c0f90f06938 Mon Sep 17 00:00:00 2001
+From 5fba1536bd24bc77ef0d6b2516fefcff69d7cf59 Mon Sep 17 00:00:00 2001
 From: Chris Friesen <chris.friesen@windriver.com>
 Date: Tue, 24 Nov 2015 16:27:28 -0500
-Subject: [PATCH 03/11] affine compute kernel threads
+Subject: [PATCH] affine compute kernel threads
 
 This is a kernel enhancement to configure the cpu affinity of kernel
 threads via kernel boot option kthread_cpus=<cpulist>. The compute
@@ -31,16 +31,16 @@ Signed-off-by: Vefa Bicakci <vefa.bicakci@windriver.com>
 [jm: Adapted the patch for context changes.]
 Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
 ---
- .../admin-guide/kernel-parameters.txt         | 10 ++++++++++
+ .../admin-guide/kernel-parameters.txt         | 10 ++++++++
  include/linux/cpumask.h                       |  3 +++
  init/main.c                                   |  2 ++
- kernel/cpu.c                                  | 19 +++++++++++++++++++
+ kernel/cpu.c                                  | 23 +++++++++++++++++++
  kernel/kthread.c                              |  4 ++--
  kernel/umh.c                                  |  3 +++
- 6 files changed, 39 insertions(+), 2 deletions(-)
+ 6 files changed, 43 insertions(+), 2 deletions(-)
 
 diff --git a/Documentation/admin-guide/kernel-parameters.txt b/Documentation/admin-guide/kernel-parameters.txt
-index a19a3005b..6f79c718a 100644
+index a19a3005b545..6f79c718ae4f 100644
 --- a/Documentation/admin-guide/kernel-parameters.txt
 +++ b/Documentation/admin-guide/kernel-parameters.txt
 @@ -2223,6 +2223,16 @@
@@ -61,7 +61,7 @@ index a19a3005b..6f79c718a 100644
  			and kernel address spaces.
  			Default: enabled on cores which need mitigation.
 diff --git a/include/linux/cpumask.h b/include/linux/cpumask.h
-index 383684e30..8fcc67ea3 100644
+index 383684e30f12..8fcc67ea3d8c 100644
 --- a/include/linux/cpumask.h
 +++ b/include/linux/cpumask.h
 @@ -55,6 +55,7 @@ extern unsigned int nr_cpu_ids;
@@ -86,7 +86,7 @@ index 383684e30..8fcc67ea3 100644
  extern atomic_t __num_online_cpus;
  
 diff --git a/init/main.c b/init/main.c
-index db693781a..4e7777bda 100644
+index db693781a12f..4e7777bdab6e 100644
 --- a/init/main.c
 +++ b/init/main.c
 @@ -1536,6 +1536,8 @@ static noinline void __init kernel_init_freeable(void)
@@ -99,10 +99,10 @@ index db693781a..4e7777bda 100644
  
  	console_on_rootfs();
 diff --git a/kernel/cpu.c b/kernel/cpu.c
-index 016f2d068..5f9bf198b 100644
+index 016f2d0686b6..6783db02e9ae 100644
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
-@@ -2505,6 +2505,25 @@ EXPORT_SYMBOL(__cpu_active_mask);
+@@ -2505,6 +2505,29 @@ EXPORT_SYMBOL(__cpu_active_mask);
  atomic_t __num_online_cpus __read_mostly;
  EXPORT_SYMBOL(__num_online_cpus);
  
@@ -112,15 +112,19 @@ index 016f2d068..5f9bf198b 100644
 +
 +static int __init kthread_setup(char *str)
 +{
-+	struct cpumask tmp_mask;
++	cpumask_var_t tmp_mask;
 +	int err;
-+	
-+	err = cpulist_parse(str, &tmp_mask);
++
++	alloc_bootmem_cpumask_var(&tmp_mask);
++
++	err = cpulist_parse(str, tmp_mask);
 +	if (!err)
-+	        cpumask_copy(&__cpu_kthread_mask, &tmp_mask);
++		cpumask_copy(&__cpu_kthread_mask, tmp_mask);
 +	else
-+	        pr_err("Cannot parse 'kthread_cpus=%s'; error %d\n", str, err);
-+	
++		pr_err("Cannot parse 'kthread_cpus=%s'; error %d\n", str, err);
++
++	free_bootmem_cpumask_var(tmp_mask);
++
 +	return 1;
 +}
 +__setup("kthread_cpus=", kthread_setup);
@@ -129,7 +133,7 @@ index 016f2d068..5f9bf198b 100644
  {
  	cpumask_copy(&__cpu_present_mask, src);
 diff --git a/kernel/kthread.c b/kernel/kthread.c
-index 3ce6a31db..683008e94 100644
+index 3ce6a31db7b4..683008e94fd4 100644
 --- a/kernel/kthread.c
 +++ b/kernel/kthread.c
 @@ -300,7 +300,7 @@ static int kthread(void *_create)
@@ -151,7 +155,7 @@ index 3ce6a31db..683008e94 100644
  
  	current->flags |= PF_NOFREEZE;
 diff --git a/kernel/umh.c b/kernel/umh.c
-index 3f646613a..e5027cee4 100644
+index 3f646613a9d3..e5027cee43f7 100644
 --- a/kernel/umh.c
 +++ b/kernel/umh.c
 @@ -80,6 +80,9 @@ static int call_usermodehelper_exec_async(void *data)
@@ -165,5 +169,5 @@ index 3f646613a..e5027cee4 100644
  	 * Our parent (unbound workqueue) runs with elevated scheduling
  	 * priority. Avoid propagating that into the userspace child.
 -- 
-2.17.1
+2.29.2
 
