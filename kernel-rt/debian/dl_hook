@@ -47,7 +47,7 @@ fi
 # to build similar things for kernel-rt, all the packages are renamed
 # from "linux-xxx" to "linux-rt-xxx". Here replace those packages'
 # name in those files of the debian folder which will affect building.
-SED_LIST=" ./debian/bin ./debian/rules.d/tools/perf ./debian/rules ./debian/rules.real ./debian/signing_templates ./debian/templates"
+SED_LIST=" ./debian/bin ./debian/rules.d/tools/perf ./debian/rules ./debian/rules.real ./debian/signing_templates ./debian/templates ./debian/control"
 sed -i "s/linux-headers/linux-rt-headers/g" `grep -rl "linux-headers" $SED_LIST`
 sed -i "s/linux-image/linux-rt-image/g" `grep -rl "linux-image" $SED_LIST`
 sed -i "s/linux-perf/linux-rt-perf/g" `grep -rl "linux-perf" $SED_LIST`
