@@ -1,0 +1,61 @@
+From f1abe8ed7ddaf580a38bd18095381604b54c79ac Mon Sep 17 00:00:00 2001
+From: "M. Vefa Bicakci" <vefa.bicakci@windriver.com>
+Date: Thu, 21 Apr 2022 17:52:22 +0000
+Subject: [PATCH] Drop Android patches
+
+Since the uprevision to the 5.10.99 kernel has been fixed with commit
+cf100293c190 ("debian: Update kernel head commit"), the kernel build has
+been failing due to the failed application of Android-related Debian
+patches, presumably because the patched files between kernel versions
+5.10.74 and 5.10.99 are different. Here are the error messages:
+
+===
+dpkg-source: info: applying debian/export-symbols-needed-by-android-drivers.patch
+patching file fs/file.c
+Hunk #1 succeeded at 780 (offset 104 lines).
+patching file kernel/fork.c
+Hunk #1 succeeded at 1127 (offset -4 lines).
+patching file kernel/sched/core.c
+Hunk #1 succeeded at 5043 (offset 376 lines).
+patching file kernel/task_work.c
+Hunk #1 succeeded at 68 (offset 16 lines).
+patching file mm/memory.c
+Hunk #1 succeeded at 1554 (offset 187 lines).
+patching file mm/shmem.c
+Hunk #1 succeeded at 4288 (offset 130 lines).
+patching file security/security.c
+Hunk #1 FAILED at 725.
+1 out of 1 hunk FAILED
+dpkg-source: info: the patch has fuzz which is not allowed, or is malformed
+===
+
+This commit removes the patches related to Android, as StarlingX does
+not (at least currently) make use of Android-related drivers in the
+kernel.
+
+Also note that CONFIG_ANDROID is disabled in StarlingX's configuration
+file snippet, which ought to disable the CONFIG_ASHMEM and
+CONFIG_ANDROID_BINDER_IPC options.
+
+Signed-off-by: M. Vefa Bicakci <vefa.bicakci@windriver.com>
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+---
+ debian/patches/series | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/debian/patches/series b/debian/patches/series
+index bdb60da..89aeb7d 100644
+--- a/debian/patches/series
++++ b/debian/patches/series
+@@ -10,8 +10,6 @@ debian/arch-sh4-fix-uimage-build.patch
+ debian/tools-perf-version.patch
+ debian/tools-perf-install.patch
+ debian/wireless-add-debian-wireless-regdb-certificates.patch
+-debian/export-symbols-needed-by-android-drivers.patch
+-debian/android-enable-building-ashmem-and-binder-as-modules.patch
+ debian/documentation-drop-sphinx-version-check.patch
+ debian/perf-traceevent-support-asciidoctor-for-documentatio.patch
+ debian/kbuild-look-for-module.lds-under-arch-directory-too.patch
+-- 
+2.17.1
+

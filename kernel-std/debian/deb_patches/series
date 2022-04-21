@@ -6,3 +6,4 @@
 0006-Debian-align-config-file-with-stx-centos.patch
 0007-Debian-update-5.10-Kernel-to-5.10.99.patch
 0008-config-set-configs-needed-for-secure-boot.patch
+0009-Drop-Android-patches.patch
