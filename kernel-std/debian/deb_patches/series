@@ -1,7 +1,8 @@
 0001-kernel-std-Remove-the-old-changelog-file.patch
 0002-kernel-std-Add-a-new-changelog-file-for-linux-yocto-.patch
 0003-kernel-std-Add-a-kernel-config-file-for-stx-debian.patch
-0004-kernel-std-Adapt-the-debian-folder-for-building-linu.patch
+0004-kernel-std-Adapt-the-debian-folder-for-new-source.patch
 0005-kernel-modules-sign-kernel-modules.patch
 0006-Debian-align-config-file-with-stx-centos.patch
 0007-Debian-update-5.10-Kernel-to-5.10.99.patch
+0008-config-set-configs-needed-for-secure-boot.patch
