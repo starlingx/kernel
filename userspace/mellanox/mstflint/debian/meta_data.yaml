@@ -1,0 +1,12 @@
+---
+debver: 4.16.0-1
+debname: mstflint
+dl_path:
+  name: mstflint-4.16.0-1.tar.gz
+  url: "https://linux.mellanox.com/public/repo/mlnx_ofed/\
+    5.5-1.0.3.2/SRPMS/mstflint-4.16.0-1.tar.gz"
+  md5sum: 951e5feb94a1e5ac3e121d1d3f66fee0
+  sha256sum: d24ea5b2265ad6260e142add4b87ac869a2e4414c66a2922017b4ad11f4f1fed
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true
