@@ -1,0 +1,7 @@
+---
+debver: 5.10.99
+debname: kernel-rt-signed
+dl_hook: dl_hook
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true

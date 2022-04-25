@@ -1,0 +1,47 @@
+#
+# Copyright (c) 2022 Wind River Systems, Inc.
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements. The ASF licenses this
+# file to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#  http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+echo "Signed kernel package: ${change}"
+
+# LAT will deal with below when install.
+if [ "${change}" = "install" ]
+then
+    exit 0
+fi
+
+# Update image/sig to the right path when upgrade.
+cmdline=$(cat /proc/cmdline)
+cmdline=${cmdline#*BOOT_IMAGE=}
+boot_image=$(echo "${cmdline}" | cut -d' ' -f 1)
+boot_image_path=${boot_image%/*}
+
+if ! cp /boot/vmlinuz-"${version}" /boot/"${boot_image}";
+then
+    echo "FAIL: cp /boot/vmlinuz-${version} /boot/${boot_image}"
+    exit 1
+fi
+
+if ! cp /boot/vmlinuz-"${version}".sig /boot/"${boot_image_path}"/vmlinuz.sig;
+then
+    echo "FAIL: cp /boot/vmlinuz-${version}.sig /boot/${boot_image_path}/vmlinuz.sig"
+    exit 1
+fi
+
+echo "Updated vmlinuz and vmlinuz.sig!"
+exit 0

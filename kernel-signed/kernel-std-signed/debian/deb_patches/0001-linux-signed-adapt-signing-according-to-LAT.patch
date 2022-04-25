@@ -1,0 +1,34 @@
+From feb5ea7b15fc7c61cd7048da309b50a0da2d6102 Mon Sep 17 00:00:00 2001
+From: Li Zhou <li.zhou@windriver.com>
+Date: Wed, 20 Apr 2022 11:29:54 +0800
+Subject: [PATCH] linux-signed: adapt signing according to LAT
+
+STX debian project's secure boot process doesn't follow DEBIAN
+process and follows LAT (wrlinux) process. It use gpg to sign
+kernel image instead of sbsign. So replace the sbsign in rules.real
+with installing vmlinuz.sig onto rootfs. That is because DEBIAN
+secure boot use the signed kernel image while LAT secure boot
+use a separate sig file for gpg verification of kernel image.
+
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+---
+ debian/rules.real | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/debian/rules.real b/debian/rules.real
+index 23df05c..f6bb8ac 100644
+--- a/debian/rules.real
++++ b/debian/rules.real
+@@ -14,8 +14,7 @@ install-signed:
+ 	rsync -a $(patsubst %,/boot/%-$(KERNEL_VERSION),config System.map $(IMAGE_INSTALL_STEM)) \
+ 		$(PACKAGE_DIR)/boot/
+ 	if [ -f $(SIGNATURE_DIR)/boot/vmlinuz-$(KERNEL_VERSION).sig ]; then \
+-		sbattach --attach $(SIGNATURE_DIR)/boot/vmlinuz-$(KERNEL_VERSION).sig \
+-			$(PACKAGE_DIR)/boot/vmlinuz-$(KERNEL_VERSION); \
++		dh_install $(SIGNATURE_DIR)/boot/vmlinuz-$(KERNEL_VERSION).sig /boot/; \
+ 		echo >> debian/$(PACKAGE_NAME).substvars 'signed:Description=The kernel image and modules are signed for use with Secure Boot.'; \
+ 	else \
+ 		echo >> debian/$(PACKAGE_NAME).substvars 'signed:Description=The modules are signed.'; \
+-- 
+2.17.1
+
