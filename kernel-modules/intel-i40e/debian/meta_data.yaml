@@ -1,11 +1,12 @@
 ---
-debver: 2.17.4
+debver: 2.18.9
 debname: i40e
 dl_path:
-  name: i40e-2.17.4.tar.gz
+  name: i40e-2.18.9.tar.gz
   url: "https://sourceforge.net/projects/e1000/files/i40e%20stable/\
-    2.17.4/i40e-2.17.4.tar.gz/download"
-  md5sum: 25101f2fa1fdb7264b5e7add8ff70917
+    2.18.9/i40e-2.18.9.tar.gz/download"
+  md5sum: f8caf2c9123d83b538812927c1460450
+  sha256sum: 68184b31fd1f1c7b61ce42c0c5bff25d14bc08d95676b84ec115ba893776d720
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true
