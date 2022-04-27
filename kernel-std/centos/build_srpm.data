@@ -7,8 +7,8 @@ BUILD_IS_BIG=21
 BUILD_IS_SLOW=16
 
 # The base branch is: v5.10/standard/base
-# commit 84f6a75f64 points to v5.10.99 in linux-yocto.
-TIS_BASE_SRCREV=84f6a75f64961e59d61bf3d70ab17e8bb430386b
+# commit 6cf7dea05b points to v5.10.112 in linux-yocto.
+TIS_BASE_SRCREV=6cf7dea05bd756513cf58c5ced8c6bf1d1f23c15
 
 PKG_BASE_SRCREV=4013790c6ef43fd9f936579b0cac50b8e0c4505a
 TIS_PATCH_VER=GITREVCOUNT+PKG_GITREVCOUNT
