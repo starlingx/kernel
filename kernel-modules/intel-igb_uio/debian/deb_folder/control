@@ -8,7 +8,14 @@ Rules-Requires-Root: no
 
 Package: igb-uio@KERNEL_TYPE@
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, python3
+Depends: ${shlibs:Depends}, ${misc:Depends}, python3, igb-uio-common
 Description: This package provides the igb-uio kernel module(s).
  This package provides the igb_uio kernel module(s) built
  for the Linux kernel using the amd64 processors.
+
+Package: igb-uio-common
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, python3
+Description: This package provides the common files of igb-uio kernel module(s).
+ This package provides the common files of igb_uio kernel module(s) built
+ for the Linux kernel-std and kernel-rt using the amd64 processors.

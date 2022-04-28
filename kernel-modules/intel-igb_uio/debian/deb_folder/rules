@@ -33,6 +33,7 @@ kversion=$(shell echo $(kheaders_name) | sed 's/linux@KERNEL_TYPE@-headers-//g')
 kmod_name=igb_uio
 version=$(shell dpkg-parsechangelog | sed -n 's/^Version: *\([^-]\+\)-.\+/\1/p')
 pkg_name=igb-uio@KERNEL_TYPE@
+pkg_common_name=igb-uio-common
 
 _datadir=/usr/share/
 _defaultdocdir=/usr/share/doc/
@@ -45,9 +46,9 @@ endif
 
 override_dh_auto_install:
 	dh_install ./linux/igb_uio/*.ko /lib/modules/$(kversion)/extra/$(kmod_name)/
-	dh_install ./README $(_defaultdocdir)/kmod-$(kmod_name)-$(version)/
-	dh_installdirs -p$(pkg_name) $(_datadir)/starlingx/scripts
-	install -m 755 debian/extra/dpdk-devbind.py ./debian/$(pkg_name)/$(_datadir)/starlingx/scripts
+	dh_install -p$(pkg_common_name) ./README $(_defaultdocdir)/kmod-$(kmod_name)-$(version)/
+	dh_installdirs -p$(pkg_common_name) $(_datadir)/starlingx/scripts
+	install -m 755 debian/extra/dpdk-devbind.py ./debian/$(pkg_common_name)/$(_datadir)/starlingx/scripts
 
 override_dh_strip:
 	dh_strip
