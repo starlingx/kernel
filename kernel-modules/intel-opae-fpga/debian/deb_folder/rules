@@ -34,6 +34,7 @@ kmod_name=opae-intel-fpga-driver
 ifeq ($(WITH_MOD_SIGN),1)
 pkg_name=kmod-opae-fpga-driver@KERNEL_TYPE@
 endif
+pkg_common_name=kmod-opae-fpga-driver-common
 
 _defaultdocdir=/usr/share/doc
 
@@ -45,7 +46,7 @@ endif
 
 override_dh_auto_install:
 	dh_install ./*.ko /lib/modules/$(kversion)/extra/$(kmod_name)/
-	dh_install ./40-intel-fpga.rules /etc/udev/rules.d/
+	dh_install -p$(pkg_common_name) ./40-intel-fpga.rules /etc/udev/rules.d/
 
 override_dh_strip:
 	dh_strip
