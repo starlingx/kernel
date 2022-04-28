@@ -34,6 +34,7 @@ kversion=$(shell echo $(kheaders_name) | sed 's/linux@KERNEL_TYPE@-headers-//g')
 kmod_name=ice
 version=$(shell dpkg-parsechangelog | sed -n 's/^Version: *\([^-]\+\)-.\+/\1/p')
 pkg_name=ice@KERNEL_TYPE@
+pkg_common_name=ice-common
 
 _sysconfdir=/etc
 _defaultdocdir=/usr/share/doc
@@ -47,14 +48,15 @@ endif
 
 override_dh_auto_install:
 	dh_install src/$(kmod_name).ko /lib/modules/$(kversion)/extra/$(kmod_name)/
-	dh_install pci.updates $(_defaultdocdir)/kmod-$(kmod_name)-$(version)/
-	dh_install README $(_defaultdocdir)/kmod-$(kmod_name)-$(version)/
-	dh_install $(kmod_name).7 $(_mandir)/man7/
-	dh_install debian/extra/ice.conf $(_sysconfdir)/modules-load.d/
-	dh_install ice_comms/*.txt /lib/firmware/updates/intel/ice/ddp/
-	dh_install ice_comms/ice_comms*.pkg /lib/firmware/updates/intel/ice/ddp/
-	mkdir -p debian/$(pkg_name)/lib/firmware/intel/ice/ddp/
-	ln -frs debian/$(pkg_name)/lib/firmware/updates/intel/ice/ddp/ice_comms*.pkg debian/$(pkg_name)/lib/firmware/intel/ice/ddp/ice.pkg
+	dh_install -p$(pkg_common_name) pci.updates $(_defaultdocdir)/kmod-$(kmod_name)-$(version)/
+	dh_install -p$(pkg_common_name) README $(_defaultdocdir)/kmod-$(kmod_name)-$(version)/
+	dh_install -p$(pkg_common_name) $(kmod_name).7 $(_mandir)/man7/
+	dh_install -p$(pkg_common_name) debian/extra/ice.conf $(_sysconfdir)/modules-load.d/
+	dh_installdirs -p$(pkg_common_name) /lib/firmware/updates/intel/ice/ddp/
+	install -m644 ice_comms/*.txt debian/$(pkg_common_name)/lib/firmware/updates/intel/ice/ddp/
+	install -m644 ice_comms/ice_comms*.pkg debian/$(pkg_common_name)/lib/firmware/updates/intel/ice/ddp/
+	dh_installdirs -p$(pkg_common_name) /lib/firmware/intel/ice/ddp/
+	ln -frs debian/$(pkg_common_name)/lib/firmware/updates/intel/ice/ddp/ice_comms*.pkg debian/$(pkg_common_name)/lib/firmware/intel/ice/ddp/ice.pkg
 
 override_dh_strip:
 	dh_strip
