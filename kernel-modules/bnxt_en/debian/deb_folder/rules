@@ -31,12 +31,12 @@ kbuild_name=$(shell ls /usr/src | grep linux@KERNEL_TYPE@-headers | grep amd64)
 kversion=$(shell echo $(kbuild_name) | sed 's/linux@KERNEL_TYPE@-headers-//g')
 pkg_common_name=bnxt-en-common
 
-# "dpkg --status mlnx-ofed-kernel-modules" prints a version line
+# "dpkg --status mlnx-ofed-kernel-dev" prints a version line
 # like the following:
 #   Version: 5.5-OFED.5.5.1.0.3.1.stx.5.kver.5.10.0-6-amd64
 # Reduce this line to the version number substring "5.5" before
 # the substring "-OFED".
-ofed_version=$(shell dpkg  --status mlnx-ofed-kernel-modules@KERNEL_TYPE@ | \
+ofed_version=$(shell dpkg  --status mlnx-ofed-kernel-dev | \
   grep -e '^Version:' | sed -e 's@^Version: \([0-9]\+\.[0-9]\+\)-OFED.*@\1@')
 
 ifeq ($(ofed_version),)

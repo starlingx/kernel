@@ -1,0 +1,240 @@
+From c1726fb23f90aa99484eb08ff5a0a4e1bf78869f Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Sun, 22 May 2022 21:02:25 -0700
+Subject: [PATCH] mlnx-ofa_kernel: Add dev package.
+
+This commit moves source code files "/usr/src/ofa_kernel/x86_64/" from
+modules package to dev package, only leaving all ko in modules package.
+Also adds postinst, prerm files for dev package and modify postinst,
+prerm files for modules package because source files are moved to
+the dev package.
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ debian/control                              |  5 +++++
+ debian/mlnx-ofed-kernel-dev-rt.postinst     | 17 +++++++++++++++++
+ debian/mlnx-ofed-kernel-dev-rt.prerm        | 10 ++++++++++
+ debian/mlnx-ofed-kernel-dev.postinst        | 17 +++++++++++++++++
+ debian/mlnx-ofed-kernel-dev.prerm           | 10 ++++++++++
+ debian/mlnx-ofed-kernel-modules-rt.postinst | 12 ------------
+ debian/mlnx-ofed-kernel-modules-rt.prerm    |  6 ------
+ debian/mlnx-ofed-kernel-modules.postinst    | 12 ------------
+ debian/mlnx-ofed-kernel-modules.prerm       |  6 ------
+ debian/rules                                | 17 +++++++++--------
+ 10 files changed, 68 insertions(+), 44 deletions(-)
+ create mode 100755 debian/mlnx-ofed-kernel-dev-rt.postinst
+ create mode 100755 debian/mlnx-ofed-kernel-dev-rt.prerm
+ create mode 100755 debian/mlnx-ofed-kernel-dev.postinst
+ create mode 100755 debian/mlnx-ofed-kernel-dev.prerm
+
+diff --git a/debian/control b/debian/control
+index 0dd0886..4493135 100644
+--- a/debian/control
++++ b/debian/control
+@@ -18,4 +18,9 @@ Architecture: any
+ Depends: ${shlibs:Depends}, ${misc:Depends}, mlnx-ofed-kernel-utils
+ Description: ofed kernel modules
+  This package provides the mlnx-ofed out of tree kernel modules.
++
++Package: mlnx-ofed-kernel-dev
++Architecture: any
++Depends: ${shlibs:Depends}, ${misc:Depends}
++Description: ofed kernel modules
+  This package provides the source code for the mlnx-ofed kernel modules.
+diff --git a/debian/mlnx-ofed-kernel-dev-rt.postinst b/debian/mlnx-ofed-kernel-dev-rt.postinst
+new file mode 100755
+index 0000000..a67c0c4
+--- /dev/null
++++ b/debian/mlnx-ofed-kernel-dev-rt.postinst
+@@ -0,0 +1,17 @@
++#!/bin/bash
++
++symlink="/usr/src/ofa_kernel/default"
++if [ "$1" = "configure" ]; then
++	if [ -L "$symlink" ] && \
++		! update-alternatives --list ofa_kernel_headers >/dev/null 2>&1;
++	then
++		rm -f "$symlink"
++	fi
++	mkdir -p /usr/src/ofa_kernel
++	update-alternatives --install "$symlink" ofa_kernel_headers \
++	  /usr/src/ofa_kernel/@ARCH@/@KVER@ 30
++fi
++
++#DEBHELPER#
++
++exit 0
+diff --git a/debian/mlnx-ofed-kernel-dev-rt.prerm b/debian/mlnx-ofed-kernel-dev-rt.prerm
+new file mode 100755
+index 0000000..6f1b1df
+--- /dev/null
++++ b/debian/mlnx-ofed-kernel-dev-rt.prerm
+@@ -0,0 +1,10 @@
++#!/bin/sh
++
++set -e
++
++if [ "$1" = remove ]; then
++    update-alternatives --remove ofa_kernel_headers \
++      /usr/src/ofa_kernel/@ARCH@/@KVER@
++fi
++
++#DEBHELPER#
+diff --git a/debian/mlnx-ofed-kernel-dev.postinst b/debian/mlnx-ofed-kernel-dev.postinst
+new file mode 100755
+index 0000000..a67c0c4
+--- /dev/null
++++ b/debian/mlnx-ofed-kernel-dev.postinst
+@@ -0,0 +1,17 @@
++#!/bin/bash
++
++symlink="/usr/src/ofa_kernel/default"
++if [ "$1" = "configure" ]; then
++	if [ -L "$symlink" ] && \
++		! update-alternatives --list ofa_kernel_headers >/dev/null 2>&1;
++	then
++		rm -f "$symlink"
++	fi
++	mkdir -p /usr/src/ofa_kernel
++	update-alternatives --install "$symlink" ofa_kernel_headers \
++	  /usr/src/ofa_kernel/@ARCH@/@KVER@ 30
++fi
++
++#DEBHELPER#
++
++exit 0
+diff --git a/debian/mlnx-ofed-kernel-dev.prerm b/debian/mlnx-ofed-kernel-dev.prerm
+new file mode 100755
+index 0000000..6f1b1df
+--- /dev/null
++++ b/debian/mlnx-ofed-kernel-dev.prerm
+@@ -0,0 +1,10 @@
++#!/bin/sh
++
++set -e
++
++if [ "$1" = remove ]; then
++    update-alternatives --remove ofa_kernel_headers \
++      /usr/src/ofa_kernel/@ARCH@/@KVER@
++fi
++
++#DEBHELPER#
+diff --git a/debian/mlnx-ofed-kernel-modules-rt.postinst b/debian/mlnx-ofed-kernel-modules-rt.postinst
+index a67c0c4..3456fe9 100755
+--- a/debian/mlnx-ofed-kernel-modules-rt.postinst
++++ b/debian/mlnx-ofed-kernel-modules-rt.postinst
+@@ -1,17 +1,5 @@
+ #!/bin/bash
+ 
+-symlink="/usr/src/ofa_kernel/default"
+-if [ "$1" = "configure" ]; then
+-	if [ -L "$symlink" ] && \
+-		! update-alternatives --list ofa_kernel_headers >/dev/null 2>&1;
+-	then
+-		rm -f "$symlink"
+-	fi
+-	mkdir -p /usr/src/ofa_kernel
+-	update-alternatives --install "$symlink" ofa_kernel_headers \
+-	  /usr/src/ofa_kernel/@ARCH@/@KVER@ 30
+-fi
+-
+ #DEBHELPER#
+ 
+ exit 0
+diff --git a/debian/mlnx-ofed-kernel-modules-rt.prerm b/debian/mlnx-ofed-kernel-modules-rt.prerm
+index 6f1b1df..ab105a3 100755
+--- a/debian/mlnx-ofed-kernel-modules-rt.prerm
++++ b/debian/mlnx-ofed-kernel-modules-rt.prerm
+@@ -1,10 +1,4 @@
+ #!/bin/sh
+ 
+-set -e
+-
+-if [ "$1" = remove ]; then
+-    update-alternatives --remove ofa_kernel_headers \
+-      /usr/src/ofa_kernel/@ARCH@/@KVER@
+-fi
+ 
+ #DEBHELPER#
+diff --git a/debian/mlnx-ofed-kernel-modules.postinst b/debian/mlnx-ofed-kernel-modules.postinst
+index a67c0c4..3456fe9 100755
+--- a/debian/mlnx-ofed-kernel-modules.postinst
++++ b/debian/mlnx-ofed-kernel-modules.postinst
+@@ -1,17 +1,5 @@
+ #!/bin/bash
+ 
+-symlink="/usr/src/ofa_kernel/default"
+-if [ "$1" = "configure" ]; then
+-	if [ -L "$symlink" ] && \
+-		! update-alternatives --list ofa_kernel_headers >/dev/null 2>&1;
+-	then
+-		rm -f "$symlink"
+-	fi
+-	mkdir -p /usr/src/ofa_kernel
+-	update-alternatives --install "$symlink" ofa_kernel_headers \
+-	  /usr/src/ofa_kernel/@ARCH@/@KVER@ 30
+-fi
+-
+ #DEBHELPER#
+ 
+ exit 0
+diff --git a/debian/mlnx-ofed-kernel-modules.prerm b/debian/mlnx-ofed-kernel-modules.prerm
+index 6f1b1df..ab105a3 100755
+--- a/debian/mlnx-ofed-kernel-modules.prerm
++++ b/debian/mlnx-ofed-kernel-modules.prerm
+@@ -1,10 +1,4 @@
+ #!/bin/sh
+ 
+-set -e
+-
+-if [ "$1" = remove ]; then
+-    update-alternatives --remove ofa_kernel_headers \
+-      /usr/src/ofa_kernel/@ARCH@/@KVER@
+-fi
+ 
+ #DEBHELPER#
+diff --git a/debian/rules b/debian/rules
+index df4c725..5fee05c 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -42,6 +42,7 @@ else
+ pdkms:=$(pname)-modules@KERNEL_TYPE@
+ endif
+ putils:=$(pname)-utils
++pdev:=$(pname)-dev
+ 
+ pversion := $(shell dpkg-parsechangelog | sed -n 's/^Version: *\([^-]\+\)-.\+/\1/p')
+ prel := $(shell dpkg-parsechangelog | sed -n 's/^Version: *\([^-]\+\)-\(.\+\)/\2/p')
+@@ -123,12 +124,12 @@ ifeq ($(WITH_DKMS),1)
+ 	dh_installdirs -p$(pdkms)  usr/src/ofa_kernel/
+ 	# copy the ofa-kernel build headers using ofed_scripts/pre_build.sh in the DKMS MAKE step (called from ofed_scripts/pre_build.sh).
+ else
+-	dh_installdirs -p$(pdkms)  $(mod_dev_dir)
+-	cp -a include/			debian/$(pdkms)$(mod_dev_dir)
+-	cp -a config*			debian/$(pdkms)$(mod_dev_dir)
+-	cp -a compat*			debian/$(pdkms)$(mod_dev_dir)
+-	cp -a ofed_scripts		debian/$(pdkms)$(mod_dev_dir)
+-	cp -a Module*.symvers		debian/$(pdkms)$(mod_dev_dir)
++	dh_installdirs -p$(pdev)  $(mod_dev_dir)
++	cp -a include/			debian/$(pdev)$(mod_dev_dir)
++	cp -a config*			debian/$(pdev)$(mod_dev_dir)
++	cp -a compat*			debian/$(pdev)$(mod_dev_dir)
++	cp -a ofed_scripts		debian/$(pdev)$(mod_dev_dir)
++	cp -a Module*.symvers		debian/$(pdev)$(mod_dev_dir)
+ endif
+ 
+ 	# Force DKMS to install our modules.
+@@ -215,8 +216,8 @@ ifneq ($(WITH_DKMS),1)
+ 	sed -i \
+ 		-e 's/@KVER@/$(kernelver)/' \
+ 		-e 's/@ARCH@/$(deb_arch)/' \
+-		debian/$(pdkms)/DEBIAN/postinst \
+-		debian/$(pdkms)/DEBIAN/prerm
++		debian/$(pdev)/DEBIAN/postinst \
++		debian/$(pdev)/DEBIAN/prerm
+ endif
+ 
+ ifneq ($(MLNX_KO_NO_STRIP),1)
+-- 
+2.35.1
+
