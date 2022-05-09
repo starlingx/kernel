@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 #
-# Copyright (c) 2021 Wind River Systems, Inc.
+# Copyright (c) 2021-2022 Wind River Systems, Inc.
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements. The ASF licenses this
@@ -26,10 +26,13 @@
 
 WITH_MOD_SIGN ?= 1
 
+export DEB_BUILD_OPTIONS=noddebs
+
 kheaders_name=$(shell ls /usr/src | grep linux@KERNEL_TYPE@-headers | grep amd64)
 export KERNEL_SOURCE_ROOT=/usr/src/$(kheaders_name)
 kernel_version=$(shell echo $(kheaders_name) | sed 's/linux@KERNEL_TYPE@-headers-//g')
 pkg_name=qat1.7.l@KERNEL_TYPE@
+pkg_name_common=qat1.7.l-common
 
 qat_src_dir=./
 _sysconfdir=/etc/
@@ -51,38 +54,38 @@ override_dh_auto_build:
 	make sample-all
 
 override_dh_auto_install:
-	dh_installdirs -p$(pkg_name) $(_sysconfdir)/default
-	install -m 750 ./debian/extra/qat $(buildroot)/$(_sysconfdir)/default
+	dh_installdirs -p$(pkg_name_common) $(_sysconfdir)/default
+	install -m 750 ./debian/extra/qat debian/$(pkg_name_common)/$(_sysconfdir)/default
 
-	dh_installdirs -p$(pkg_name) $(_sysconfdir)/qat/conf_files
-	install -m 640 $(qat_src_dir)/build/*.conf $(buildroot)$(_sysconfdir)/qat/conf_files
-	install -m 640 $(qat_src_dir)/build/*.vm $(buildroot)$(_sysconfdir)/qat/conf_files
+	dh_installdirs -p$(pkg_name_common) $(_sysconfdir)/qat/conf_files
+	install -m 640 $(qat_src_dir)/build/*.conf debian/$(pkg_name_common)/$(_sysconfdir)/qat/conf_files
+	install -m 640 $(qat_src_dir)/build/*.vm debian/$(pkg_name_common)/$(_sysconfdir)/qat/conf_files
 
-	dh_installdirs -p$(pkg_name) $(_sbindir)
-	install -m 750 $(qat_src_dir)/build/adf_ctl $(buildroot)$(_sbindir)
+	dh_installdirs -p$(pkg_name_common) $(_sbindir)
+	install -m 750 $(qat_src_dir)/build/adf_ctl debian/$(pkg_name_common)/$(_sbindir)
 
-	dh_installdirs -p$(pkg_name) $(_sysconfdir)/init.d/
-	install -m 750 ./debian/extra/qat_service $(buildroot)$(_sysconfdir)/init.d/
+	dh_installdirs -p$(pkg_name_common) $(_sysconfdir)/init.d/
+	install -m 750 ./debian/extra/qat_service debian/$(pkg_name_common)/$(_sysconfdir)/init.d/
 
-	dh_installdirs -p$(pkg_name) $(_libdir)
-	install -m 750 $(qat_src_dir)/build/*.so $(buildroot)$(_libdir)
+	dh_installdirs -p$(pkg_name_common) $(_libdir)
+	install -m 750 $(qat_src_dir)/build/*.so debian/$(pkg_name_common)/$(_libdir)
 
 	dh_installdirs -p$(pkg_name) lib/modules/$(kernel_version)/kernel/drivers/crypto/qat/
 	install -m 750 $(qat_src_dir)/build/*qat*.ko $(buildroot)/lib/modules/$(kernel_version)/kernel/drivers/crypto/qat/
 	install -m 750 $(qat_src_dir)/build/usdm_drv.ko $(buildroot)/lib/modules/$(kernel_version)/kernel/drivers/crypto/qat
 
 	# intel test sample
-	dh_installdirs -p$(pkg_name) usr/lib/firmware
-	install -m 750 $(qat_src_dir)/quickassist/lookaside/access_layer/src/sample_code/build/cpa_sample_code $(buildroot)$(_sbindir)/
-	install -m 640 $(qat_src_dir)/quickassist/lookaside/access_layer/src/sample_code/performance/compression/calgary $(buildroot)/usr/lib/firmware
-	install -m 640 $(qat_src_dir)/quickassist/lookaside/access_layer/src/sample_code/performance/compression/calgary32 $(buildroot)/usr/lib/firmware
-	install -m 640 $(qat_src_dir)/quickassist/lookaside/access_layer/src/sample_code/performance/compression/canterbury $(buildroot)/usr/lib/firmware
+	dh_installdirs -p$(pkg_name_common) usr/lib/firmware
+	install -m 750 $(qat_src_dir)/quickassist/lookaside/access_layer/src/sample_code/build/cpa_sample_code debian/$(pkg_name_common)/$(_sbindir)/
+	install -m 640 $(qat_src_dir)/quickassist/lookaside/access_layer/src/sample_code/performance/compression/calgary debian/$(pkg_name_common)/usr/lib/firmware
+	install -m 640 $(qat_src_dir)/quickassist/lookaside/access_layer/src/sample_code/performance/compression/calgary32 debian/$(pkg_name_common)/usr/lib/firmware
+	install -m 640 $(qat_src_dir)/quickassist/lookaside/access_layer/src/sample_code/performance/compression/canterbury debian/$(pkg_name_common)/usr/lib/firmware
 
 	# device firmware
 	# install to the updates directory so this firmware will get grabbed ahead of
 	# anything supplied by the linux-firmware package
-	dh_installdirs -p$(pkg_name) usr/lib/firmware/updates
-	install -m 640 $(qat_src_dir)/build/*.bin $(buildroot)/usr/lib/firmware/updates
+	dh_installdirs -p$(pkg_name_common) usr/lib/firmware/updates
+	install -m 640 $(qat_src_dir)/build/*.bin debian/$(pkg_name_common)/usr/lib/firmware/updates
 
 override_dh_strip:
 	dh_strip
