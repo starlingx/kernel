@@ -8,3 +8,4 @@
 0008-config-set-configs-needed-for-secure-boot.patch
 0009-Drop-Android-patches.patch
 0010-Debian-Disable-CONFIG_BNXT.patch
+0011-Debian-Harcode-net.naming-scheme-in-CONFIG_CMDLINE.patch
