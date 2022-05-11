@@ -1,0 +1,52 @@
+#!/bin/bash
+#
+# Copyright (c) 2022 Wind River Systems, Inc.
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements. The ASF licenses this
+# file to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#  http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+# The only parameter is the name of the folder where the source code
+# is extracted to. Pay attention to that the extracted package should
+# be put at the same path where this script is located.
+# Tools needed: tar/sed
+
+mkdir "$1"
+cd "$1" || exit 1
+
+file_debian=(../../linux-rt/linux-signed-*.tar.xz)
+if [ ! -f "${file_debian}" ]
+then
+    echo "Please create signatures first (e.g. use debian-test-sign)!"
+    exit 1
+fi
+cp "${file_debian}" ./
+
+if ! tar xvf linux-signed-*.tar.xz;
+then
+    echo "Tar failed to decompress the source code for this pkg!"
+    exit 1
+fi
+
+mv ./source-template/debian ./debian
+rmdir source-template
+
+# Add extra functions in image pkg's postinst to follow LAT secure boot
+cd debian || exit 1
+cp "${MY_REPO_ROOT_DIR}"/cgcs-root/stx/kernel/kernel-signed/\
+kernel-rt-signed/debian/linux-rt-image.postinst.extra ./
+# Remove the end line ( "exit 0" ) in the init script
+sed -i '$d' linux-rt-image-*.postinst
+cat linux-rt-image.postinst.extra >> linux-rt-image-*.postinst
