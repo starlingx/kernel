@@ -9,3 +9,4 @@
 0009-Drop-Android-patches.patch
 0010-Debian-Disable-CONFIG_BNXT.patch
 0011-Debian-Hardcode-net.naming-scheme-in-CONFIG_CMDLINE.patch
+0012-Debian-update-5.10-Kernel-to-5.10.112.patch
