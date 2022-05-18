@@ -1,7 +1,7 @@
-From af3e406bccbcad7b7fce66201db9d431f48cf36b Mon Sep 17 00:00:00 2001
+From 8d2b2a2cd694d77872b28cbbd03d2647ef43c394 Mon Sep 17 00:00:00 2001
 From: Dan Voiculeasa <dan.voiculeasa@windriver.com>
 Date: Tue, 10 May 2022 12:21:32 +0300
-Subject: [PATCH 11/11] Debian: Harcode net.naming-scheme in CONFIG_CMDLINE
+Subject: [PATCH 11/11] Debian: Hardcode net.naming-scheme in CONFIG_CMDLINE
 
 Between CentOS systemd v219 and Debian systemd v247 some changes for
 determining NIC naming were introduced. Something called Predictable
@@ -27,16 +27,16 @@ Signed-off-by: Dan Voiculeasa <dan.voiculeasa@windriver.com>
  1 file changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/debian/config/amd64/none/config b/debian/config/amd64/none/config
-index bb72bbd94..2e1910137 100644
+index 5d75b7523..f8babc0c3 100644
 --- a/debian/config/amd64/none/config
 +++ b/debian/config/amd64/none/config
-@@ -463,7 +463,8 @@ CONFIG_HOTPLUG_CPU=y
+@@ -466,7 +466,8 @@ CONFIG_HOTPLUG_CPU=y
  CONFIG_LEGACY_VSYSCALL_EMULATE=y
  # CONFIG_LEGACY_VSYSCALL_XONLY is not set
  # CONFIG_LEGACY_VSYSCALL_NONE is not set
 -# CONFIG_CMDLINE_BOOL is not set
 +CONFIG_CMDLINE_BOOL=y
-+CONFIG_CMDLINE="net.naming-scheme=v238"
++CONFIG_CMDLINE="net.naming-scheme=vSTX7_0"
  CONFIG_MODIFY_LDT_SYSCALL=y
  CONFIG_HAVE_LIVEPATCH=y
  CONFIG_LIVEPATCH=y
