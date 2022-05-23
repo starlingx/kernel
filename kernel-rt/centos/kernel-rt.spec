@@ -90,7 +90,7 @@ Summary: The Linux kernel
 %define base_sublevel 10
 
 # Do we have a -stable update to apply?
-%define stable_update 99
+%define stable_update 112
 # Set rpm version accordingly
 %define stablerev %{stable_update}
 %define stable_base %{stable_update}
