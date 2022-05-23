@@ -32,6 +32,7 @@ Source11: modules-load.conf
 
 
 Patch1: 0001-ice_main-ice_lib-Use-irq_update_affinity_hint.patch
+Patch2: 0002-rename-the-ddp-file-to-avoid-conflict.patch
 
 %define kversion %(rpm -q kernel%{?bt_ext}-devel | sort --version-sort | tail -1 | sed 's/kernel%{?bt_ext}-devel-//')
 %define find() %(for f in %*; do if [ -e $f ]; then echo $f; break; fi; done)
@@ -81,7 +82,7 @@ source scl_source enable devtoolset-8 || :
 %{__install} -m 644 ice_comms/*.txt %{buildroot}/lib/firmware/updates/intel/ice/ddp/
 %{__install} -m 644 ice_comms/ice_comms*.pkg %{buildroot}/lib/firmware/updates/intel/ice/ddp/
 mkdir -p %{buildroot}//lib/firmware/intel/ice/ddp/
-ln -frs %{buildroot}/lib/firmware/updates/intel/ice/ddp/ice_comms*.pkg %{buildroot}//lib/firmware/intel/ice/ddp/ice.pkg
+ln -frs %{buildroot}/lib/firmware/updates/intel/ice/ddp/ice_comms*.pkg %{buildroot}//lib/firmware/intel/ice/ddp/stx-ice.pkg
 
 # Strip the modules(s).
 find %{buildroot} -type f -name \*.ko -exec %{__strip} --strip-debug \{\} \;
@@ -102,7 +103,7 @@ rm -rf %{buildroot}
 %defattr(644,root,root,755)
 /lib/modules/%{kversion}/
 /lib/firmware/updates/intel/ice/ddp/*
-/lib/firmware/intel/ice/ddp/ice.pkg
+/lib/firmware/intel/ice/ddp/stx-ice.pkg
 %{_sysconfdir}/modules-load.d/ice.conf
 %doc /usr/share/doc/kmod-ice-%{version}/
 %doc /usr/share/man/man7/
