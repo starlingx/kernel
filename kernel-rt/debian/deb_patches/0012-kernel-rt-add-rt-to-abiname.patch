@@ -1,0 +1,29 @@
+From c150984dea33d04e08edb7ddfde3fab79d3fc824 Mon Sep 17 00:00:00 2001
+From: Li Zhou <li.zhou@windriver.com>
+Date: Thu, 28 Apr 2022 10:16:20 +0800
+Subject: [PATCH] kernel-rt: add '-rt' to abiname
+
+Adding an extra '-rt' to abiname can change '5.10.0-6-amd64'
+in file names/paths to '5.10.0-6-rt-amd64'.
+In this way, the same names/paths in kernel-rt and kernel-std
+packages can be avoided.
+
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+---
+ debian/config/defines | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/debian/config/defines b/debian/config/defines
+index ee09bd2..828b481 100644
+--- a/debian/config/defines
++++ b/debian/config/defines
+@@ -1,5 +1,5 @@
+ [abi]
+-abiname: 6
++abiname: 6-rt
+ ignore-changes:
+  __cpuhp_*
+  __udp_gso_segment
+-- 
+2.17.1
+
