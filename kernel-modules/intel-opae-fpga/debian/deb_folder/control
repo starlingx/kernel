@@ -8,7 +8,14 @@ Rules-Requires-Root: no
 
 Package: kmod-opae-fpga-driver@KERNEL_TYPE@
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}, kmod-opae-fpga-driver-common
 Description: This package provides the opae-fpga kernel module(s).
  This package provides the opae-fpga-driver kernel module(s) built
  for the Linux kernel using the amd64 processors.
+
+Package: kmod-opae-fpga-driver-common
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: This package provides the common files of opae-fpga kernel module(s).
+ This package provides the common files of opae-fpga-driver kernel module(s) built
+ for the Linux kernel-std and kernel-rt using the amd64 processors.
