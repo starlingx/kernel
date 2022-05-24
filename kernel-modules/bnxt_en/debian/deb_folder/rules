@@ -29,6 +29,7 @@ WITH_MOD_SIGN ?= 1
 kheaders_name=$(shell ls /usr/src | grep linux@KERNEL_TYPE@-headers | grep common)
 kbuild_name=$(shell ls /usr/src | grep linux@KERNEL_TYPE@-headers | grep amd64)
 kversion=$(shell echo $(kbuild_name) | sed 's/linux@KERNEL_TYPE@-headers-//g')
+pkg_common_name=bnxt-en-common
 
 # "dpkg --status mlnx-ofed-kernel-modules" prints a version line
 # like the following:
@@ -59,7 +60,7 @@ endif
 override_dh_auto_install:
 	dh_install bnxt_en/bnxt_en.ko /lib/modules/$(kversion)/extra/bnxt_en/
 	dh_install bnxt_re/bnxt_re.ko /lib/modules/$(kversion)/extra/drivers/infiniband/hw/bnxt_re/
-	dh_install debian/extra/bnxt.conf $(_sysconfdir)/modprobe.d/
+	dh_install -p$(pkg_common_name) debian/extra/bnxt.conf $(_sysconfdir)/modprobe.d/
 
 override_dh_strip:
 	dh_strip
