@@ -56,6 +56,11 @@ sed -i "s/linux-kbuild/linux-rt-kbuild/g" `grep -rl "linux-kbuild" $SED_LIST`
 sed -i "s/linux-libc-dev/linux-rt-libc-dev/g" `grep -rl "linux-libc-dev" $SED_LIST`
 sed -i "s/linux-source/linux-rt-source/g" `grep -rl "linux-source" $SED_LIST`
 sed -i "s/linux-support/linux-rt-support/g" `grep -rl "linux-support" $SED_LIST`
+
+# The abiname is changed from "6" to "6-rt", so replace "5.10.0-6" with
+# "5.10.0-6-rt" in init control file.
+sed -i "s/5.10.0-6/5.10.0-6-rt/g" ./debian/control
+
 # This is the only file name that involves renaming in debian
 # folder.
 mv debian/linux-image.NEWS debian/linux-rt-image.NEWS
