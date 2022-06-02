@@ -37,7 +37,7 @@ pkg_name_common=qat1.7.l-common
 qat_src_dir=./
 _sysconfdir=/etc/
 _sbindir=/usr/sbin
-_libdir=/usr/lib64
+_libdir=/usr/lib/
 buildroot=./debian/$(pkg_name)/
 
 ifeq ($(WITH_MOD_SIGN),1)
