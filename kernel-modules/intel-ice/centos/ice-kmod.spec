@@ -78,11 +78,17 @@ source scl_source enable devtoolset-8 || :
 %{__install} -d %{buildroot}%{_sysconfdir}/modules-load.d
 %{__install} -m 644 %{SOURCE11} %{buildroot}%{_sysconfdir}/modules-load.d/ice.conf
 
+# Install both the OS default regular DDP fw and the COMMS version
 %{__install} -d %{buildroot}/lib/firmware/updates/intel/ice/ddp/
+%{__install} ddp/README %{buildroot}/lib/firmware/updates/intel/ice/ddp/README
+%{__install} ddp/LICENSE %{buildroot}/lib/firmware/updates/intel/ice/ddp/LICENSE
+%{__install} ddp/ice-*.pkg %{buildroot}/lib/firmware/updates/intel/ice/ddp/
 %{__install} -m 644 ice_comms/*.txt %{buildroot}/lib/firmware/updates/intel/ice/ddp/
 %{__install} -m 644 ice_comms/ice_comms*.pkg %{buildroot}/lib/firmware/updates/intel/ice/ddp/
+
+# Make the regular DDP fw be the default one to load
 mkdir -p %{buildroot}//lib/firmware/intel/ice/ddp/
-ln -frs %{buildroot}/lib/firmware/updates/intel/ice/ddp/ice_comms*.pkg %{buildroot}//lib/firmware/intel/ice/ddp/stx-ice.pkg
+ln -frs %{buildroot}/lib/firmware/updates/intel/ice/ddp/ice-*.pkg %{buildroot}//lib/firmware/intel/ice/ddp/stx-ice.pkg
 
 # Strip the modules(s).
 find %{buildroot} -type f -name \*.ko -exec %{__strip} --strip-debug \{\} \;
