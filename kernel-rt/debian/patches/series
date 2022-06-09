@@ -25,3 +25,4 @@
 0027-driver-core-auxiliary-bus-Fix-memory-leak-when-drive.patch
 0028-driver-core-auxiliary-bus-Enable-by-default.patch
 0029-Enable-CONFIG_PAGE_POOL-by-default.patch
+0030-printk-Add-the-condition-check-for-msleep-in-pr_flus.patch
