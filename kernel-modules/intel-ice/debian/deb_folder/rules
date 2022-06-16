@@ -56,7 +56,7 @@ override_dh_auto_install:
 	install -m644 ice_comms/*.txt debian/$(pkg_common_name)/lib/firmware/updates/intel/ice/ddp/
 	install -m644 ice_comms/ice_comms*.pkg debian/$(pkg_common_name)/lib/firmware/updates/intel/ice/ddp/
 	dh_installdirs -p$(pkg_common_name) /lib/firmware/intel/ice/ddp/
-	ln -frs debian/$(pkg_common_name)/lib/firmware/updates/intel/ice/ddp/ice_comms*.pkg debian/$(pkg_common_name)/lib/firmware/intel/ice/ddp/ice.pkg
+	ln -frs debian/$(pkg_common_name)/lib/firmware/updates/intel/ice/ddp/ice_comms*.pkg debian/$(pkg_common_name)/lib/firmware/intel/ice/ddp/stx-ice.pkg
 
 override_dh_strip:
 	dh_strip
