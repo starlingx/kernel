@@ -1,0 +1,34 @@
+From 9488453d8b47d886f472d2046ca1e1b841b704fa Mon Sep 17 00:00:00 2001
+From: Li Zhou <li.zhou@windriver.com>
+Date: Tue, 5 Jul 2022 14:51:33 +0800
+Subject: [PATCH] kernel-rt: fix /proc/version content
+
+Remove below settings from DEBIAN when building kernel:
+KBUILD_BUILD_USER
+KBUILD_BUILD_HOST
+To make /proc/version not contain debian maillist.
+
+Add "StarlingX" in KBUILD_BUILD_VERSION_TIMESTAMP
+to correct only "Debian" in the utsname::version string.
+
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+---
+ debian/rules.real | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/debian/rules.real b/debian/rules.real
+index 4e74b5b..3ddfcd4 100644
+--- a/debian/rules.real
++++ b/debian/rules.real
+@@ -43,7 +43,7 @@ export LINK_DOC_PACKAGE
+ stamp = [ -d $(dir $@) ] || mkdir $(dir $@); touch $@
+ 
+ setup_env := env -u ABINAME -u ARCH -u FEATURESET -u FLAVOUR -u VERSION -u LOCALVERSION
+-setup_env += DISTRIBUTION_OFFICIAL_BUILD=1 DISTRIBUTOR="$(DISTRIBUTOR)" DISTRIBUTION_VERSION="$(SOURCEVERSION)" KBUILD_BUILD_TIMESTAMP="$(SOURCE_DATE)" KBUILD_BUILD_VERSION_TIMESTAMP="$(DISTRIBUTOR) $(SOURCEVERSION) ($(SOURCE_DATE_UTC_ISO))" KBUILD_BUILD_USER="$(word 1,$(subst @, ,$(MAINTAINER)))" KBUILD_BUILD_HOST="$(word 2,$(subst @, ,$(MAINTAINER)))"
++setup_env += DISTRIBUTION_OFFICIAL_BUILD=1 DISTRIBUTOR="$(DISTRIBUTOR)" DISTRIBUTION_VERSION="$(SOURCEVERSION)" KBUILD_BUILD_TIMESTAMP="$(SOURCE_DATE)" KBUILD_BUILD_VERSION_TIMESTAMP="StarlingX $(DISTRIBUTOR) $(SOURCEVERSION) ($(SOURCE_DATE_UTC_ISO))"
+ setup_env += KBUILD_VERBOSE=$(if $(filter terse,$(DEB_BUILD_OPTIONS)),0,1)
+ 
+ MAKE_CLEAN = $(setup_env) $(MAKE) KCFLAGS=-fdebug-prefix-map=$(CURDIR)/=
+-- 
+2.17.1
+

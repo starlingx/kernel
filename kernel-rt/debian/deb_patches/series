@@ -11,3 +11,4 @@
 0011-Debian-Hardcode-net.naming-scheme-in-CONFIG_CMDLINE.patch
 0012-kernel-rt-add-rt-to-abiname.patch
 0013-Debian-update-5.10-Kernel-to-5.10.112.patch
+0014-kernel-rt-fix-proc-version-content.patch
