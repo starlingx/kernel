@@ -1,0 +1,58 @@
+From 073427e88d24bf573734e22d0e23d65f95b0a479 Mon Sep 17 00:00:00 2001
+From: Li Zhou <li.zhou@windriver.com>
+Date: Wed, 6 Jul 2022 14:51:17 +0800
+Subject: [PATCH] kernel-std: clean patches from debian release
+
+Clean the patches listed in debian/patches/series:
+(1) For section [# Changes to support package build system]
+
+Below 2 patches are kept for adding kernel version information
+in debian style:
+debian/version.patch
+debian/uname-version-timestamp.patch
+
+Below 4 patches are kept for working together with debian kernel
+building style, or else building errors occur:
+debian/kernelvariables.patch
+debian/tools-perf-version.patch
+debian/perf-traceevent-support-asciidoctor-for-documentatio.patch
+debian/kbuild-look-for-module.lds-under-arch-directory-too.patch
+
+(2) For section [# Lockdown missing pieces].
+Only 2 patches are kept for the necessary function of kernel modules
+signing.
+
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+---
+ debian/patches/series | 10 ----------
+ 1 file changed, 10 deletions(-)
+
+diff --git a/debian/patches/series b/debian/patches/series
+index 6b96a60..d91da94 100644
+--- a/debian/patches/series
++++ b/debian/patches/series
+@@ -2,15 +2,7 @@
+ debian/version.patch
+ debian/uname-version-timestamp.patch
+ debian/kernelvariables.patch
+-debian/ia64-hardcode-arch-script-output.patch
+-debian/mips-disable-werror.patch
+-debian/mips-boston-disable-its.patch
+-debian/mips-ieee754-relaxed.patch
+-debian/arch-sh4-fix-uimage-build.patch
+ debian/tools-perf-version.patch
+-debian/tools-perf-install.patch
+-debian/wireless-add-debian-wireless-regdb-certificates.patch
+-debian/documentation-drop-sphinx-version-check.patch
+ debian/perf-traceevent-support-asciidoctor-for-documentatio.patch
+ debian/kbuild-look-for-module.lds-under-arch-directory-too.patch
+ 
+@@ -19,5 +11,3 @@ debian/kbuild-look-for-module.lds-under-arch-directory-too.patch
+ # Lockdown missing pieces
+ features/all/lockdown/efi-add-an-efi_secure_boot-flag-to-indicate-secure-b.patch
+ features/all/lockdown/efi-lock-down-the-kernel-if-booted-in-secure-boot-mo.patch
+-features/all/lockdown/mtd-disable-slram-and-phram-when-locked-down.patch
+-features/all/lockdown/arm64-add-kernel-config-option-to-lock-down-when.patch
+-- 
+2.17.1
+
