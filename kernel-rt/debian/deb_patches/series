@@ -13,3 +13,4 @@
 0013-Debian-update-5.10-Kernel-to-5.10.112.patch
 0014-kernel-rt-fix-proc-version-content.patch
 0015-kernel-rt-clean-patches-from-debian-release.patch
+0016-Debian-Added-apparmor-security-module.patch
