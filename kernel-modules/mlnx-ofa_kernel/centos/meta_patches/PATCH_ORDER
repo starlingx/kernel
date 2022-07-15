@@ -1,3 +1,4 @@
 Support-STX-system-and-introduce-devtoolset-8.patch
 mlx5-pci_irq-Use-irq_update_affinity_hint.patch
 Ensure-that-modules-are-signed.patch
+Enable-mlx5-onboard-udev-name.patch

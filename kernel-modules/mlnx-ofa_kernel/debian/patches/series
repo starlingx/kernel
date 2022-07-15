@@ -1,1 +1,2 @@
 0001-mlx5-pci_irq-Use-irq_update_affinity_hint.patch
+0002-Enable-mlx5-onboard-udev-name.patch

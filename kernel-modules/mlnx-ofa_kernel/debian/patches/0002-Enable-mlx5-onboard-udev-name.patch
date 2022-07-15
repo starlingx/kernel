@@ -1,0 +1,57 @@
+From 74ecb6be9dd81ff6a3c28d2d8f9e557cb76009c3 Mon Sep 17 00:00:00 2001
+From: Steven Webster <steven.webster@windriver.com>
+Date: Thu, 11 Aug 2022 12:32:48 -0400
+Subject: [PATCH] Enable mlx5 onboard udev name
+
+This patch prioritizes the udev renaming rule for mlx5 controlled
+devices to take the onboard name over the slot/path name.
+
+This is consistent with the 70-persistent-net.rules file written
+by the StarlingX installer.
+
+It is also consistent with the naming order in the 99-default.link
+file.
+
+Without this patch, there could be an inconsistency with the
+70-persistent-net.rules first re-naming the device to its
+slot/path name, and then being overridden by the Mellanox specific
+82-net-setup-link.rules.
+
+Signed-off-by: Steven Webster <steven.webster@windriver.com>
+---
+ source/ofed_scripts/vf-net-link-name.sh | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
+
+diff --git a/ofed_scripts/vf-net-link-name.sh b/ofed_scripts/vf-net-link-name.sh
+index 65d8a7b..3bf87cc 100755
+--- a/ofed_scripts/vf-net-link-name.sh
++++ b/ofed_scripts/vf-net-link-name.sh
+@@ -68,7 +68,9 @@ if [ "$ID_NET_DRIVER" == "mlx5e_rep" ]; then
+ fi
+ 
+ if [ "$skip" == "0" ]; then
+-	if [ -n "$ID_NET_NAME_SLOT" ]; then
++	if [ -n "$ID_NET_NAME_ONBOARD" ]; then
++	    NAME="${ID_NET_NAME_ONBOARD%%np[[:digit:]]}"
++	elif [ -n "$ID_NET_NAME_SLOT" ]; then
+ 	    NAME="${ID_NET_NAME_SLOT%%np[[:digit:]]}"
+ 	elif [ -n "$ID_NET_NAME_PATH" ]; then
+ 	    NAME="${ID_NET_NAME_PATH%%np[[:digit:]]}"
+@@ -176,9 +178,12 @@ for cnt in {1..2}; do
+             continue
+         fi
+ 
+-        parent_path=`get_pci_name $pci ID_NET_NAME_SLOT`
++        parent_path=`get_pci_name $pci ID_NET_NAME_ONBOARD`
+         if [ -z "$parent_path" ]; then
+-            parent_path=`get_pci_name $pci ID_NET_NAME_PATH`
++            parent_path=`get_pci_name $pci ID_NET_NAME_SLOT`
++            if [ -z "$parent_path" ]; then
++                parent_path=`get_pci_name $pci ID_NET_NAME_PATH`
++            fi
+         fi
+         echo "NAME=${parent_path}_$PORT"
+         exit
+-- 
+2.29.2
+

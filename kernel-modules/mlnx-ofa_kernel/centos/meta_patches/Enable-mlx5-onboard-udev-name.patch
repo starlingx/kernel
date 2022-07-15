@@ -1,0 +1,33 @@
+From 0eb52f4a2a5d4d041afae205516515c4393fac2f Mon Sep 17 00:00:00 2001
+From: Steven Webster <steven.webster@windriver.com>
+Date: Mon, 11 Jul 2022 16:16:13 -0400
+Subject: [PATCH] Enable mlx5 onboard udev name
+
+Signed-off-by: Steven Webster <steven.webster@windriver.com>
+---
+ SPECS/mlnx-ofa_kernel.spec | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/SPECS/mlnx-ofa_kernel.spec b/SPECS/mlnx-ofa_kernel.spec
+index 2a1b956..d83da56 100644
+--- a/SPECS/mlnx-ofa_kernel.spec
++++ b/SPECS/mlnx-ofa_kernel.spec
+@@ -91,6 +91,7 @@ Group: System Environment/Base
+ Source: %{_basename}-%{_version}.tgz
+ Source100: modules-load.conf
+ Patch01: 0001-mlx5-pci_irq-Use-irq_update_affinity_hint.patch
++Patch02: 0002-Enable-mlx5-onboard-udev-name.patch
+ BuildRoot: %{?build_root:%{build_root}}%{!?build_root:/var/tmp/OFED}
+ Vendor: Mellanox Technologies
+ Obsoletes: kernel-ib
+@@ -267,6 +268,7 @@ mv "$@" source/
+ mkdir obj
+ 
+ %patch01 -p1
++%patch02 -p1
+ 
+ %build
+ %if 0%{?rhel} == 7
+-- 
+2.29.2
+
