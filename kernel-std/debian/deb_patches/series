@@ -13,3 +13,4 @@
 0013-kernel-std-fix-proc-version-content.patch
 0014-kernel-std-clean-patches-from-debian-release.patch
 0015-Debian-Added-apparmor-security-module.patch
+0016-debian-rules.real-Parallelize-xz-compression.patch
