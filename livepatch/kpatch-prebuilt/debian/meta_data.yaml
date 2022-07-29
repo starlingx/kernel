@@ -1,0 +1,7 @@
+---
+debver: 0.9.5-1
+serial: true
+src_path: source
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: True

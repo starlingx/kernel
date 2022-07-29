@@ -7,6 +7,7 @@ kernel-modules/intel-igb_uio
 kernel-modules/intel-opae-fpga
 kernel-modules/mlnx-ofa_kernel
 kernel-modules/qat17
+livepatch/kpatch-prebuilt
 userspace/broadcom/libbnxt_re
 userspace/mellanox/rdma-core
 userspace/mellanox/mstflint

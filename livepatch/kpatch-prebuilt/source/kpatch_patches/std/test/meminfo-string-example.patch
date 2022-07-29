@@ -1,0 +1,28 @@
+From 8d0255caf3407a29abde844033bcbf33a895c96d Mon Sep 17 00:00:00 2001
+From: Zhixiong Chi <zhixiong.chi@windriver.com>
+Date: Tue, 26 Jul 2022 21:42:51 -0700
+Subject: [PATCH] meminfo string example
+
+Add the kernel example patch for kpatch build.
+
+Signed-off-by: Zhixiong Chi <zhixiong.chi@windriver.com>
+---
+ fs/proc/meminfo.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/proc/meminfo.c b/fs/proc/meminfo.c
+index 887a5532e..62aafe080 100644
+--- a/fs/proc/meminfo.c
++++ b/fs/proc/meminfo.c
+@@ -119,7 +119,7 @@ static int meminfo_proc_show(struct seq_file *m, void *v)
+ 	seq_printf(m, "VmallocTotal:   %8lu kB\n",
+ 		   (unsigned long)VMALLOC_TOTAL >> 10);
+ 	show_val_kb(m, "VmallocUsed:    ", vmalloc_nr_pages());
+-	show_val_kb(m, "VmallocChunk:   ", 0ul);
++	show_val_kb(m, "VMALLOCChunk:   ", 0ul);
+ 	show_val_kb(m, "Percpu:         ", pcpu_nr_pages());
+ 
+ #ifdef CONFIG_MEMORY_FAILURE
+-- 
+2.34.1
+
