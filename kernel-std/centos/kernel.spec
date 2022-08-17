@@ -836,6 +836,9 @@ Patch25: 0026-driver-core-auxiliary-bus-Remove-unneeded-module-bit.patch
 Patch26: 0027-driver-core-auxiliary-bus-Fix-memory-leak-when-drive.patch
 Patch27: 0028-driver-core-auxiliary-bus-Enable-by-default.patch
 Patch28: 0029-Enable-CONFIG_PAGE_POOL-by-default.patch
+Patch29: 0030-x86-Enumerate-AVX512-FP16-CPUID-feature-flag.patch
+Patch30: 0031-KVM-x86-Expose-AVX512_FP16-for-supported-CPUID.patch
+Patch31: 0032-tools-headers-cpufeatures-Sync-with-the-kernel-sourc.patch
 
 # END OF PATCH DEFINITIONS
 %endif

@@ -26,3 +26,6 @@
 0028-driver-core-auxiliary-bus-Enable-by-default.patch
 0029-Enable-CONFIG_PAGE_POOL-by-default.patch
 0030-printk-Add-the-condition-check-for-msleep-in-pr_flus.patch
+0031-x86-Enumerate-AVX512-FP16-CPUID-feature-flag.patch
+0032-KVM-x86-Expose-AVX512_FP16-for-supported-CPUID.patch
+0033-tools-headers-cpufeatures-Sync-with-the-kernel-sourc.patch
