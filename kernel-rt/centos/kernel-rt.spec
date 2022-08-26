@@ -1098,6 +1098,24 @@ against the %{?2:%{2} }kernel package.\
 %{nil}
 
 #
+# This macro creates a kernel-<subpackage>-devel-keys package.
+#       %%kernel_devel_keys_package <subpackage> <pretty-name>
+#
+%define kernel_devel_keys_package() \
+%package %{?1:%{1}-}devel-keys\
+Summary: Development keys package for building signed kernel modules to match the %{?2:%{2} }kernel\
+Provides: kernel%{?1:-%{1}}-devel-keys-%{_target_cpu} = %{version}-%{release}\
+Provides: kernel-devel-keys-%{_target_cpu} = %{version}-%{release}%{?1:+%{1}}\
+Provides: kernel-devel-keys-uname-r = %{KVERREL}%{?variant}%{?1:+%{1}}\
+Provides: installonlypkg(kernel)\
+AutoReqProv: no\
+Requires: kernel-devel-%{_target_cpu} = %{version}-%{release}\
+%description %{?1:%{1}-}devel-keys\
+This package provides kernel module signing keys\
+against the %{?2:%{2} }kernel package.\
+%{nil}
+
+#
 # kernel-<variant>-ipaclones-internal package
 #
 %define kernel_ipaclones_package() \
@@ -1233,6 +1251,7 @@ Obsoletes: kernel-bootwrapper\
 %{expand:%%kernel_meta_package %{?1:%{1}}}\
 %endif\
 %{expand:%%kernel_devel_package %{?1:%{1}} %{!?{-n}:%{1}}%{?{-n}:%{-n*}}}\
+%{expand:%%kernel_devel_keys_package %{?1:%{1}} %{!?{-n}:%{1}}%{?{-n}:%{-n*}}}\
 %{expand:%%kernel_modules_package %{?1:%{1}} %{!?{-n}:%{1}}%{?{-n}:%{-n*}}}\
 %{expand:%%kernel_modules_extra_package %{?1:%{1}} %{!?{-n}:%{1}}%{?{-n}:%{-n*}}}\
 %{expand:%%kernel_modules_internal_package %{?1:%{1}} %{!?{-n}:%{1}}%{?{-n}:%{-n*}}}\
@@ -2997,6 +3016,11 @@ fi
 %{expand:%%files %{?3:%{3}-}devel}\
 %defverify(not mtime)\
 /usr/src/kernels/%{KVERREL}%{?3:+%{3}}\
+%exclude /usr/src/kernels/%{KVERREL}%{?3:+%{3}}/signing_key.x509\
+%exclude /usr/src/kernels/%{KVERREL}%{?3:+%{3}}/signing_key.pem\
+%{expand:%%files %{?3:%{3}-}devel-keys}\
+/usr/src/kernels/%{KVERREL}%{?3:+%{3}}/signing_key.x509\
+/usr/src/kernels/%{KVERREL}%{?3:+%{3}}/signing_key.pem\
 %{expand:%%files %{?3:%{3}-}modules-extra}\
 %config(noreplace) /etc/modprobe.d/*-blacklist.conf\
 /lib/modules/%{KVERREL}%{?3:+%{3}}/extra\
@@ -3058,6 +3082,9 @@ fi
 #
 #
 %changelog
+* Tue Aug 30 2022 Jiping Ma <jiping.ma2@windriver.com> - 5.10.112
+- Place module signing keys in a separate package kernel-rt-devel-keys.
+
 * Mon Jul 05 2021 Jiping Ma <jiping.ma2@windriver.com> - 5.10.30
 - This spec file is based on the spec file of std kernel.
 - Added STX patches.

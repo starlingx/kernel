@@ -15,7 +15,7 @@ Group: base
 Packager: Wind River <info@windriver.com>
 URL: https://01.org/packet-processing/intel%C2%AE-quickassist-technology-drivers-and-patches
 
-BuildRequires: kernel%{?bt_ext}-devel
+BuildRequires: kernel%{?bt_ext}-devel, kernel%{?bt_ext}-devel-keys
 BuildRequires: zlib-devel
 BuildRequires: openssl-devel
 BuildRequires: pciutils
