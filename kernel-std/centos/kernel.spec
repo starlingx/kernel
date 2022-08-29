@@ -2597,6 +2597,53 @@ echo "#define KERNEL_HEADERS_CHECKSUM \"$HEADERS_CHKSUM\"" >> $RPM_BUILD_ROOT/us
 ###
 ### scripts
 ###
+%transfiletriggerpostun -- /lib/modules/%{KVERREL}%{?1:+%{1}}/
+# No file list is provided via standard input, according to the
+# documentation, so we do not need to flush standard input.
+
+# This script will not run if the patch includes kernel.
+
+echo "Updating initramfs with dracut..."
+if dracut --force ; then
+	echo "Successfully updated initramfs."
+else
+	echo "Failed to update initramfs."
+	echo "You must update your initramfs image for changes to take place."
+	exit -1
+fi
+
+%transfiletriggerin -- /lib/modules/%{KVERREL}%{?1:+%{1}}/
+# Need to flush the standard input, because a list of files that caused
+# this trigger to fire is provided by RPM via standard input. If needed,
+# we can check if there are specific files we are interested in and only
+# re-generate initramfs in that case, but in our use case, this is not
+# necessary -- we always want to regenerate the initramfs.
+
+# Regardless of which files fire the trigger, we would like to regenerate
+# the initramfs, so flush the standard input.
+cat >/dev/null
+# There will be one left-over initramfs after upgrade or downgrade if the
+# patch includes kernel. To solve this problem, we added a judgment, if
+# the kernel is upgrading, initramfs will not be generated.
+
+# For example, we will downgrade kernel from 5.10.112-200.49 to 5.10.112-200.48.
+# There will be two initramfs in /boot after downgrade.
+# initramfs-5.10.112-200.48.tis.el7.x86_64.img
+# initramfs-5.10.112-200.49.tis.el7.x86_64.img(left-over one)
+# The running kernel verion is 5.10.112-200.49 when this script run, so
+# initramfs-5.10.112-200.49.tis.el7.x86_64.img is generated.
+# The running kernel version is different with the one that we will
+# upgrade or downgrade.
+if [ "$(uname -r)" == "%{KVERREL}%{?1:+%{1}}" ]; then
+	echo "Updating initramfs with dracut..."
+	if dracut --force ; then
+		echo "Successfully updated initramfs."
+	else
+		echo "Failed to update initramfs."
+		echo "You must update your initramfs image for changes to take place."
+		exit -1
+	fi
+fi
 
 %if %{with_tools}
 %post -n kernel-tools-libs

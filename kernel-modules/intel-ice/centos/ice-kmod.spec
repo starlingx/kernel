@@ -131,15 +131,6 @@ rm -rf /usr/local/share/%{name}
 %postun -n kmod-ice%{?bt_ext}
 uname -r | grep BOOT || /sbin/depmod -a > /dev/null 2>&1 || true
 
-echo "Updating initramfs with dracut..."
-if dracut --force ; then
-	echo "Successfully updated initramfs."
-else
-	echo "Failed to update initramfs."
-	echo "You must update your initramfs image for changes to take place."
-	exit -1
-fi
-
 %description
 This package provides the ice kernel module(s) built
 for the Linux kernel using the %{_target_cpu} family of processors.
