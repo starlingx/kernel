@@ -1,4 +1,4 @@
-From f5c58571e3f4278082e87bdbb2be565d61c0a21c Mon Sep 17 00:00:00 2001
+From 9c8a4be36cf93039931c01970943420b787d37bc Mon Sep 17 00:00:00 2001
 From: Li Zhou <li.zhou@windriver.com>
 Date: Thu, 7 Apr 2022 11:42:47 +0800
 Subject: [PATCH] intel-iavf: pass linux common header to check_aux_bus
@@ -11,15 +11,17 @@ path as the KSRC for check_aux_bus when KSRC_COMMON is exported in
 debian rules.
 
 Signed-off-by: Li Zhou <li.zhou@windriver.com>
+[jpm: Refresh patch for iavf v4.5.3)]
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
 ---
  src/common.mk | 7 ++++++-
  1 file changed, 6 insertions(+), 1 deletion(-)
 
 diff --git a/src/common.mk b/src/common.mk
-index e164d13..b2b4fe2 100644
+index 0b2ad05..a0b65d6 100644
 --- a/src/common.mk
 +++ b/src/common.mk
-@@ -373,8 +373,13 @@ export INSTALL_MOD_DIR ?= updates/drivers/net/ethernet/intel/${DRIVER}
+@@ -410,9 +410,14 @@ export INSTALL_MOD_DIR ?= updates/drivers/net/ethernet/intel/${DRIVER}
  # If the check_aux_bus script exists, then this driver depends on the
  # auxiliary module. Run the script to determine if we need to include
  # auxiliary files with this build.
@@ -28,12 +30,13 @@ index e164d13..b2b4fe2 100644
 +else
 +KSRC_AUX := ${KSRC_COMMON}
 +endif
- ifneq ($(call test_file,../scripts/check_aux_bus),)
--NEED_AUX_BUS := $(shell ../scripts/check_aux_bus --ksrc="${KSRC}" --build-kernel="${BUILD_KERNEL}" >/dev/null 2>&1; echo $$?)
-+NEED_AUX_BUS := $(shell ../scripts/check_aux_bus --ksrc="${KSRC_AUX}" --build-kernel="${BUILD_KERNEL}" >/dev/null 2>&1; echo $$?)
+ CHECK_AUX_BUS ?= ../scripts/check_aux_bus
+ ifneq ($(call test_file,${CHECK_AUX_BUS}),)
+-NEED_AUX_BUS := $(shell ${CHECK_AUX_BUS} --ksrc="${KSRC}" --build-kernel="${BUILD_KERNEL}" >/dev/null 2>&1; echo $$?)
++NEED_AUX_BUS := $(shell ${CHECK_AUX_BUS} --ksrc="${KSRC_AUX}" --build-kernel="${BUILD_KERNEL}" >/dev/null 2>&1; echo $$?)
  endif # check_aux_bus exists
  
  # The out-of-tree auxiliary module we ship should be moved into this
 -- 
-2.17.1
+2.30.2
 

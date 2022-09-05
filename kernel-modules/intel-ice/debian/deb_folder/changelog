@@ -1,3 +1,10 @@
+ice (1.9.11-1) unstable; urgency=medium
+
+  * Update ICE driver to 1.9.11 to support the Intel Logan Beach NIC
+    (E810-CQDA2T), which comes from bundle 27.5.
+
+ -- Jiping Ma <jiping.ma2@windriver.com>  Thu, 01 Sep 2022 11:32:03 +0800
+
 ice (1.8.3-1) unstable; urgency=medium
 
   * Update ICE driver to 1.8.3-1 to support the Intel Logan Beach NIC
