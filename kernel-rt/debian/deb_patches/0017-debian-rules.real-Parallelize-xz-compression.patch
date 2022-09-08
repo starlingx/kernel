@@ -1,0 +1,34 @@
+From 90afea5c8af57d90c0db6ff4330e5d9a5f120648 Mon Sep 17 00:00:00 2001
+From: "M. Vefa Bicakci" <vefa.bicakci@windriver.com>
+Date: Fri, 29 Jul 2022 19:10:11 +0000
+Subject: [PATCH 17/18] debian/rules.real: Parallelize xz compression
+
+This commit enables the multi-threading feature of the xz program so
+that it uses all of the available CPUs for the compression of the kernel
+source archive.
+
+In a 12-core virtual machine, this reduces the compression time from
+about 9 minutes to a little less than 1 minute.
+
+Signed-off-by: M. Vefa Bicakci <vefa.bicakci@windriver.com>
+---
+ debian/rules.real | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/debian/rules.real b/debian/rules.real
+index ffd75e75fc6e..2e6f636f70af 100644
+--- a/debian/rules.real
++++ b/debian/rules.real
+@@ -134,7 +134,8 @@ $(BUILD_DIR)/$(SOURCE_BASENAME)-source-$(UPSTREAMVERSION).tar.xz: $(STAMPS_DIR)/
+ 		-print0 | \
+ 		sort -z | \
+ 		tar --owner=root --group=root --numeric-owner \
+-			--no-recursion --null -T - -caf '$(SOURCE_BASENAME)-source-$(UPSTREAMVERSION).tar.xz'
++			--no-recursion --null -T - -I 'xz --threads=0' \
++			-cf '$(SOURCE_BASENAME)-source-$(UPSTREAMVERSION).tar.xz'
+ 	rm -rf '$(DIR)'
+ 
+ $(BUILD_DIR)/linux-patch-$(UPSTREAMVERSION)-%.patch.xz: $(STAMPS_DIR)/source_none $(STAMPS_DIR)/source_%
+-- 
+2.25.1
+
