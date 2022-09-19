@@ -15,7 +15,7 @@ License: GPLv2
 Summary: %{kmod_name} kernel module(s)
 URL:     http://www.intel.com/
 
-BuildRequires: kernel%{?bt_ext}-devel, redhat-rpm-config, openssl
+BuildRequires: kernel%{?bt_ext}-devel, kernel%{?bt_ext}-devel-keys, redhat-rpm-config, openssl
 BuildRequires: elfutils-libelf-devel
 %if 0%{?rhel} == 7
 BuildRequires:  devtoolset-8-build

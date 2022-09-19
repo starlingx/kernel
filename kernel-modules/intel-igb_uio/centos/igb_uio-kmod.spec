@@ -19,7 +19,7 @@ Summary: %{kmod_name} kernel module(s)
 URL:     http://www.intel.com/
 
 
-BuildRequires: kernel%{?bt_ext}-devel, openssl, redhat-rpm-config
+BuildRequires: kernel%{?bt_ext}-devel, kernel%{?bt_ext}-devel-keys, openssl, redhat-rpm-config
 %if 0%{?rhel} == 7
 BuildRequires:  devtoolset-8-build
 BuildRequires:  devtoolset-8-binutils

@@ -1,2 +1,3 @@
 Support-TiS-system-and-devtoolset-8.patch
 Fix-build-issues.patch
+Add-BuildRequires-on-kernel-devel-keys.patch

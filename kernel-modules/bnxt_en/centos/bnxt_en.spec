@@ -11,7 +11,7 @@
 ## Default: retpolines are enabled.
 %bcond_without retpoline
 
-%define kernel_module_package_buildreqs kernel%{?bt_ext}-devel
+%define kernel_module_package_buildreqs kernel%{?bt_ext}-devel, kernel%{?bt_ext}-devel-keys
 
 # Disable the building of debug package(s).
 %define debug_package %{nil}
