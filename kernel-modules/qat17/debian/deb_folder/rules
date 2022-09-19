@@ -50,8 +50,8 @@ override_dh_auto_configure:
 	./configure --enable-icp-sriov=host
 
 override_dh_auto_build:
-	make
-	make sample-all
+	$(MAKE)
+	$(MAKE) sample-all
 
 override_dh_auto_install:
 	dh_installdirs -p$(pkg_name_common) $(_sysconfdir)/default
@@ -94,3 +94,6 @@ ifeq ($(WITH_MOD_SIGN),1)
 	@echo "Sign the modules!"
 	./debian/sign_modules $(buildroot) $(privkey) $(pubkey)
 endif
+
+override_dh_auto_test:
+	true
