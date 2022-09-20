@@ -11,8 +11,6 @@
 ## Default: retpolines are enabled.
 %bcond_without retpoline
 
-%define kernel_module_package_buildreqs kernel%{?bt_ext}-devel, kernel%{?bt_ext}-devel-keys
-
 # Disable the building of debug package(s).
 %define debug_package %{nil}
 
@@ -31,7 +29,8 @@ BuildRequires: devtoolset-8-build
 BuildRequires: devtoolset-8-binutils
 BuildRequires: devtoolset-8-gcc
 BuildRequires: devtoolset-8-make
-BuildRequires: kernel%{?bt_ext}-devel findutils
+BuildRequires: findutils
+BuildRequires: kernel%{?bt_ext}-devel kernel%{?bt_ext}-devel-keys
 BuildRequires: mlnx-ofa_kernel%{?bt_ext}-devel mlnx-ofa_kernel%{?bt_ext}-source
 Requires: mlnx-ofa_kernel%{?bt_ext}-modules
 Requires(post):   /usr/sbin/depmod
