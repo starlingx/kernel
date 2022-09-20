@@ -1,19 +1,19 @@
 ---
-debver: 1.8.3
+debver: 1.9.11
 debname: ice
 dl_path:
-  name: ice-1.8.3.tar.gz
+  name: ice-1.9.11.tar.gz
   url: "https://sourceforge.net/projects/e1000/files/ice%20stable/\
-    1.8.3/ice-1.8.3.tar.gz"
-  md5sum: 9f14e96c6c807a5e1a57fb9075c85662
-  sha256sum: 180eaec1a644c1803d85df121575878e9291d583f926dec1ca7f1f4798f7e54c
+    1.9.11/ice-1.9.11.tar.gz"
+  md5sum: 26916c6a807a8ad7b977071d31c9ae01
+  sha256sum: 1c7640e81ba489321c6b29024517851f927291eb2e1c5c292ef5a74a6462f064
 dl_files:
-  ice_comms-1.3.35.0.zip:
+  800-Series-DDP-Comms-Package-1.3.37.0.zip:
     topdir: null
-    url: "https://downloadmirror.intel.com/727568/\
-      ice_comms-1.3.35.0.zip"
-    md5sum: ee79feecf555fa50d26dfc7c07879e41
-    sha256sum: 4bd0cc87784747f799e4600a54ec3710f006a89a0268efa201f30cb34a731908
+    url: "https://downloadmirror.intel.com/738733/\
+       800%20Series%20DDP%20Comms%20Package%201.3.37.0.zip"
+    md5sum: ba5febc828e1789d6c81bae5f1ab5d71
+    sha256sum: ee048ea47cd9d1f33b628131e8adc3751cc850bf89040cb8ebaa845d1a85508e
 revision:
   dist: $STX_DIST
   PKG_GITREVCOUNT: true

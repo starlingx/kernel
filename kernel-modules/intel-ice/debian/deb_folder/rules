@@ -73,5 +73,6 @@ ifeq ($(WITH_MOD_SIGN),1)
 endif
 
 override_dh_auto_build:
-	unzip -d ice_comms ice_comms*.zip
+	unzip -d ddp_comms 800-Series-DDP-Comms-Package-*.zip
+	unzip -d ice_comms ddp_comms/ice_comms*.zip
 	dh_auto_build -D ./src
