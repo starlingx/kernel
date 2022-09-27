@@ -1,0 +1,26 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+
+Upstream-Name: i40e
+Upstream-Contact: Intel Corporation
+Source: https://sourceforge.net/projects/e1000/files/i40e%20stable/2.14.13/i40e-2.14.13.tar.gz/download
+Files: *
+Copyright: (c) 2014 - 2022 Intel Corporation.
+License: GPL-2
+
+ This program is free software; you can redistribute it and/or modify it under
+ the terms and conditions of the GNU General Public License, version 2, as
+ published by the Free Software Foundation.
+
+ This program is distributed in the hope it will be useful, but WITHOUT ANY
+ WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+ PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along with
+ this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+ St - Fifth Floor, Boston, MA 02110-1301 USA.
+
+ The full GNU General Public License is included in this distribution in the
+ file called "COPYING".
+
+ On Debian-based systems the full text of the GNU General Public License
+ version 2 license can be found in `/usr/share/common-licenses/GPL-2'.

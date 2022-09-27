@@ -1,0 +1,28 @@
+From 16f902c806a16dcabce189a3ddd15ad63972351f Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Tue, 28 Jun 2022 22:23:56 -0400
+Subject: [PATCH] ddp: change ddp file name for legacy driver
+
+This commit changes ddp file name to support the multi drivers.
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ src/ice_main.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/ice_main.c b/src/ice_main.c
+index 4ab12f8..3f2412b 100644
+--- a/src/ice_main.c
++++ b/src/ice_main.c
+@@ -44,7 +44,7 @@ static const char ice_copyright[] = "Copyright (C) 2018-2019, Intel Corporation.
+ #else /* UTS_UBUNTU_RELEASE_ABI */
+ #define ICE_DDP_PKG_PATH	"intel/ice/ddp/"
+ #endif /* UTS_UBUNTU_RELEASE_ABI */
+-#define ICE_DDP_PKG_FILE	ICE_DDP_PKG_PATH "ice.pkg"
++#define ICE_DDP_PKG_FILE	ICE_DDP_PKG_PATH "legacy-1.5.8.1-ice.pkg"
+ 
+ MODULE_AUTHOR("Intel Corporation, <linux.nics@intel.com>");
+ MODULE_DESCRIPTION(DRV_SUMMARY);
+-- 
+2.32.0
+

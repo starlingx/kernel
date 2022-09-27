@@ -1,0 +1,23 @@
+Source: ice-1.5.8.1-legacy
+Section: net
+Priority: optional
+Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
+Build-Depends: debhelper-compat (= 13), linux@KERNEL_TYPE@-headers-5.10.0-6@KERNEL_TYPE@-amd64, linux@KERNEL_TYPE@-kbuild-5.10, unzip
+Standards-Version: 4.5.1
+Rules-Requires-Root: no
+
+Package: ice-1.5.8.1-legacy@KERNEL_TYPE@
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, ice-1.5.8.1-legacy-common
+Description: This package provides the ice kernel module(s).
+ This package provides the ice kernel module(s) built
+ for the Linux kernel using the amd64 processors.
+ This package contains the Intel(R) Ethernet Connection E800 Series Linux Driver.
+
+Package: ice-1.5.8.1-legacy-common
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: This package provides the common files of ice kernel module(s).
+ This package provides the common files of ice kernel module(s) built
+ for the Linux kernel-std and kernel-rt using the amd64 processors.
+ This package contains the Intel(R) Ethernet Connection E800 Series Linux Driver.
