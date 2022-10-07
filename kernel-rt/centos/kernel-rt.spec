@@ -808,6 +808,7 @@ Patch28: 0029-Enable-CONFIG_PAGE_POOL-by-default.patch
 Patch29: 0030-x86-Enumerate-AVX512-FP16-CPUID-feature-flag.patch
 Patch30: 0031-KVM-x86-Expose-AVX512_FP16-for-supported-CPUID.patch
 Patch31: 0032-tools-headers-cpufeatures-Sync-with-the-kernel-sourc.patch
+Patch32: 0033-rcu-Avoid-running-boost-kthreads-on-isolated-CPUs.patch
 
 # END OF PATCH DEFINITIONS
 %endif
