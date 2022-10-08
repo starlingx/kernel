@@ -1,0 +1,87 @@
+From 11af91a648f54802eeacae8d8f3d406cb23bdc8b Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Mon, 26 Sep 2022 20:58:57 -0700
+Subject: [PATCH] Place module signing keys in a separate package
+
+Currently we package our module signing keys as part of
+the 'linux-kbuild' package.  This means that anyone obtaining
+our 'linux-kbuild' package, which we do publish, can produce
+signed modules.  This violates the intent of secure boot.
+
+Re-package our module signing keys into a separate package
+known as 'linux-keys'.
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ debian/rules.real                           | 21 +++++++++++++++++++--
+ debian/templates/control.tools-versioned.in |  8 ++++++++
+ 2 files changed, 27 insertions(+), 2 deletions(-)
+
+diff --git a/debian/rules.real b/debian/rules.real
+index 01b568c..03dcb0a 100644
+--- a/debian/rules.real
++++ b/debian/rules.real
+@@ -72,6 +72,7 @@ binary-arch-arch: \
+ 	$(call if_package, $(SOURCE_BASENAME)-config-$(VERSION), install-config_$(ARCH)) \
+ 	$(call if_package, linux-libc-dev,               install-libc-dev_$(ARCH)) \
+ 	$(call if_package, linux-kbuild-$(VERSION),      install-kbuild) \
++	$(call if_package, linux-keys-$(VERSION),        install-keys) \
+ 	$(call if_package, linux-perf-$(VERSION),        install-perf) \
+ 	$(if $(filter-out x-$(VERSION),x$(SOURCE_SUFFIX)), \
+ 	  $(call if_package, linux-perf$(SOURCE_SUFFIX), install-perf-meta)) \
+@@ -664,8 +665,6 @@ install-kbuild: build-kbuild
+ 	$(call make-tools,scripts) install DESTDIR=$(DIR) prefix=$(PREFIX_DIR)
+ 	$(call make-tools,tools/objtool) install DESTDIR=$(DIR) prefix=$(PREFIX_DIR)
+ 	dh_link $(PREFIX_DIR) /usr/src/$(PACKAGE_NAME)
+-	dh_install $(BUILD_DIR)/*/certs/signing_key.pem /usr/src/kernels/$(ABINAME)-$(ARCH)/
+-	dh_install $(BUILD_DIR)/*/certs/signing_key.x509 /usr/src/kernels/$(ABINAME)-$(ARCH)/
+ 	dh_installchangelogs
+ ifeq (,$(filter nodoc,$(DEB_BUILD_PROFILES)))
+ 	dh_installdocs
+@@ -679,6 +678,24 @@ endif
+ 	dh_md5sums
+ 	dh_builddeb
+ 
++install-keys: PACKAGE_NAME = linux-keys-$(VERSION)
++install-keys: DH_OPTIONS = -p$(PACKAGE_NAME)
++install-keys: DIR = $(CURDIR)/debian/$(PACKAGE_NAME)
++install-keys:
++	dh_testdir
++	dh_testroot
++	dh_prep
++	dh_installdirs
++	dh_install $(BUILD_DIR)/*/certs/signing_key.pem /usr/src/kernels/$(ABINAME)-$(ARCH)/
++	dh_install $(BUILD_DIR)/*/certs/signing_key.x509 /usr/src/kernels/$(ABINAME)-$(ARCH)/
++	dh_installchangelogs
++	dh_compress
++	dh_fixperms
++	dh_installdeb
++	dh_gencontrol
++	dh_md5sums
++	dh_builddeb
++
+ build-cpupower: $(STAMPS_DIR)/build-tools-headers
+ 	$(call make-tools,tools/power/cpupower)
+ ifneq ($(filter i386 amd64 x32,$(DEB_HOST_ARCH)),)
+diff --git a/debian/templates/control.tools-versioned.in b/debian/templates/control.tools-versioned.in
+index 9219039..c9d48ed 100644
+--- a/debian/templates/control.tools-versioned.in
++++ b/debian/templates/control.tools-versioned.in
+@@ -6,6 +6,14 @@ Multi-Arch: foreign
+ Description: Kbuild infrastructure for Linux @version@
+  This package provides the kbuild infrastructure for the headers packages for Linux kernel version @version@.
+ 
++Package: linux-keys-@version@
++Build-Profiles: <!stage1 !pkg.linux.notools>
++Architecture: linux-any
++Depends: ${shlibs:Depends}, ${misc:Depends}
++Multi-Arch: foreign
++Description: Key infrastructure for Linux @version@
++ This package provides the kernel module signing keys for Linux kernel version @version@.
++
+ Package: linux-perf-@version@
+ Build-Profiles: <!stage1 !pkg.linux.notools !nopython>
+ Section: devel
+-- 
+2.35.1
+

@@ -19,7 +19,7 @@ Source: kpatch-prebuilt
 Section: kernel
 Priority: optional
 Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
-Build-Depends: python3, openssl, libelf-dev, libssl-dev, debhelper (>= 13), kpatch, kpatch-build, bison, flex, linux@KERNEL_TYPE@-image-5.10.0-6@KERNEL_TYPE@-amd64-unsigned, linux@KERNEL_TYPE@-source-5.10, linux@KERNEL_TYPE@-image-5.10.0-6@KERNEL_TYPE@-amd64-dbg, linux@KERNEL_TYPE@-kbuild-5.10
+Build-Depends: python3, openssl, libelf-dev, libssl-dev, debhelper (>= 13), kpatch, kpatch-build, bison, flex, linux@KERNEL_TYPE@-image-5.10.0-6@KERNEL_TYPE@-amd64-unsigned, linux@KERNEL_TYPE@-source-5.10, linux@KERNEL_TYPE@-image-5.10.0-6@KERNEL_TYPE@-amd64-dbg, linux@KERNEL_TYPE@-kbuild-5.10, linux@KERNEL_TYPE@-keys-5.10
 
 Package: kpatch-prebuilt@KERNEL_TYPE@
 Architecture: linux-amd64

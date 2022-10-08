@@ -15,3 +15,4 @@
 0015-Debian-Added-apparmor-security-module.patch
 0016-debian-rules.real-Parallelize-xz-compression.patch
 0017-Debian-Enable-WireGuard-config.patch
+0018-Place-module-signing-keys-in-a-separate-packa.patch
