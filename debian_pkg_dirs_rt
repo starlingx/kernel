@@ -1,8 +1,11 @@
 kernel-rt
 kernel-modules/bnxt_en
 kernel-modules/intel-i40e
+kernel-modules/intel-i40e-2.14.13-legacy
 kernel-modules/intel-iavf
+kernel-modules/intel-iavf-4.0.1-legacy
 kernel-modules/intel-ice
+kernel-modules/intel-ice-1.5.8.1-legacy
 kernel-modules/intel-igb_uio
 kernel-modules/intel-opae-fpga
 kernel-modules/mlnx-ofa_kernel

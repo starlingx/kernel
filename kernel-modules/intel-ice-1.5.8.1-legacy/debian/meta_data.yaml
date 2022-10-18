@@ -1,0 +1,12 @@
+---
+debver: 1.5.8.1
+debname: ice-1.5.8.1-legacy
+dl_path:
+  name: ice-1.5.8.1.tar.gz
+  url: "https://sourceforge.net/projects/e1000/files/unsupported/\
+    ice%20unsupported/1.5.8.1/ice-1.5.8.1.tar.gz"
+  md5sum: 0b8e2e18b4f4ab1e0c4981ca3ba1051d
+  sha256sum: f0e817abbcbbc7cb0676c159e5064afa89e86ace0bd1b66b644c728d344467ee
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true

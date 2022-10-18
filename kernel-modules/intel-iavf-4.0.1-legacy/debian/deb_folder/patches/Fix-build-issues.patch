@@ -1,0 +1,31 @@
+From 924a8432cc395d9cf522dace526133b95ff11b3d Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Wed, 8 Jun 2022 20:01:17 -0400
+Subject: [PATCH] Fix build issue
+
+read_barrier_depends() was a NOP on all architectures other than Alpha,
+so drop this entirely.
+https://github.com/torvalds/linux/commit/93fab07c22930c9ac4f01212fd92913c9a812f9f
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ src/iavf_txrx.c | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/src/iavf_txrx.c b/src/iavf_txrx.c
+index 03c685c..90bc0d6 100644
+--- a/src/iavf_txrx.c
++++ b/src/iavf_txrx.c
+@@ -288,9 +288,6 @@ static bool iavf_clean_tx_irq(struct iavf_vsi *vsi,
+ 		if (!eop_desc)
+ 			break;
+ 
+-		/* prevent any other reads prior to eop_desc */
+-		read_barrier_depends();
+-
+ 		iavf_trace(clean_tx_irq, tx_ring, tx_desc, tx_buf);
+ 		/* if the descriptor isn't done, no work yet to do */
+ 		if (!(eop_desc->cmd_type_offset_bsz &
+-- 
+2.29.2
+
