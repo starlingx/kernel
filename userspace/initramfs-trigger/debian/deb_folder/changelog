@@ -1,0 +1,5 @@
+initramfs-trigger (1.0) unstable; urgency=medium
+
+  * Initial Release.
+
+ -- Zhang Xiao <xiao.zhang@windriver.com>  Wed, 19 Oct 2022 22:34:57 +0800

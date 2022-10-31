@@ -1,0 +1,7 @@
+---
+debver: 1.0
+debname: initramfs-trigger
+src_path: src
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT:

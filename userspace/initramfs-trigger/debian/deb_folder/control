@@ -1,0 +1,14 @@
+Source: initramfs-trigger
+Section: admin
+Priority: optional
+Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 1.0
+Homepage: https://www.starlingx.io
+Rules-Requires-Root: no
+
+Package: initramfs-trigger
+Architecture: all
+Depends: ${misc:Depends}
+Description: Tag the version of the initramfs
+ Tag the version of the initramfs
