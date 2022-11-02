@@ -1,0 +1,11 @@
+i40e-cvl-2.54 (2.14.13-1) unstable; urgency=medium
+
+  * Change deb package name with bundle version
+
+ -- Jiping Ma <jiping.ma2@windriver.com>  Wed, 02 Nov 2022 15:09:35 +0800
+
+i40e-2.14.13-legacy (2.14.13-1) unstable; urgency=medium
+
+  * Initial release
+
+ -- Jiping Ma <jiping.ma2@windriver.com>  Wed, 12 Oct 2022 13:09:50 +0800

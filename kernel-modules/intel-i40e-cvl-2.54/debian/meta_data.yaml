@@ -1,6 +1,6 @@
 ---
 debver: 2.14.13
-debname: i40e-2.14.13-legacy
+debname: i40e-cvl-2.54
 dl_path:
   name: i40e-2.14.13.tar.gz
   url: "https://sourceforge.net/projects/e1000/files/i40e%20stable/\

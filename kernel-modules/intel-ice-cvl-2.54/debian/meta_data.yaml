@@ -1,6 +1,6 @@
 ---
 debver: 1.5.8.1
-debname: ice-1.5.8.1-legacy
+debname: ice-cvl-2.54
 dl_path:
   name: ice-1.5.8.1.tar.gz
   url: "https://sourceforge.net/projects/e1000/files/unsupported/\

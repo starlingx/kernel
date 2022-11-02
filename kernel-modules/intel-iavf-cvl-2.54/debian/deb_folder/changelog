@@ -1,0 +1,11 @@
+iavf-cvl-2.54 (4.0.1-1) unstable; urgency=medium
+
+ * Change deb package name with the bundle version
+
+ -- Jiping Ma <jiping.ma2@windriver.com>  Wed, 02 Nov 2022 15:30:48 +0800
+
+iavf-4.0.1-legacy (4.0.1-1) unstable; urgency=medium
+
+ * Initial release
+
+ -- Jiping Ma <jiping.ma2@windriver.com>  Wed, 12 Oct 2022 14:30:42 +0800

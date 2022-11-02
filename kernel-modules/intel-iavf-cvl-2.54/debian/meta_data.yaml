@@ -1,6 +1,6 @@
 ---
 debver: 4.0.1
-debname: iavf-4.0.1-legacy
+debname: iavf-cvl-2.54
 dl_path:
   name: iavf-4.0.1.tar.gz
   url: "https://sourceforge.net/projects/e1000/files/iavf%20stable/\
