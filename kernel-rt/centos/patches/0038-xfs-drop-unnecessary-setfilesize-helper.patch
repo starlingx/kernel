@@ -1,0 +1,74 @@
+From 2fd609b6c90a88630a50fb317473b210759b3873 Mon Sep 17 00:00:00 2001
+From: Brian Foster <bfoster@redhat.com>
+Date: Fri, 9 Apr 2021 10:27:56 -0700
+Subject: [PATCH 5/5] xfs: drop unnecessary setfilesize helper
+
+xfs_setfilesize() is the only remaining caller of the internal
+__xfs_setfilesize() helper. Fold them into a single function.
+
+Signed-off-by: Brian Foster <bfoster@redhat.com>
+Reviewed-by: Christoph Hellwig <hch@lst.de>
+Reviewed-by: Darrick J. Wong <djwong@kernel.org>
+Signed-off-by: Darrick J. Wong <djwong@kernel.org>
+[commit e7a3d7e792a5ad50583a2e6c35e72bd2ca6096f4 upstream
+ git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git]
+Signed-off-by: Zhixiong Chi <zhixiong.chi@windriver.com>
+---
+ fs/xfs/xfs_aops.c | 29 +++++++++--------------------
+ 1 file changed, 9 insertions(+), 20 deletions(-)
+
+diff --git a/fs/xfs/xfs_aops.c b/fs/xfs/xfs_aops.c
+index 23a9bd9ff..9e32d4135 100644
+--- a/fs/xfs/xfs_aops.c
++++ b/fs/xfs/xfs_aops.c
+@@ -42,14 +42,20 @@ static inline bool xfs_ioend_is_append(struct iomap_ioend *ioend)
+ /*
+  * Update on-disk file size now that data has been written to disk.
+  */
+-STATIC int
+-__xfs_setfilesize(
++int
++xfs_setfilesize(
+ 	struct xfs_inode	*ip,
+-	struct xfs_trans	*tp,
+ 	xfs_off_t		offset,
+ 	size_t			size)
+ {
++	struct xfs_mount	*mp = ip->i_mount;
++	struct xfs_trans	*tp;
+ 	xfs_fsize_t		isize;
++	int			error;
++
++	error = xfs_trans_alloc(mp, &M_RES(mp)->tr_fsyncts, 0, 0, 0, &tp);
++	if (error)
++		return error;
+ 
+ 	xfs_ilock(ip, XFS_ILOCK_EXCL);
+ 	isize = xfs_new_eof(ip, offset + size);
+@@ -68,23 +74,6 @@ __xfs_setfilesize(
+ 	return xfs_trans_commit(tp);
+ }
+ 
+-int
+-xfs_setfilesize(
+-	struct xfs_inode	*ip,
+-	xfs_off_t		offset,
+-	size_t			size)
+-{
+-	struct xfs_mount	*mp = ip->i_mount;
+-	struct xfs_trans	*tp;
+-	int			error;
+-
+-	error = xfs_trans_alloc(mp, &M_RES(mp)->tr_fsyncts, 0, 0, 0, &tp);
+-	if (error)
+-		return error;
+-
+-	return __xfs_setfilesize(ip, tp, offset, size);
+-}
+-
+ /*
+  * IO write completion.
+  */
+-- 
+2.34.1
+
