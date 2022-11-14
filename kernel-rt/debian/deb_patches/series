@@ -17,3 +17,4 @@
 0017-debian-rules.real-Parallelize-xz-compression.patch
 0018-Debian-Enable-WireGuard-config.patch
 0019-Place-module-signing-keys-in-a-separate-packa.patch
+0020-Upgrade-5.10-kernel-to-5.10.152.patch

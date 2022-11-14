@@ -1,0 +1,31 @@
+From e0f2104de72f2cc5252ebb6dce1a32c2d4847d67 Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Fri, 4 Nov 2022 01:54:18 -0700
+Subject: [PATCH] Upgrade 5.10 kernel to 5.10.152
+
+Update debian/changelog.
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ debian/changelog | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/debian/changelog b/debian/changelog
+index 37698fb..1855b1f 100644
+--- a/debian/changelog
++++ b/debian/changelog
+@@ -1,3 +1,11 @@
++linux-rt (5.10.152-1) unstable; urgency=medium
++
++  * New upstream update:
++    https://git.yoctoproject.org/linux-yocto/log/?h=v5.10%2Fstandard%2Fpreempt-rt%2Fbase&qt=range&q=899cf349eab4ac3020c6bad06f889e679509a1d2
++
++ -- Jiping Ma <jiping.ma2@windriver.com>  Fri Nov 04 16:43:32 CST 2022
++
++
+ linux-rt (5.10.112-1) unstable; urgency=medium
+ 
+   * New upstream update:
+-- 
+2.35.1
+
