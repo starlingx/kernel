@@ -809,6 +809,11 @@ Patch29: 0030-x86-Enumerate-AVX512-FP16-CPUID-feature-flag.patch
 Patch30: 0031-KVM-x86-Expose-AVX512_FP16-for-supported-CPUID.patch
 Patch31: 0032-tools-headers-cpufeatures-Sync-with-the-kernel-sourc.patch
 Patch32: 0033-rcu-Avoid-running-boost-kthreads-on-isolated-CPUs.patch
+Patch33: 0034-xfs-use-current-journal_info-for-detecting-transacti.patch
+Patch34: 0035-xfs-drop-submit-side-trans-alloc-for-append-ioends.patch
+Patch35: 0036-xfs-open-code-ioend-needs-workqueue-helper.patch
+Patch36: 0037-xfs-drop-unused-ioend-private-merge-and-setfilesize-.patch
+Patch37: 0038-xfs-drop-unnecessary-setfilesize-helper.patch
 
 # END OF PATCH DEFINITIONS
 %endif

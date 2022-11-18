@@ -29,3 +29,7 @@
 0031-KVM-x86-Expose-AVX512_FP16-for-supported-CPUID.patch
 0032-tools-headers-cpufeatures-Sync-with-the-kernel-sourc.patch
 0033-rcu-Avoid-running-boost-kthreads-on-isolated-CPUs.patch
+0034-xfs-drop-submit-side-trans-alloc-for-append-ioends.patch
+0035-xfs-open-code-ioend-needs-workqueue-helper.patch
+0036-xfs-drop-unused-ioend-private-merge-and-setfilesize-.patch
+0037-xfs-drop-unnecessary-setfilesize-helper.patch

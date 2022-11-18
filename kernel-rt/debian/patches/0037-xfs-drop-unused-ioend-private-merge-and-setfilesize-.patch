@@ -1,0 +1,94 @@
+From 170e31793806ce5e5a9647b6340954536244518e Mon Sep 17 00:00:00 2001
+From: Brian Foster <bfoster@redhat.com>
+Date: Fri, 9 Apr 2021 10:27:55 -0700
+Subject: [PATCH 3/4] xfs: drop unused ioend private merge and setfilesize code
+
+XFS no longer attaches anthing to ioend->io_private. Remove the
+unnecessary ->io_private merging code. This removes the only remaining
+user of xfs_setfilesize_ioend() so remove that function as well.
+
+Signed-off-by: Brian Foster <bfoster@redhat.com>
+Reviewed-by: Christoph Hellwig <hch@lst.de>
+Reviewed-by: Darrick J. Wong <djwong@kernel.org>
+Signed-off-by: Darrick J. Wong <djwong@kernel.org>
+[commit 044c6449f18f174ba8d86640936add3fc7582e49 upstream
+ git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git]
+Signed-off-by: Zhixiong Chi <zhixiong.chi@windriver.com>
+---
+ fs/xfs/xfs_aops.c | 46 +---------------------------------------------
+ 1 file changed, 1 insertion(+), 45 deletions(-)
+
+diff --git a/fs/xfs/xfs_aops.c b/fs/xfs/xfs_aops.c
+index a74a9ead5..23a9bd9ff 100644
+--- a/fs/xfs/xfs_aops.c
++++ b/fs/xfs/xfs_aops.c
+@@ -85,31 +85,6 @@ xfs_setfilesize(
+ 	return __xfs_setfilesize(ip, tp, offset, size);
+ }
+ 
+-STATIC int
+-xfs_setfilesize_ioend(
+-	struct iomap_ioend	*ioend,
+-	int			error)
+-{
+-	struct xfs_inode	*ip = XFS_I(ioend->io_inode);
+-	struct xfs_trans	*tp = ioend->io_private;
+-
+-	/*
+-	 * The transaction may have been allocated in the I/O submission thread,
+-	 * thus we need to mark ourselves as being in a transaction manually.
+-	 * Similarly for freeze protection.
+-	 */
+-	xfs_trans_set_context(tp);
+-	__sb_writers_acquired(VFS_I(ip)->i_sb, SB_FREEZE_FS);
+-
+-	/* we abort the update if there was an IO error */
+-	if (error) {
+-		xfs_trans_cancel(tp);
+-		return error;
+-	}
+-
+-	return __xfs_setfilesize(ip, tp, ioend->io_offset, ioend->io_size);
+-}
+-
+ /*
+  * IO write completion.
+  */
+@@ -163,25 +138,6 @@ xfs_end_ioend(
+ 	memalloc_nofs_restore(nofs_flag);
+ }
+ 
+-/*
+- * If the to be merged ioend has a preallocated transaction for file
+- * size updates we need to ensure the ioend it is merged into also
+- * has one.  If it already has one we can simply cancel the transaction
+- * as it is guaranteed to be clean.
+- */
+-static void
+-xfs_ioend_merge_private(
+-	struct iomap_ioend	*ioend,
+-	struct iomap_ioend	*next)
+-{
+-	if (!ioend->io_private) {
+-		ioend->io_private = next->io_private;
+-		next->io_private = NULL;
+-	} else {
+-		xfs_setfilesize_ioend(next, -ECANCELED);
+-	}
+-}
+-
+ /* Finish all pending io completions. */
+ void
+ xfs_end_io(
+@@ -201,7 +157,7 @@ xfs_end_io(
+ 	while ((ioend = list_first_entry_or_null(&tmp, struct iomap_ioend,
+ 			io_list))) {
+ 		list_del_init(&ioend->io_list);
+-		iomap_ioend_try_merge(ioend, &tmp, xfs_ioend_merge_private);
++		iomap_ioend_try_merge(ioend, &tmp, NULL);
+ 		xfs_end_ioend(ioend);
+ 	}
+ }
+-- 
+2.34.1
+
