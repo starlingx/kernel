@@ -1,0 +1,14 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+
+Upstream-Name: iqvlinux
+Upstream-Contact: Intel Corporation
+Source: iqvlinux.tar.gz in https://sourceforge.net/projects/e1000/files/iqvlinux/
+Files: *
+Copyright: (c) 2022 Intel Corporation.
+License: GPL-2
+
+ The full GNU General Public License is included in this distribution in the
+ file called "COPYING".
+
+ On Debian-based systems the full text of the GNU General Public License
+ version 2 license can be found in `/usr/share/common-licenses/GPL-2'.

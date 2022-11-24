@@ -1,0 +1,18 @@
+#!/bin/bash
+set -x
+
+# $1: Name of directory where the source code is extracted to.
+#     It corresponds to the build name taken from changelog.QV_ZIP
+
+PKG_BUILD_NAME=$1
+PKG_BUILD_DIR=$(realpath `pwd`/"${PKG_BUILD_NAME}")
+
+QV_SOURCE=iqvlinux.tar.gz
+
+mkdir -p "${PKG_BUILD_DIR}/iqvlinux"
+
+# Unpack source code
+tar xzf "${QV_SOURCE}" -C "${PKG_BUILD_DIR}"
+
+# Clean-up
+rm -rf *.tar.gz

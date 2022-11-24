@@ -1,0 +1,62 @@
+#!/usr/bin/make -f
+#
+# Copyright (c) 2022 Wind River Systems, Inc.
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements. The ASF licenses this
+# file to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#  http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+# output every command that modifies files on the build system.
+#export DH_VERBOSE = 1
+
+export LINUX_DRIVER_BUILD_DIR="$(PWD)/src/linux/driver"
+export NALDIR="$(PWD)"
+
+WITH_MOD_SIGN ?= 1
+
+kheaders_name=$(shell ls /usr/src | grep linux@KERNEL_TYPE@-headers | grep amd64)
+export KSRC=/usr/src/$(kheaders_name)
+kversion=$(shell echo $(kheaders_name) | sed 's/linux@KERNEL_TYPE@-headers-//g')
+kmod_name=iqvlinux
+version=$(shell dpkg-parsechangelog | sed -n 's/^Version: *\([^-]\+\)-.\+/\1/p')
+
+ifeq ($(WITH_MOD_SIGN),1)
+pkg_name=iqvlinux@KERNEL_TYPE@
+endif
+pkg_common_name=iqvlinux-common
+
+_sysconfdir=/etc
+_defaultdocdir=/usr/share/doc
+_mandir=/usr/share/man
+
+ifeq ($(WITH_MOD_SIGN),1)
+_keydir ?= /usr/src/kernels/$(kversion)/
+privkey ?= $(_keydir)/signing_key.pem
+pubkey ?= $(_keydir)/signing_key.x509
+endif
+
+%:
+	dh $@ --sourcedirectory=src/linux/driver/
+
+override_dh_auto_install:
+	dh_install ./src/linux/driver/iqvlinux.ko lib/modules/$(kversion)/kernel/drivers/net/
+
+override_dh_strip:
+	dh_strip
+	find debian -name '*.ko' | xargs strip -g
+ifeq ($(WITH_MOD_SIGN),1)
+	@echo "Sign the modules!"
+	./debian/sign_modules ./debian/$(pkg_name)/lib/modules/$(kversion)/kernel/drivers/net/ $(privkey) $(pubkey)
+endif

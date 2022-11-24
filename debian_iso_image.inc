@@ -29,6 +29,10 @@ igb-uio-rt
 #initramfs-trigger
 initramfs-trigger
 
+# Intel Quartzville Linux Driver
+iqvlinux
+iqvlinux-rt
+
 #intel-opae-fpgaa
 kmod-opae-fpga-driver
 kmod-opae-fpga-driver-rt
