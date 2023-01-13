@@ -1,0 +1,30 @@
+From 499fdf920b9b5523b7e0d47bbefb736ba54f7ece Mon Sep 17 00:00:00 2001
+From: Li Zhou <li.zhou@windriver.com>
+Date: Fri, 13 Jan 2023 19:20:29 +0800
+Subject: [PATCH] config: don't unset CONFIG_EFIVAR_FS
+
+The efivarfs at /sys/firmware/efi/efivars is a new way to access
+the efi-variables and it is better supported by efi tools than the
+old way /sys/firmware/efi/vars. So here compile the efivarfs as a
+module by default.
+
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+---
+ debian/config/amd64/none/config | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/debian/config/amd64/none/config b/debian/config/amd64/none/config
+index 06e93c2..22fae05 100644
+--- a/debian/config/amd64/none/config
++++ b/debian/config/amd64/none/config
+@@ -5471,7 +5471,6 @@ CONFIG_HUGETLB_PAGE=y
+ CONFIG_MEMFD_CREATE=y
+ CONFIG_ARCH_HAS_GIGANTIC_PAGE=y
+ CONFIG_CONFIGFS_FS=y
+-# CONFIG_EFIVAR_FS is not set
+ # end of Pseudo filesystems
+ 
+ CONFIG_MISC_FILESYSTEMS=y
+-- 
+2.17.1
+
