@@ -19,3 +19,4 @@
 0019-Upgrade-5.10-kernel-to-5.10.152.patch
 0020-kernel-std-unset-LOCK_DOWN_IN_EFI_SECURE_BOOT.patch
 0021-config-don-t-unset-CONFIG_EFIVAR_FS.patch
+0022-Upgrade-5.10-kernel-to-5.10.162.patch
