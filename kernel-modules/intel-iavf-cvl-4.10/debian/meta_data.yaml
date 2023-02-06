@@ -1,0 +1,11 @@
+---
+debver: 4.6.1
+debname: iavf-cvl-4.10
+dl_path:
+  name: iavf-4.6.1.tar.gz
+  url: "https://sourceforge.net/projects/e1000/files/iavf%20stable/\
+    4.6.1/iavf-4.6.1.tar.gz/download"
+  sha256sum: 03374f4277d6a09bdfdfbe3df4908c5cb9221160b2d9f816856dba2b048ca6f9
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true

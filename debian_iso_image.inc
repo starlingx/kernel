@@ -9,18 +9,24 @@ i40e
 i40e-rt
 i40e-cvl-2.54
 i40e-cvl-2.54-rt
+i40e-cvl-4.10
+i40e-cvl-4.10-rt
 
 #intel-iavf
 iavf
 iavf-rt
 iavf-cvl-2.54
 iavf-cvl-2.54-rt
+iavf-cvl-4.10
+iavf-cvl-4.10-rt
 
 #intel-ice
 ice
 ice-rt
 ice-cvl-2.54
 ice-cvl-2.54-rt
+ice-cvl-4.10
+ice-cvl-4.10-rt
 
 #intel-igb_uio
 igb-uio

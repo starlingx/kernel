@@ -1,0 +1,49 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+
+Upstream-Name: iavf
+Upstream-Contact: Intel Corporation
+Source: https://sourceforge.net/projects/e1000/files/iavf%20stable/4.6.1/iavf-4.6.1.tar.gz/download
+Files: *
+Copyright: (c) 2018 - 2023 Intel Corporation.
+License: GPL-2
+
+Files: debian/deb_folder/patches/*
+Copyright: (c) 2023 Wind River Systems, Inc.
+License: GPL-2
+
+ This program is free software; you can redistribute it and/or modify it under
+ the terms and conditions of the GNU General Public License, version 2, as
+ published by the Free Software Foundation.
+
+ This program is distributed in the hope it will be useful, but WITHOUT ANY
+ WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+ PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License along with
+ this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+ St - Fifth Floor, Boston, MA 02110-1301 USA.
+
+ The full GNU General Public License is included in this distribution in the
+ file called "COPYING".
+
+ On Debian-based systems the full text of the GNU General Public License
+ version 2 license can be found in `/usr/share/common-licenses/GPL-2'.
+
+Files: debian/*  except debian/deb_folder/patches/*
+Copyright: (c) 2023 Wind River Systems, Inc.
+License: Apache-2.0
+
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements. The ASF licenses this
+ file to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.

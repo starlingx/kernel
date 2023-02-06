@@ -1,0 +1,29 @@
+From e0b6411ddcc2d3060a0703d3b33dd59b9d3d64e8 Mon Sep 17 00:00:00 2001
+From: Jackie Huang <jackie.huang@windriver.com>
+Date: Fri, 20 May 2022 03:23:25 -0400
+Subject: [PATCH 3/3] rename the ddp file to avoid conflict
+
+Rename the ddp file to avoid conflict with the one
+provided by linux-firmware.
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ src/ice_main.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/ice_main.c b/src/ice_main.c
+index 79588a8..eeef56e 100644
+--- a/src/ice_main.c
++++ b/src/ice_main.c
+@@ -47,7 +47,7 @@ static const char ice_copyright[] = "Copyright (C) 2018-2021, Intel Corporation.
+ #else /* UTS_UBUNTU_RELEASE_ABI */
+ #define ICE_DDP_PKG_PATH	"intel/ice/ddp/"
+ #endif /* UTS_UBUNTU_RELEASE_ABI */
+-#define ICE_DDP_PKG_FILE	ICE_DDP_PKG_PATH "ice.pkg"
++#define ICE_DDP_PKG_FILE	ICE_DDP_PKG_PATH "1.10.1.2-ice.pkg"
+ 
+ MODULE_AUTHOR("Intel Corporation, <linux.nics@intel.com>");
+ MODULE_DESCRIPTION(DRV_SUMMARY);
+-- 
+2.39.0
+

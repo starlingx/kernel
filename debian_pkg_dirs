@@ -2,10 +2,13 @@ kernel-std
 kernel-modules/bnxt_en
 kernel-modules/intel-i40e
 kernel-modules/intel-i40e-cvl-2.54
+kernel-modules/intel-i40e-cvl-4.10
 kernel-modules/intel-iavf
 kernel-modules/intel-iavf-cvl-2.54
+kernel-modules/intel-iavf-cvl-4.10
 kernel-modules/intel-ice
 kernel-modules/intel-ice-cvl-2.54
+kernel-modules/intel-ice-cvl-4.10
 kernel-modules/intel-igb_uio
 kernel-modules/intel-opae-fpga
 kernel-modules/intel-qv

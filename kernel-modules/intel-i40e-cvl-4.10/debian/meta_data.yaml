@@ -1,0 +1,11 @@
+---
+debver: 2.21.12
+debname: i40e-cvl-4.10
+dl_path:
+  name: i40e-2.21.12.tar.gz
+  url: "https://sourceforge.net/projects/e1000/files/i40e%20stable/\
+    2.21.12/i40e-2.21.12.tar.gz/download"
+  sha256sum: db59d21f5af7c0bebf361d61c8debce3021ac40e10133bec24e7e95987ea0678
+revision:
+  dist: $STX_DIST
+  PKG_GITREVCOUNT: true
