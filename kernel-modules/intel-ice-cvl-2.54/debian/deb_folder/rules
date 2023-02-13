@@ -59,7 +59,7 @@ override_dh_auto_install:
 	install -m 644 ddp/ice-*.pkg debian/$(pkg_common_name)/lib/firmware/updates/intel/$(kmod_name)-$(version)/ddp/
 	# Make the regular DDP fw be the default one to load
 	dh_installdirs -p$(pkg_common_name) /lib/firmware/intel/$(kmod_name)/ddp/
-	ln -frs debian/$(pkg_common_name)/lib/firmware/updates/intel/$(kmod_name)-$(version)/ddp/ice-*.pkg debian/$(pkg_common_name)/lib/firmware/intel/$(kmod_name)/ddp/legacy-1.5.8.1-ice.pkg
+	ln -frs debian/$(pkg_common_name)/lib/firmware/updates/intel/$(kmod_name)-$(version)/ddp/ice-*.pkg debian/$(pkg_common_name)/lib/firmware/intel/$(kmod_name)/ddp/legacy-1.5.8-ice.pkg
 
 override_dh_strip:
 	dh_strip
