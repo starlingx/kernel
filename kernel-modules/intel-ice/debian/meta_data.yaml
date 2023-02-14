@@ -16,4 +16,6 @@ dl_files:
     sha256sum: ee048ea47cd9d1f33b628131e8adc3751cc850bf89040cb8ebaa845d1a85508e
 revision:
   dist: $STX_DIST
-  PKG_GITREVCOUNT: true
+  GITREVCOUNT:
+    BASE_SRCREV: d219f2aec116bef15ff00df9df1bee82a5db3a93
+    SRC_DIR: ${MY_REPO}/stx/kernel/kernel-modules/intel-ice

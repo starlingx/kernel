@@ -10,4 +10,6 @@ dl_path:
 dl_hook: dl_hook
 revision:
   dist: $STX_DIST
-  PKG_GITREVCOUNT: true
+  GITREVCOUNT:
+    BASE_SRCREV: 6bc25e523948015fb80eac77bd946a9000955241
+    SRC_DIR: ${MY_REPO}/stx/kernel/kernel-modules/intel-qv

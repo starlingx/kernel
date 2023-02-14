@@ -8,4 +8,6 @@ dl_path:
   sha256sum: 03374f4277d6a09bdfdfbe3df4908c5cb9221160b2d9f816856dba2b048ca6f9
 revision:
   dist: $STX_DIST
-  PKG_GITREVCOUNT: true
+  GITREVCOUNT:
+    BASE_SRCREV: 9781c5567d6667ba4a1ec6588e6b86f5dea3945a
+    SRC_DIR: ${MY_REPO}/stx/kernel/kernel-modules/intel-iavf-cvl-4.10

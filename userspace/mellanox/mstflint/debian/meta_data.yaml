@@ -9,4 +9,6 @@ dl_path:
   sha256sum: d24ea5b2265ad6260e142add4b87ac869a2e4414c66a2922017b4ad11f4f1fed
 revision:
   dist: $STX_DIST
-  PKG_GITREVCOUNT: true
+  GITREVCOUNT:
+    BASE_SRCREV: e42c4c49aa62d86c180c8430ea4dcf6a221ba805
+    SRC_DIR: ${MY_REPO}/stx/kernel/userspace/mellanox/mstflint

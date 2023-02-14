@@ -11,4 +11,6 @@ dl_files:
     sha256sum: 85bdfc30b4bd3e184e3b57a48055c11085e3b97593f7b4a8347fa50a9d571336
 revision:
   dist: $STX_DIST
-  PKG_GITREVCOUNT: true
+  GITREVCOUNT:
+    BASE_SRCREV: e8cb7ff3ee3cee16c15287fe91204a448786acfa
+    SRC_DIR: ${MY_REPO}/stx/kernel/userspace/broadcom/libbnxt_re

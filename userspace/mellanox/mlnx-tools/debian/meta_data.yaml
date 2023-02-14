@@ -9,4 +9,6 @@ dl_path:
   sha256sum: db0246a22ffe0e75f64dfb41736ea4a21931f4f67fb971f519834eeab9176932
 revision:
   dist: $STX_DIST
-  PKG_GITREVCOUNT: true
+  GITREVCOUNT:
+    BASE_SRCREV: e42c4c49aa62d86c180c8430ea4dcf6a221ba805
+    SRC_DIR: ${MY_REPO}/stx/kernel/userspace/mellanox/mlnx-tools

@@ -7,4 +7,6 @@ dl_path:
   md5sum: a6ff665184159583542dac89b9226f09
 revision:
   dist: $STX_DIST
-  PKG_GITREVCOUNT: true
+  GITREVCOUNT:
+    BASE_SRCREV: 3a55c2449120d1682351c4b9af671768ba3dae51
+    SRC_DIR: ${MY_REPO}/stx/kernel/kernel-modules/qat17

@@ -9,4 +9,6 @@ dl_path:
   sha256sum: 11419e81b85946575338ab2b78260a647dc458753d6c10de68dc8a199425b8ec
 revision:
   dist: $STX_DIST
-  PKG_GITREVCOUNT: true
+  GITREVCOUNT:
+    BASE_SRCREV: e7d9eb420228a86dcecd578de13d5a7c4e236b79
+    SRC_DIR: ${MY_REPO}/stx/kernel/kernel-modules/intel-i40e

@@ -4,4 +4,6 @@ debname: initramfs-trigger
 src_path: src
 revision:
   dist: $STX_DIST
-  PKG_GITREVCOUNT:
+  GITREVCOUNT:
+    BASE_SRCREV: 4dd2b4a96084663c94b631409e9c7fcc6175ba92
+    SRC_DIR: ${MY_REPO}/stx/kernel/userspace/initramfs-trigger

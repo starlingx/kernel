@@ -4,4 +4,6 @@ debname: kernel-rt-signed
 dl_hook: dl_hook
 revision:
   dist: $STX_DIST
-  PKG_GITREVCOUNT: true
+  GITREVCOUNT:
+    BASE_SRCREV: 4f3e32ce75cd9772e7973bf63cff07ed89503b35
+    SRC_DIR: ${MY_REPO}/stx/kernel/kernel-signed/kernel-rt-signed

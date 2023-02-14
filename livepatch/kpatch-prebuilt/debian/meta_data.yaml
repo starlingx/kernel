@@ -4,4 +4,6 @@ serial: true
 src_path: source
 revision:
   dist: $STX_DIST
-  PKG_GITREVCOUNT: True
+  GITREVCOUNT:
+    BASE_SRCREV: e0bb6f65d7f3fe8c77089e1a447ab8d58b8bb2de
+    SRC_DIR: ${MY_REPO}/stx/kernel/livepatch/kpatch-prebuilt

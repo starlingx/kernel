@@ -17,4 +17,6 @@ dl_files:
     sha256sum: 1367a40724054a540c4d9c92f0ea6f73e9e50b2a99e46b59a987be15bdc4c4b7
 revision:
   dist: $STX_DIST
-  PKG_GITREVCOUNT: true
+  GITREVCOUNT:
+    BASE_SRCREV: 92efe6f6668a66b7a16261a7bd40a1f648764590
+    SRC_DIR: ${MY_REPO}/stx/kernel/kernel-std

@@ -8,4 +8,6 @@ dl_path:
   md5sum: 1ae270026cda66789eb7e92aa236a489
 revision:
   dist: $STX_DIST
-  PKG_GITREVCOUNT: true
+  GITREVCOUNT:
+    BASE_SRCREV: 23c4b6e7dd5788419cbad912ceb6a76849b89fe2
+    SRC_DIR: ${MY_REPO}/stx/kernel/kernel-modules/intel-igb_uio

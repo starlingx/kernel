@@ -11,4 +11,6 @@ dl_files:
     md5sum: 389888f2bb3e8cfb002a1ba880fc6823
 revision:
   dist: $STX_DIST
-  PKG_GITREVCOUNT: true
+  GITREVCOUNT:
+    BASE_SRCREV: 9f11519ae0d92019a8718693e110c11746223222
+    SRC_DIR: ${MY_REPO}/stx/kernel/kernel-modules/intel-opae-fpga
