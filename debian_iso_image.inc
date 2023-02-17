@@ -28,6 +28,10 @@ ice-cvl-2.54-rt
 ice-cvl-4.10
 ice-cvl-4.10-rt
 
+# Marvell kernel modules
+octeon-ep
+octeon-ep-rt
+
 #intel-igb_uio
 igb-uio
 igb-uio-rt

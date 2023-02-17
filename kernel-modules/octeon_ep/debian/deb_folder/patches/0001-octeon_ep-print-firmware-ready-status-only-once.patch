@@ -1,0 +1,39 @@
+From c3a97b11a797825a78d394ccd54612b313e210d2 Mon Sep 17 00:00:00 2001
+From: Veerasenareddy Burru <vburru@marvell.com>
+Date: Mon, 20 Feb 2023 22:28:58 -0800
+Subject: [PATCH] octeon_ep: print firmware ready status only once
+
+Do not log everytime when firmware ready status is read as 0 (not
+ready). log only once when firmware is not ready and once when
+firmware is ready.
+
+Signed-off-by: Veerasenareddy Burru <vburru@marvell.com>
+---
+ host/drivers/octeon_ep/octep_main.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/host/drivers/octeon_ep/octep_main.c b/host/drivers/octeon_ep/octep_main.c
+index cad1208..f8a5fe4 100644
+--- a/host/drivers/octeon_ep/octep_main.c
++++ b/host/drivers/octeon_ep/octep_main.c
+@@ -1206,8 +1206,7 @@ static u8 get_fw_ready_status(struct octep_device *oct)
+ #define FW_STATUS_VSEC_ID  0xA3
+ 		if (vsec_id == FW_STATUS_VSEC_ID) {
+ 			pci_read_config_byte(oct->pdev, (pos + 8), &status);
+-			dev_info(&oct->pdev->dev, "Firmware ready %u\n",
+-				 status);
++			dev_info_once(&oct->pdev->dev, "Firmware ready %u\n", status);
+ 			return status;
+ 		}
+ 	}
+@@ -1247,6 +1246,7 @@ static void octep_dev_setup_task(struct work_struct *work)
+ 			return;
+ 		}
+ 	}
++	dev_info_once(&oct->pdev->dev, "Firmware is ready!!\n");
+ 
+ 	/* Do not free resources on failure. driver unload will
+ 	 * lead to freeing resources.
+-- 
+2.34.1
+

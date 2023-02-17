@@ -1,0 +1,56 @@
+#!/usr/bin/make -f
+
+# output every command that modifies files on the build system.
+#export DH_VERBOSE = 1
+
+%:
+	dh $@
+
+WITH_MOD_SIGN ?= 1
+
+kheaders_name=$(shell ls /usr/src | grep linux@KERNEL_TYPE@-headers | grep amd64)
+kheaders_common=$(shell ls /usr/src | grep linux@KERNEL_TYPE@-headers | grep common)
+export KSRC=/usr/src/$(kheaders_name)
+export KSRC_COMMON=/usr/src/$(kheaders_common)
+kversion=$(shell echo $(kheaders_name) | sed 's/linux@KERNEL_TYPE@-headers-//g')
+kmod_name=octeon_ep
+version=$(shell dpkg-parsechangelog | sed -n 's/^Version: *\([^-]\+\)-.\+/\1/p')
+pkg_name=octeon-ep@KERNEL_TYPE@
+pkg_common_name=octeon-ep-common
+
+_sysconfdir=/etc
+_defaultdocdir=/usr/share/doc
+_mandir=/usr/share/man
+
+ifeq ($(WITH_MOD_SIGN),1)
+_keydir ?= /usr/src/kernels/$(kversion)/
+privkey ?= $(_keydir)/signing_key.pem
+pubkey ?= $(_keydir)/signing_key.x509
+endif
+
+override_dh_auto_install:
+	dh_install host/drivers/octeon_ep/*.ko /lib/modules/$(kversion)/updates/$(kmod_name)
+	dh_install host/drivers/octeon_ep_vf/*.ko /lib/modules/$(kversion)/updates/$(kmod_name)
+	dh_install host/drivers/phc/*.ko /lib/modules/$(kversion)/updates/$(kmod_name)
+	dh_install -p$(pkg_common_name) debian/extra/octeon-ep-phc.conf $(_sysconfdir)/modules-load.d/
+	dh_install -p$(pkg_common_name) debian/extra/blacklist-octeon-ep.conf $(_sysconfdir)/modprobe.d/
+
+override_dh_strip:
+	dh_strip
+	find debian -name '*.ko' | xargs strip -g
+ifeq ($(WITH_MOD_SIGN),1)
+	@echo "Sign the modules!"
+	@ls ./debian/$(pkg_name)/lib/modules/$(kversion)/updates/$(kmod_name)/
+	/usr/lib/linux@KERNEL_TYPE@-kbuild-*/scripts/sign-file sha256 $(privkey) $(pubkey) \
+		./debian/$(pkg_name)/lib/modules/$(kversion)/updates/$(kmod_name)/octeon_ep.ko
+	/usr/lib/linux@KERNEL_TYPE@-kbuild-*/scripts/sign-file sha256 $(privkey) $(pubkey) \
+		./debian/$(pkg_name)/lib/modules/$(kversion)/updates/$(kmod_name)/octeon_ep_vf.ko
+	/usr/lib/linux@KERNEL_TYPE@-kbuild-*/scripts/sign-file sha256 $(privkey) $(pubkey) \
+		./debian/$(pkg_name)/lib/modules/$(kversion)/updates/$(kmod_name)/oct_ep_phc.ko
+endif
+
+override_dh_auto_clean:
+	dh_auto_build -D ./host -- clean KVER=$(kversion)
+
+override_dh_auto_build:
+	dh_auto_build -D ./host -- KVER=$(kversion)

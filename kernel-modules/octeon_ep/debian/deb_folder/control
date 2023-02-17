@@ -1,0 +1,22 @@
+Source: octeon-ep
+Section: net
+Priority: optional
+Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
+Build-Depends: debhelper-compat (= 13), linux@KERNEL_TYPE@-headers-5.10.0-6@KERNEL_TYPE@-amd64, linux@KERNEL_TYPE@-kbuild-5.10, linux@KERNEL_TYPE@-keys-5.10
+Standards-Version: 4.5.1
+Rules-Requires-Root: no
+
+Package: octeon-ep@KERNEL_TYPE@
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, octeon-ep-common
+Description: This package provides the octeon_ep kernel module(s).
+ This package provides the octeon_ep kernel module(s) built
+ for the Linux kernel using the Octeon family of processors.
+ This package contains the Marvell Octeon PCIE-EP NIC PF Linux Driver.
+
+Package: octeon-ep-common
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: This package provides the common files of the octeon_ep kernel modules.
+ This package provides the config files files of the octeon_ep, octeon_ep_vf, oct_ep_phc
+ kernel modules built for the Linux kernel-std and kernel-rt using the amd64 processors.
