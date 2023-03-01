@@ -95,19 +95,14 @@ ibverbs-providers
 ibverbs-utils
 infiniband-diags
 #libibmad-dev  # not used
-libibmad5-dbg
 libibmad5
 #libibnetdisc-dev  # not used
-libibnetdisc5-dbg
 libibnetdisc5
 #libibumad-dev  # not used
-libibumad3-dbg
 libibumad3
 #libibverbs-dev  # not used
-libibverbs1-dbg
 libibverbs1
 #librdmacm-dev  # not used
-librdmacm1-dbg
 librdmacm1
 python3-pyverbs
 rdma-core
