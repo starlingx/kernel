@@ -1,3 +1,9 @@
+ice-cvl-2.54 (1.5.8.2-1) unstable; urgency=medium
+
+  * ice package version update to 1.5.8.2
+
+ -- Jiping Ma <jiping.ma2@windriver.com>  Wed, 12 Apr 2023 12:48:15 +0800
+
 ice-cvl-2.54 (1.5.8-1) unstable; urgency=medium
 
   * Revert package version back to 1.5.8
