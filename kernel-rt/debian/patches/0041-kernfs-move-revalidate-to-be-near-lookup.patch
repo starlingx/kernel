@@ -1,0 +1,131 @@
+From 856d95a4c92e27a1209d47a83aa72dfd14ff1a7c Mon Sep 17 00:00:00 2001
+From: Ian Kent <raven@themaw.net>
+Date: Tue, 15 Jun 2021 18:25:53 +0800
+Subject: [PATCH] kernfs: move revalidate to be near lookup
+
+While the dentry operation kernfs_dop_revalidate() is grouped with
+dentry type functions it also has a strong affinity to the inode
+operation ->lookup().
+
+It makes sense to locate this function near to kernfs_iop_lookup()
+because we will be adding VFS negative dentry caching to reduce path
+lookup overhead for non-existent paths.
+
+There's no functional change from this patch.
+
+Signed-off-by: Ian Kent <raven@themaw.net>
+Reviewed-by: Miklos Szeredi <mszeredi@redhat.com>
+Link: https://lore.kernel.org/r/162375275365.232295.8995526416263659926.stgit@web.messagingengine.com
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Signed-off-by: Jim Somerville <jim.somerville@windriver.com>
+---
+ fs/kernfs/dir.c | 86 ++++++++++++++++++++++++-------------------------
+ 1 file changed, 43 insertions(+), 43 deletions(-)
+
+diff --git a/fs/kernfs/dir.c b/fs/kernfs/dir.c
+index 8b3c86a502da..c16571cbb997 100644
+--- a/fs/kernfs/dir.c
++++ b/fs/kernfs/dir.c
+@@ -556,49 +556,6 @@ void kernfs_put(struct kernfs_node *kn)
+ }
+ EXPORT_SYMBOL_GPL(kernfs_put);
+ 
+-static int kernfs_dop_revalidate(struct dentry *dentry, unsigned int flags)
+-{
+-	struct kernfs_node *kn;
+-
+-	if (flags & LOOKUP_RCU)
+-		return -ECHILD;
+-
+-	/* Always perform fresh lookup for negatives */
+-	if (d_really_is_negative(dentry))
+-		goto out_bad_unlocked;
+-
+-	kn = kernfs_dentry_node(dentry);
+-	mutex_lock(&kernfs_mutex);
+-
+-	/* The kernfs node has been deactivated */
+-	if (!kernfs_active(kn))
+-		goto out_bad;
+-
+-	/* The kernfs node has been moved? */
+-	if (kernfs_dentry_node(dentry->d_parent) != kn->parent)
+-		goto out_bad;
+-
+-	/* The kernfs node has been renamed */
+-	if (strcmp(dentry->d_name.name, kn->name) != 0)
+-		goto out_bad;
+-
+-	/* The kernfs node has been moved to a different namespace */
+-	if (kn->parent && kernfs_ns_enabled(kn->parent) &&
+-	    kernfs_info(dentry->d_sb)->ns != kn->ns)
+-		goto out_bad;
+-
+-	mutex_unlock(&kernfs_mutex);
+-	return 1;
+-out_bad:
+-	mutex_unlock(&kernfs_mutex);
+-out_bad_unlocked:
+-	return 0;
+-}
+-
+-const struct dentry_operations kernfs_dops = {
+-	.d_revalidate	= kernfs_dop_revalidate,
+-};
+-
+ /**
+  * kernfs_node_from_dentry - determine kernfs_node associated with a dentry
+  * @dentry: the dentry in question
+@@ -1081,6 +1038,49 @@ struct kernfs_node *kernfs_create_empty_dir(struct kernfs_node *parent,
+ 	return ERR_PTR(rc);
+ }
+ 
++static int kernfs_dop_revalidate(struct dentry *dentry, unsigned int flags)
++{
++	struct kernfs_node *kn;
++
++	if (flags & LOOKUP_RCU)
++		return -ECHILD;
++
++	/* Always perform fresh lookup for negatives */
++	if (d_really_is_negative(dentry))
++		goto out_bad_unlocked;
++
++	kn = kernfs_dentry_node(dentry);
++	mutex_lock(&kernfs_mutex);
++
++	/* The kernfs node has been deactivated */
++	if (!kernfs_active(kn))
++		goto out_bad;
++
++	/* The kernfs node has been moved? */
++	if (kernfs_dentry_node(dentry->d_parent) != kn->parent)
++		goto out_bad;
++
++	/* The kernfs node has been renamed */
++	if (strcmp(dentry->d_name.name, kn->name) != 0)
++		goto out_bad;
++
++	/* The kernfs node has been moved to a different namespace */
++	if (kn->parent && kernfs_ns_enabled(kn->parent) &&
++	    kernfs_info(dentry->d_sb)->ns != kn->ns)
++		goto out_bad;
++
++	mutex_unlock(&kernfs_mutex);
++	return 1;
++out_bad:
++	mutex_unlock(&kernfs_mutex);
++out_bad_unlocked:
++	return 0;
++}
++
++const struct dentry_operations kernfs_dops = {
++	.d_revalidate	= kernfs_dop_revalidate,
++};
++
+ static struct dentry *kernfs_iop_lookup(struct inode *dir,
+ 					struct dentry *dentry,
+ 					unsigned int flags)
+-- 
+2.25.1
+

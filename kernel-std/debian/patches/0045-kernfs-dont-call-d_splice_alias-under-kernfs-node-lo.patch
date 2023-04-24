@@ -1,0 +1,47 @@
+From e3ffb2492087e6d9b85c18fbc24b3d73b7d14dfd Mon Sep 17 00:00:00 2001
+From: Ian Kent <raven@themaw.net>
+Date: Fri, 16 Jul 2021 17:28:40 +0800
+Subject: [PATCH] kernfs: dont call d_splice_alias() under kernfs node lock
+
+The call to d_splice_alias() in kernfs_iop_lookup() doesn't depend on
+any kernfs node so there's no reason to hold the kernfs node lock when
+calling it.
+
+Reviewed-by: Miklos Szeredi <mszeredi@redhat.com>
+Signed-off-by: Ian Kent <raven@themaw.net>
+Link: https://lore.kernel.org/r/162642772000.63632.10672683419693513226.stgit@web.messagingengine.com
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Signed-off-by: Jim Somerville <jim.somerville@windriver.com>
+---
+ fs/kernfs/dir.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+
+diff --git a/fs/kernfs/dir.c b/fs/kernfs/dir.c
+index cdc57ab2e5ea..51b35d6f9739 100644
+--- a/fs/kernfs/dir.c
++++ b/fs/kernfs/dir.c
+@@ -1108,7 +1108,6 @@ static struct dentry *kernfs_iop_lookup(struct inode *dir,
+ 					struct dentry *dentry,
+ 					unsigned int flags)
+ {
+-	struct dentry *ret;
+ 	struct kernfs_node *parent = dir->i_private;
+ 	struct kernfs_node *kn;
+ 	struct inode *inode = NULL;
+@@ -1128,11 +1127,10 @@ static struct dentry *kernfs_iop_lookup(struct inode *dir,
+ 	/* Needed only for negative dentry validation */
+ 	if (!inode)
+ 		kernfs_set_rev(parent, dentry);
+-	/* instantiate and hash (possibly negative) dentry */
+-	ret = d_splice_alias(inode, dentry);
+ 	up_read(&kernfs_rwsem);
+ 
+-	return ret;
++	/* instantiate and hash (possibly negative) dentry */
++	return d_splice_alias(inode, dentry);
+ }
+ 
+ static int kernfs_iop_mkdir(struct inode *dir, struct dentry *dentry,
+-- 
+2.25.1
+
