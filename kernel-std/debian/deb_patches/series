@@ -21,3 +21,4 @@
 0021-config-don-t-unset-CONFIG_EFIVAR_FS.patch
 0022-Upgrade-5.10-kernel-to-5.10.162.patch
 0023-Fix-badly-formatted-trailer-line.patch
+0024-Upgrade-5.10-kernel-to-5.10.177.patch
