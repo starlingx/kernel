@@ -52,3 +52,4 @@
 0054-cpufreq-intel_pstate-Add-Ice-Lake-server-to-out-of-b.patch
 0055-cpufreq-intel_pstate-Support-Sapphire-Rapids-OOB-mod.patch
 0056-cpufreq-intel_pstate-Add-Sapphire-Rapids-support-in-.patch
+0057-Port-negative-dentries-limit-feature-from-3.10.patch
