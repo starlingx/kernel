@@ -1,11 +1,11 @@
 ---
-debver: 1.5.8.2
+debver: 1.5.8
 debname: ice-cvl-2.54
 dl_path:
-  name: ice-1.5.8.2.tar.gz
-  url: "https://sourceforge.net/projects/e1000/files/unsupported/\
-    ice%20unsupported/1.5.8.2/ice-1.5.8.2.tar.gz"
-  sha256sum: a9672c6ca64b90baf48099a69311c74fe7099b14790ab807ba47af31a3f6d8b2
+  name: ice-1.5.8.tar.gz
+  url: "https://sourceforge.net/projects/e1000/files/ice%20stable/\
+    1.5.8/ice-1.5.8.tar.gz"
+  sha256sum: 6e86d11ac501de1b8fccd31d532ae65aa3c50f1c514c3018d9823429e6008e1b
 revision:
   dist: $STX_DIST
   GITREVCOUNT:
