@@ -1,0 +1,32 @@
+From 2674da4d76d74e51ef5e17dbdafd88228efed704 Mon Sep 17 00:00:00 2001
+From: Haiqing Bai <haiqing.bai@windriver.com>
+Date: Tue, 9 May 2023 06:38:27 +0000
+Subject: [PATCH] Disable unprivileged eBPF by default
+
+Unprivileged eBPF is disabled by default on most distro
+Disabling unprivileged eBPF effectively mitigates the
+known attack vectors for exploiting intra-mode branch
+injections attacks.
+This commit also removed the below kernel warning:
+"Spectre V2: WARNING: Unprivileged eBPF is enabled with eIBRS on,
+ data leaks possible via Spectre v2 BHB attacks!"
+
+Signed-off-by: Haiqing Bai <haiqing.bai@windriver.com>
+---
+ debian/config/amd64/none/config | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/debian/config/amd64/none/config b/debian/config/amd64/none/config
+index 75625e089..70ff1b80c 100644
+--- a/debian/config/amd64/none/config
++++ b/debian/config/amd64/none/config
+@@ -6409,5 +6409,5 @@ CONFIG_MODULE_SIG_KEY="certs/signing_key.pem"
+ #
+ # Upgrade to 5.10.99
+ #
+-# CONFIG_BPF_UNPRIV_DEFAULT_OFF is not set
++CONFIG_BPF_UNPRIV_DEFAULT_OFF=y
+ # CONFIG_FRAMEBUFFER_CONSOLE_LEGACY_ACCELERATION is not set
+-- 
+2.30.2
+

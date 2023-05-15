@@ -22,3 +22,4 @@
 0022-Upgrade-5.10-kernel-to-5.10.162.patch
 0023-Fix-badly-formatted-trailer-line.patch
 0024-Upgrade-5.10-kernel-to-5.10.177.patch
+0025-Disable-unprivileged-eBPF-by-default.patch
