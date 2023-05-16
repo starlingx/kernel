@@ -1,3 +1,9 @@
+octeon-ep (112304-1) unstable; urgency=medium
+
+  * Updated PF, VF and PHC driver for Octeon PCIe NIC
+
+ -- Shinas Rasheed <srasheed@marvell.com>  Tue, May 16 2023 03:07:20 -0700
+
 octeon-ep (112301-1) unstable; urgency=medium
 
   * PF, VF and PHC driver for Octeon PCIe NIC
