@@ -2,7 +2,7 @@ Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 
 Upstream-Name: ice
 Upstream-Contact: Intel Corporation
-Source: https://sourceforge.net/projects/e1000/files/unsupported/ice%20unsupported/1.5.8.2/ice-1.5.8.2.tar.gz/download
+Source: https://sourceforge.net/projects/e1000/files/ice%20stable/1.5.8/ice-1.5.8.tar.gz/download
 Files: *
 Copyright: (c) 2017 - 2023 Intel Corporation.
 License: GPL-2
