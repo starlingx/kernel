@@ -1,0 +1,37 @@
+From 9ccd5855a67d4ce932ed60fb6801ca28a80d9d24 Mon Sep 17 00:00:00 2001
+From: Alyson Deives Pereira <alyson.deivespereira@windriver.com>
+Date: Wed, 24 May 2023 20:40:24 -0300
+Subject: [PATCH] config: Enable Intel RAPL and uncore frequency control
+
+Signed-off-by: Alyson Deives Pereira <alyson.deivespereira@windriver.com>
+---
+ debian/config/amd64/none/config | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/debian/config/amd64/none/config b/debian/config/amd64/none/config
+index 70ff1b80c3..bdee9655b8 100644
+--- a/debian/config/amd64/none/config
++++ b/debian/config/amd64/none/config
+@@ -4700,7 +4700,7 @@ CONFIG_INTEL_RST=m
+ # end of Intel Speed Select Technology interface support
+ 
+ CONFIG_INTEL_TURBO_MAX_3=y
+-# CONFIG_INTEL_UNCORE_FREQ_CONTROL is not set
++CONFIG_INTEL_UNCORE_FREQ_CONTROL=m
+ CONFIG_INTEL_PMC_CORE=m
+ # CONFIG_INTEL_PUNIT_IPC is not set
+ # CONFIG_INTEL_SCU_PCI is not set
+@@ -5301,7 +5301,9 @@ CONFIG_PWM_LPSS_PLATFORM=m
+ # CONFIG_PHY_INTEL_LGM_EMMC is not set
+ # end of PHY Subsystem
+ 
+-# CONFIG_POWERCAP is not set
++CONFIG_POWERCAP=y
++CONFIG_INTEL_RAPL=y
++CONFIG_INTEL_RAPL_CORE=y
+ # CONFIG_MCB is not set
+ 
+ #
+-- 
+2.25.1
+

@@ -52,3 +52,4 @@
 0055-cpufreq-intel_pstate-Support-Sapphire-Rapids-OOB-mod.patch
 0056-cpufreq-intel_pstate-Add-Sapphire-Rapids-support-in-.patch
 0057-Port-negative-dentries-limit-feature-from-3.10.patch
+0058-platform-x86-intel-uncore-freq-Add-Sapphire-Rapids-s.patch
