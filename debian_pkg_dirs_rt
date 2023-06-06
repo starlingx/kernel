@@ -15,4 +15,3 @@ kernel-modules/intel-qv
 kernel-modules/mlnx-ofa_kernel
 kernel-modules/qat17
 kernel-modules/octeon_ep
-livepatch/kpatch-prebuilt
