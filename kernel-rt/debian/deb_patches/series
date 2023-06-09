@@ -24,3 +24,4 @@
 0024-Fix-badly-formatted-trailer-line.patch
 0025-Upgrade-5.10-kernel-to-5.10.177.patch
 0026-Disable-unprivileged-eBPF-by-default.patch
+0027-Upgrade-5.10-kernel-to-5.10.180.patch
