@@ -52,3 +52,16 @@
 0055-cpufreq-intel_pstate-Add-Sapphire-Rapids-support-in-.patch
 0056-Port-negative-dentries-limit-feature-from-3.10.patch
 0057-platform-x86-intel-uncore-freq-Add-Sapphire-Rapids-s.patch
+0058-intel_idle-add-SPR-support.patch
+0059-intel_idle-add-preferred_cstates-module-argument.patch
+0060-intel_idle-add-core-C6-optimization-for-SPR.patch
+0061-intel_idle-Fix-the-preferred_cstates-module-paramete.patch
+0062-intel_idle-Fix-SPR-C6-optimization.patch
+0063-intel_idle-make-SPR-C1-and-C1E-be-independent.patch
+0064-perf-x86-cstate-Add-ICELAKE_X-and-ICELAKE_D-support.patch
+0065-perf-x86-cstate-Add-SAPPHIRERAPIDS_X-CPU-support.patch
+0066-powercap-intel_rapl-support-new-layout-of-Psys-Power.patch
+0067-perf-x86-rapl-Add-msr-mask-support.patch
+0068-perf-x86-rapl-Only-check-lower-32bits-for-RAPL-energ.patch
+0069-perf-x86-rapl-Fix-psys-energy-event-on-Intel-SPR-pla.patch
+0070-perf-x86-rapl-Use-standard-Energy-Unit-for-SPR-Dram-.patch

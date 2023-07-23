@@ -1,0 +1,52 @@
+From 9be604696472a5f2d72d98593ae95974319156b3 Mon Sep 17 00:00:00 2001
+From: Zhang Rui <rui.zhang@intel.com>
+Date: Fri, 5 Feb 2021 00:18:15 +0800
+Subject: [PATCH] perf/x86/rapl: Only check lower 32bits for RAPL energy
+ counters
+
+In the RAPL ENERGY_COUNTER MSR, only the lower 32bits represent the energy
+counter.
+
+On previous platforms, the higher 32bits are reverved and always return
+Zero. But on Intel SapphireRapids platform, the higher 32bits are reused
+for other purpose and return non-zero value.
+
+Thus check the lower 32bits only for these ENERGY_COUTNER MSRs, to make
+sure the RAPL PMU events are not added erroneously when higher 32bits
+contain non-zero value.
+
+Signed-off-by: Zhang Rui <rui.zhang@intel.com>
+Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+Reviewed-by: Andi Kleen <ak@linux.intel.com>
+Link: https://lkml.kernel.org/r/20210204161816.12649-2-rui.zhang@intel.com
+(cherry picked from commit b6f78d3fba7f605f673185d7292d84af7576fdc1)
+Signed-off-by: M. Vefa Bicakci <vefa.bicakci@windriver.com>
+---
+ arch/x86/events/rapl.c | 13 ++++++++-----
+ 1 file changed, 8 insertions(+), 5 deletions(-)
+
+diff --git a/arch/x86/events/rapl.c b/arch/x86/events/rapl.c
+index 7dbbeaacd995..7ed25b2ba05f 100644
+--- a/arch/x86/events/rapl.c
++++ b/arch/x86/events/rapl.c
+@@ -523,12 +523,15 @@ static bool test_msr(int idx, void *data)
+ 	return test_bit(idx, (unsigned long *) data);
+ }
+ 
++/* Only lower 32bits of the MSR represents the energy counter */
++#define RAPL_MSR_MASK 0xFFFFFFFF
++
+ static struct perf_msr intel_rapl_msrs[] = {
+-	[PERF_RAPL_PP0]  = { MSR_PP0_ENERGY_STATUS,      &rapl_events_cores_group, test_msr },
+-	[PERF_RAPL_PKG]  = { MSR_PKG_ENERGY_STATUS,      &rapl_events_pkg_group,   test_msr },
+-	[PERF_RAPL_RAM]  = { MSR_DRAM_ENERGY_STATUS,     &rapl_events_ram_group,   test_msr },
+-	[PERF_RAPL_PP1]  = { MSR_PP1_ENERGY_STATUS,      &rapl_events_gpu_group,   test_msr },
+-	[PERF_RAPL_PSYS] = { MSR_PLATFORM_ENERGY_STATUS, &rapl_events_psys_group,  test_msr },
++	[PERF_RAPL_PP0]  = { MSR_PP0_ENERGY_STATUS,      &rapl_events_cores_group, test_msr, false, RAPL_MSR_MASK },
++	[PERF_RAPL_PKG]  = { MSR_PKG_ENERGY_STATUS,      &rapl_events_pkg_group,   test_msr, false, RAPL_MSR_MASK },
++	[PERF_RAPL_RAM]  = { MSR_DRAM_ENERGY_STATUS,     &rapl_events_ram_group,   test_msr, false, RAPL_MSR_MASK },
++	[PERF_RAPL_PP1]  = { MSR_PP1_ENERGY_STATUS,      &rapl_events_gpu_group,   test_msr, false, RAPL_MSR_MASK },
++	[PERF_RAPL_PSYS] = { MSR_PLATFORM_ENERGY_STATUS, &rapl_events_psys_group,  test_msr, false, RAPL_MSR_MASK },
+ };
+ 
+ /*
