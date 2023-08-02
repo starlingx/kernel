@@ -26,3 +26,4 @@
 0026-Disable-unprivileged-eBPF-by-default.patch
 0027-Upgrade-5.10-kernel-to-5.10.180.patch
 0028-config-Enable-Intel-RAPL-and-uncore-frequency-contro.patch
+0029-Upgrade-5.10-kernel-to-5.10.185.patch
