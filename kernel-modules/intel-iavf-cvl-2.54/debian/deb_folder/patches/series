@@ -1,2 +1,3 @@
 Fix-build-issues.patch
 iavf_main-Use-irq_update_affinity_hint.patch
+Fix-the-invalid-check.patch

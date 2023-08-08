@@ -1,0 +1,78 @@
+From 302d470b0559ecaf0c5392035f2054ae5e3ab53a Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Mon, 10 Apr 2023 01:22:57 -0700
+Subject: [PATCH] Disable irq_msix_misc before ptp release
+
+The ptp resources are released before disable irq_msix_misc
+interrupt in ice_remove() function when the system reboot, but
+the interrupt handler ice_misc_intr is still using these
+resources, which cause the panic to happen.
+
+The patch fixes this by putting irq_msix_misc() before
+ice_ptp_release().
+
+[48357.039676] pci 0000:51:06.6: Removing from iommu group 175
+[48357.039750] pci 0000:51:06.7: Removing from iommu group 176
+[48359.332713] ice 0000:51:00.0: removed Clock from enp81s0f0
+[48359.492523] BUG: kernel NULL pointer dereference, address: 0000000000000004
+[48359.499484] #PF: supervisor write access in kernel mode
+[48359.504711] #PF: error_code(0x0002) - not-present page
+[48359.509850] PGD 213439067 P4D 0
+[48359.513084] Oops: 0002 [#1] PREEMPT SMP NOPTI
+[48359.517442] CPU: 0 PID: 0 Comm: swapper/0 Kdump: loaded \
+  Tainted: G S         O \
+  5.10.0-6-amd64 #1 Debian 5.10.162-1.stx.64
+[48359.528821] Hardware name: ...
+[48359.536303] RIP: 0010:_raw_spin_lock_irqsave+0x19/0x40
+[48359.541441] Code: ...
+...
+[48359.641473]  <IRQ>
+[48359.643494]  kthread_queue_work+0x22/0x70
+[48359.647527]  ice_misc_intr+0x237/0x2c0 [ice]
+[48359.651796]  ? __handle_irq_event_percpu+0x3d/0x190
+[48359.656680]  ? handle_irq_event+0x58/0xb0
+[48359.660700]  ? handle_edge_irq+0x93/0x240
+[48359.664721]  ? asm_call_irq_on_stack+0xf/0x20
+[48359.669076]  </IRQ>
+[48359.671186]  ? common_interrupt+0xb3/0x130
+[48359.675285]  ? asm_common_interrupt+0x1e/0x40
+[48359.679645]  ? cpuidle_enter_state+0xca/0x350
+[48359.684002]  ? cpuidle_enter+0x29/0x40
+[48359.687753]  ? do_idle+0x1ec/0x2a0
+[48359.691160]  ? cpu_startup_entry+0x19/0x20
+[48359.695260]  ? start_kernel+0x54c/0x571
+[48359.699099]  ? secondary_startup_64_no_verify+0xc2/0xcb
+
+Reproducer:
+1. Create container with sts-silicom application(ptp related appliction).
+2. Ensure sts-silicom pod is running status.
+3. Reboot -f
+
+Signed-off-by: Jiping Ma <Jiping.ma2@windriver.com>
+---
+ src/ice_main.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/ice_main.c b/src/ice_main.c
+index f43c2e2..8feba46 100644
+--- a/src/ice_main.c
++++ b/src/ice_main.c
+@@ -6083,6 +6083,7 @@ static void ice_remove(struct pci_dev *pdev)
+ #ifdef HAVE_NETDEV_UPPER_INFO
+ 	ice_deinit_lag(pf);
+ #endif /* HAVE_NETDEV_UPPER_INFO */
++	ice_free_irq_msix_misc(pf);
+ 	if (test_bit(ICE_FLAG_PTP_ENA, pf->flags))
+ 		ice_ptp_release(pf);
+ 	if (!ice_is_safe_mode(pf))
+@@ -6097,7 +6098,6 @@ static void ice_remove(struct pci_dev *pdev)
+ 		devm_kfree(&pdev->dev, pf->peers);
+ 	}
+ 	ice_set_wake(pf);
+-	ice_free_irq_msix_misc(pf);
+ 	ice_for_each_vsi(pf, i) {
+ 		if (!pf->vsi[i])
+ 			continue;
+-- 
+2.40.0
+
