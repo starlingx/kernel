@@ -1,3 +1,0 @@
-0001-crypto-qat-Silence-smp_processor_id-warning.patch
-0002-build-Don-t-override-KERNELVERSION-in-a-wrong-way.patch
-0003-Add-mcx16-cflag-to-solve-linking-issue.patch

@@ -85,9 +85,9 @@ mlnx-ofed-kernel-modules
 mlnx-ofed-kernel-modules-rt
 mlnx-ofed-kernel-utils
 
-#qat17
-qat1.7.l
-qat1.7.l-rt
+#qat20
+qat2.0.l
+qat2.0.l-rt
 
 #rdma-core
 ibacm
@@ -111,3 +111,4 @@ srptools
 
 #mstflint
 mstflint
+

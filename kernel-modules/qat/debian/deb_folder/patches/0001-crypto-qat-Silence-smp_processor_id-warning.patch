@@ -48,23 +48,25 @@ Cc: stable@vger.kernel.org
 Signed-off-by: Alexander Sverdlin <alexander.sverdlin@nokia.com>
 Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
 Signed-off-by: zhao.shuai <zhaos@neusoft.com>
+[zp: Adapted the patch for context changes.]
+Signed-off-by: Peng Zhang <Peng.Zhang2@windriver.com>
 ---
  quickassist/qat/drivers/crypto/qat/qat_common/adf_common_drv.h | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/quickassist/qat/drivers/crypto/qat/qat_common/adf_common_drv.h b/quickassist/qat/drivers/crypto/qat/qat_common/adf_common_drv.h
-index f2343b9..e7799fb 100644
+index abab8db..16cdc58 100644
 --- a/quickassist/qat/drivers/crypto/qat/qat_common/adf_common_drv.h
 +++ b/quickassist/qat/drivers/crypto/qat/qat_common/adf_common_drv.h
-@@ -58,7 +58,7 @@ struct service_hndl {
- 
+@@ -74,7 +74,7 @@ struct service_hndl {
+
  static inline int get_current_node(void)
  {
 -	return topology_physical_package_id(smp_processor_id());
 +	return topology_physical_package_id(raw_smp_processor_id());
  }
- 
+
  int adf_service_register(struct service_hndl *service);
--- 
-2.17.1
+--
+2.25.1
 
