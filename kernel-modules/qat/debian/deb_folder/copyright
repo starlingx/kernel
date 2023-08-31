@@ -2,9 +2,9 @@ Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 
 Upstream-Name: QAT
 Upstream-Contact: Intel Corporation
-Source: https://downloadmirror.intel.com/30178/eng/QAT1.7.L.4.14.0-00031.tar.gz
+Source: https://downloadmirror.intel.com/777529/QAT20.L.1.0.20-00008.tar.gz
 Files: *
-Copyright: (C) Intel Corporation 2008
+Copyright: (C) Intel Corporation 2022
 License:
  The Licensing of the files within this project splits under various set of
  licenses which are listed below.
