@@ -1,0 +1,65 @@
+From ad0232f1d77150adc3e25619449cc714164314cc Mon Sep 17 00:00:00 2001
+From: Chengming Zhou <zhouchengming@bytedance.com>
+Date: Tue, 29 Mar 2022 23:45:23 +0800
+Subject: [PATCH 81/81] perf/core: Always set cpuctx cgrp when enable cgroup
+ event
+
+When enable a cgroup event, cpuctx->cgrp setting is conditional
+on the current task cgrp matching the event's cgroup, so have to
+do it for every new event. It brings complexity but no advantage.
+
+To keep it simple, this patch would always set cpuctx->cgrp
+when enable the first cgroup event, and reset to NULL when disable
+the last cgroup event.
+
+Signed-off-by: Chengming Zhou <zhouchengming@bytedance.com>
+Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+Link: https://lore.kernel.org/r/20220329154523.86438-5-zhouchengming@bytedance.com
+(cherry picked from commit e19cd0b6fa5938c51d7b928010d584f0de93913a)
+Signed-off-by: Alyson Deives Pereira <alyson.deivespereira@windriver.com>
+---
+ kernel/events/core.c | 18 ++----------------
+ 1 file changed, 2 insertions(+), 16 deletions(-)
+
+diff --git a/kernel/events/core.c b/kernel/events/core.c
+index 5f0265a4809d..807375faaa98 100644
+--- a/kernel/events/core.c
++++ b/kernel/events/core.c
+@@ -966,22 +966,10 @@ perf_cgroup_event_enable(struct perf_event *event, struct perf_event_context *ct
+ 	 */
+ 	cpuctx = container_of(ctx, struct perf_cpu_context, ctx);
+ 
+-	/*
+-	 * Since setting cpuctx->cgrp is conditional on the current @cgrp
+-	 * matching the event's cgroup, we must do this for every new event,
+-	 * because if the first would mismatch, the second would not try again
+-	 * and we would leave cpuctx->cgrp unset.
+-	 */
+-	if (ctx->is_active && !cpuctx->cgrp) {
+-		struct perf_cgroup *cgrp = perf_cgroup_from_task(current, ctx);
+-
+-		if (cgroup_is_descendant(cgrp->css.cgroup, event->cgrp->css.cgroup))
+-			cpuctx->cgrp = cgrp;
+-	}
+-
+ 	if (ctx->nr_cgroups++)
+ 		return;
+ 
++	cpuctx->cgrp = perf_cgroup_from_task(current, ctx);
+ 	list_add(&cpuctx->cgrp_cpuctx_entry,
+ 			per_cpu_ptr(&cgrp_cpuctx_list, event->cpu));
+ }
+@@ -1003,9 +991,7 @@ perf_cgroup_event_disable(struct perf_event *event, struct perf_event_context *c
+ 	if (--ctx->nr_cgroups)
+ 		return;
+ 
+-	if (ctx->is_active && cpuctx->cgrp)
+-		cpuctx->cgrp = NULL;
+-
++	cpuctx->cgrp = NULL;
+ 	list_del(&cpuctx->cgrp_cpuctx_entry);
+ }
+ 
+-- 
+2.25.1
+
