@@ -2,7 +2,7 @@ Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 
 Upstream-Name: octeon_ep
 Upstream-Contact: Marvell Semiconductors
-Source: https://sourceforge.net/projects/octeon-ep/files/octeon_ep-112301.tar.gz/download
+Source: https://sourceforge.net/projects/octeon-ep/files/octeon_ep-112304.tar.gz/download
 Files: * except host/Makefile
 Copyright: Copyright 2023 Marvell Corporation.
 License: GPL-2

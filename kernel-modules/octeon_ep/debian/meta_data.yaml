@@ -1,13 +1,13 @@
 ---
-debver: 112301
+debver: 112304
 debname: octeon-ep
 dl_path:
-  name: octeon_ep-112301.tar.gz
+  name: octeon_ep-112304.tar.gz
   url: "https://sourceforge.net/projects/octeon-ep/files/\
-        octeon_ep-112301.tar.gz/download"
-  sha256sum: 729777a68dbe17e17773672752e9dc0e307c49ead2c488089854f87c11ed4772
+        octeon_ep-112304.tar.gz/download"
+  sha256sum: 7250da17d9829738b010496b1950689725058bd31dd49a95a588a4f823ee883f
 revision:
   dist: $STX_DIST
   GITREVCOUNT:
-    BASE_SRCREV: c73c2272c5bb0ef8bd7b5e706ad4f6bfa781c245
+    BASE_SRCREV: eaff9021509f0348a59f14bd784c0391a5c70760
     SRC_DIR: ${MY_REPO}/stx/kernel/kernel-modules/octeon_ep
