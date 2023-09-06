@@ -1,3 +1,4 @@
 0001-ice_xsk-Avoid-dependency-on-napi_busy_loop-with-PREE.patch
 0002-ice_main-ice_lib-Use-irq_update_affinity_hint.patch
 0003-ddp-change-ddp-file-name-for-legacy-driver.patch
+0004-Disable-irq_msix_misc-before-ptp-release.patch

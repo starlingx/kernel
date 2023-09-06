@@ -1,3 +1,4 @@
 0001-ice_main-ice_lib-Use-irq_update_affinity_hint.patch
 0001-intel-ice-pass-linux-common-header-to-check_aux_bus.patch
 0001-rename-the-ddp-file-to-avoid-conflict.patch
+0001-Disable-irq_msix_misc-before-ptp-release.patch

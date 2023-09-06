@@ -1,0 +1,105 @@
+From ce2502ef4019e7d00ccafdfbaa2bd8f4bf85c82b Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Tue, 4 Apr 2023 23:40:48 -0700
+Subject: [PATCH] Fix the invalid check in iavf_remove()
+
+If the netdev pointer is NULL, then iavf_remove() returns early to
+ensure that it does not proceed with an already-freed netdev instance.
+However, drvdata field of the iavf driver's pci_dev structure continues
+to keep the former value of the netdev pointer, and this value can be
+acquired from the pci_dev structure via pci_get_drvdata(). This causes a
+kernel panic when a forced reboot/shutdown is in progress due to the
+following sequence of events:
+
+- The iavf_shutdown() callback is called by the kernel. This function
+  detaches the device, brings it down if it was running and frees
+  resources.
+- Later, the associated PF driver's shutdown callback is called:
+  ice_shutdown(). That callback calls, among others, sriov_disable(),
+  which then indirectly calls iavf_remove() again.
+- Kernel WARNING is reported because the work adminq_task->func is NULL
+  in cancel_work_sync(&adapter->adminq_task) during iavf_remove(), that
+  reason is the resource already had been freed in the first iavf_remove()
+  running stage.
+  "WARNING: CPU: 63 PID: 93678 at kernel/workqueue.c:3047
+    __flush_work.isra.0+0x6b/0x80"
+
+The patch for iavf resolves this issue by checking the pci_dev
+structure's is_busmaster field at the beginning of iavf_remove(). If the
+PCI device had already been disabled by an earlier call to
+iavf_shutdown() or iavf_remove(), via a call to pci_disable_device(),
+then the is_busmaster field would be set to zero. Based on this logic,
+if the is_busmaster field is set to zero, then the iavf_remove function
+returns early. This in turn avoids the aforementioned kernel panic
+caused by multiple calls to iavf_remove().
+
+Reproducer:
+1. Create container with VF on PF driven by ice.
+2. Ensure that the VF is bound to iavf driver
+3. Reboot -f
+
+[  341.561449] iavf 0000:51:05.2: Removing device
+[  341.730407] iavf 0000:51:05.1: Removing device
+[  341.924457] iavf 0000:51:05.0: Removing device
+[  347.130324] pci 0000:51:05.0: Removing from iommu group 161
+[  347.130367] ------------[ cut here ]------------
+[  347.130372] WARNING: CPU: 63 PID: 93678 at kernel/workqueue.c:3047 \
+  __flush_work.isra.0+0x6b/0x80
+[  347.130373] Modules linked in: ...
+[  347.130688]  ...
+[  347.130958] CPU: 63 PID: 93678 Comm: reboot Kdump: loaded \
+  Tainted: G S         O \
+  5.10.0-6-amd64 #1 Debian 5.10.162-1.stx.64
+[  347.130990] Hardware name: ...
+[  347.130995] RIP: 0010:__flush_work.isra.0+0x6b/0x80
+...
+[  347.131076] Call Trace:
+[  347.131083]  __cancel_work_timer+0xff/0x190
+[  347.131089]  ? kernfs_put.part.0+0xd9/0x1a0
+[  347.131150]  ? kmem_cache_free+0x3bd/0x410
+[  347.131158]  iavf_remove+0x5e/0xe0 [iavf]
+[  347.131163]  ? pci_device_remove+0x38/0xa0
+[  347.131167]  ? __device_release_driver+0x17b/0x250
+[  347.131169]  ? device_release_driver+0x24/0x30
+[  347.131172]  ? pci_stop_bus_device+0x6c/0x90
+[  347.131174]  ? pci_stop_and_remove_bus_device+0xe/0x20
+[  347.131179]  ? pci_iov_remove_virtfn+0xc0/0x130
+[  347.131185]  ? sriov_disable+0x34/0xe0
+[  347.131210]  ? ice_free_vfs+0x77/0x350 [ice]
+[  347.131215]  ? flow_indr_dev_unregister+0x243/0x250
+[  347.131226]  ? ice_remove+0x3e5/0x430 [ice]
+[  347.131237]  ? ice_shutdown+0x16/0x50 [ice]
+[  347.131240]  ? pci_device_shutdown+0x31/0x60
+[  347.131243]  ? device_shutdown+0x156/0x1b0
+[  347.131248]  ? __do_sys_reboot.cold+0x2f/0x5b
+[  347.131251]  ? vfs_writev+0xc5/0x160
+[  347.131254]  ? get_max_files+0x20/0x20
+[  347.131258]  ? sched_clock+0x5/0x10
+[  347.131264]  ? get_vtime_delta+0xf/0xc0
+[  347.131267]  ? vtime_user_exit+0x1c/0x70
+[  347.131272]  ? do_syscall_64+0x30/0x40
+[  347.131276]  ? entry_SYSCALL_64_after_hwframe+0x61/0xc6
+
+Signed-off-by: Jiping Ma <Jiping.ma2@windriver.com>
+---
+ src/iavf_main.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/src/iavf_main.c b/src/iavf_main.c
+index 69cc5b3..ef3404c 100644
+--- a/src/iavf_main.c
++++ b/src/iavf_main.c
+@@ -4483,6 +4483,10 @@ static void iavf_remove(struct pci_dev *pdev)
+ 	struct iavf_mac_filter *f, *ftmp;
+ 	struct iavf_hw *hw = &adapter->hw;
+ 	int err;
++
++	/* Don't proceed with remove if pci device is already disable */
++	if(pdev->is_busmaster == 0)
++		return;
+ 	/* Indicate we are in remove and not to run/schedule any driver tasks */
+ 	set_bit(__IAVF_IN_REMOVE_TASK, &adapter->crit_section);
+ 	cancel_delayed_work_sync(&adapter->client_task);
+-- 
+2.40.0
+
