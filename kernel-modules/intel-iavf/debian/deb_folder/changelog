@@ -1,3 +1,9 @@
+iavf (4.5.3.2-1) unstable; urgency=medium
+
+  * Update iavf driver from v4.5.3 to v4.5.3.2.
+
+ -- M. Vefa Bicakci <vefa.bicakci@windriver.com>  Tue, 19 Sep 2023 16:44:59 -0400
+
 iavf (4.5.3-1) unstable; urgency=medium
 
   * Update ICE driver to 1.9.11, and that dictates the upgrade of the iavf
