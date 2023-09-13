@@ -72,3 +72,7 @@
 0075-locking-lockdep-Clean-up-check_redundant-a-bit.patch
 0076-locking-lockdep-Exclude-local_lock_t-from-IRQ-invers.patch
 0077-debugobjects-locking-Annotate-debug_object_fill_pool.patch
+0078-perf-core-Don-t-pass-task-around-when-ctx-sched-in.patch
+0079-perf-core-Use-perf_cgroup_info-active-to-check-if-cg.patch
+0080-perf-core-Fix-perf_cgroup_switch.patch
+0081-perf-core-Always-set-cpuctx-cgrp-when-enable-cgroup-.patch
