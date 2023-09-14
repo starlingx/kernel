@@ -3,7 +3,7 @@ debver: 1.2.0.19-1
 debname: iqvlinux
 dl_path:
   name: iqvlinux.tar.gz
-  url: "http://mirror.starlingx.cengn.ca/mirror/debian/sourceforge.net/\
+  url: "https://mirror.starlingx.windriver.com/mirror/debian/sourceforge.net/\
     projects/e1000/files/iqvlinux/1.2.0.19/iqvlinux.tar.gz/download"
   md5sum: a1277f6c75c62005d75a8c9676032236
   sha256sum: c86c1a394c27474f793641db82803a9784d02ce92de802b99b46a7736757019d
