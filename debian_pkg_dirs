@@ -20,3 +20,4 @@ userspace/mellanox/rdma-core
 userspace/mellanox/mstflint
 userspace/mellanox/mlnx-tools
 userspace/initramfs-trigger
+userspace/qat/qatzip

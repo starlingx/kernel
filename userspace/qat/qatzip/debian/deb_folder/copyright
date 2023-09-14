@@ -1,0 +1,13 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+
+Upstream-Name:QATzip
+Upstream-Contact: Intel Corporation
+Source: https://github.com/intel/QATzip/archive/refs/tags/v1.1.2.tar.gz
+Files: *
+Copyright: (C) Intel Corporation 2023
+License:
+ The Licensing of the files within this project is split as follows:
+ Intel® Quickassist Technology (QAT) QATzip - BSD License. Please see the
+ LICENSE file contained in the top level folder.
+ Example Intel® Quickassist Technology Driver Configuration Files contained
+ within the folder hierarchy config_file - Dual BSD/GPLv2 License.

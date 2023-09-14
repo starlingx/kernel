@@ -112,3 +112,4 @@ srptools
 #mstflint
 mstflint
 
+qatzip
