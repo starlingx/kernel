@@ -1,0 +1,130 @@
+From 8413d120f4610e23a146bb341303f3f4dd1ef8d2 Mon Sep 17 00:00:00 2001
+From: Li Zhou <li.zhou@windriver.com>
+Date: Thu, 14 Sep 2023 14:56:32 +0800
+Subject: [PATCH] kernel-rt: Add pkgs without abiname for image/headers
+
+Add 2 packages linux-rt-image-stx-amd64/linux-rt-headers-stx-amd64
+which don't have abiname in their names. They depend on packages with
+abiname in names. Then we can use these 2 packages in anywhere
+that involves image/headers packages (e.g. Build-Depends/yaml config
+and so on). When the abiname is changed later in any kernel upgrading
+we don't need change above places involved any more.
+
+We don't use the linux-image-amd64/linux-headers-amd64 as Debian does
+because they are built by linux-signed-amd64, and coupled with signed
+kernel. We don't follow Debian's signing process so we create 2 new
+packages which are coupled with unsigned image.
+
+BTW, rename package "linux-rt-keys-@version@" to "linux-rt-keys"
+because the "@version@" isn't necessary for this package. Then the
+version numbers can be completely removed from the Build-Depends of
+OOT kernel modules' codes.
+
+Add the 2 new packages in init control file of "debian" folder, or else
+a wrong build sequence ( OOT kernel modules are ahead of kernel ) will
+be determined because it is deduced from init control files of
+packages. The build error for kernel modules is like:
+"unsat-dependency: linux-rt-headers-stx-amd64:amd64"
+
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+---
+ debian/control                              | 16 ++++++++++++++++
+ debian/rules.real                           |  4 ++--
+ debian/templates/control.extra.in           | 16 ++++++++++++++++
+ debian/templates/control.tools-versioned.in |  6 +++---
+ 4 files changed, 37 insertions(+), 5 deletions(-)
+
+diff --git a/debian/control b/debian/control
+index 7bd1395..c8c1c99 100644
+--- a/debian/control
++++ b/debian/control
+@@ -14606,3 +14606,19 @@ Description: Linux for multiprocessor 32-bit PA-RISC (dummy package)
+  This is a dummy transitional package.  It can be safely removed.
+ Build-Profiles: <!stage1 !pkg.linux.nokernel !pkg.linux.nometa>
+ 
++Package: linux-rt-image-stx-amd64
++Architecture: amd64
++Depends: linux-rt-image-5.10.0-6-rt-amd64-unsigned (= ${binary:Version}), ${misc:Depends}
++Description: RT Linux for 64-bit PCs (meta-package)
++ This package depends on the latest unsigned Linux kernel and modules for
++ use on PCs with AMD64, Intel 64 or VIA Nano processors.
++Build-Profiles: <!stage1 !pkg.linux.nokernel>
++
++Package: linux-rt-headers-stx-amd64
++Architecture: amd64
++Depends: linux-rt-headers-5.10.0-6-rt-amd64 (= ${binary:Version}), ${misc:Depends}
++Description: Header files for RT Linux amd64 configuration (meta-package)
++ This package depends on the architecture-specific header files for the
++ latest Linux kernel amd64 configuration.
++Build-Profiles: <!stage1 !pkg.linux.nokernel>
++
+diff --git a/debian/rules.real b/debian/rules.real
+index dbb23f5..ed29e26 100644
+--- a/debian/rules.real
++++ b/debian/rules.real
+@@ -72,7 +72,7 @@ binary-arch-arch: \
+ 	$(call if_package, $(SOURCE_BASENAME)-config-$(VERSION), install-config_$(ARCH)) \
+ 	$(call if_package, linux-rt-libc-dev,               install-libc-dev_$(ARCH)) \
+ 	$(call if_package, linux-rt-kbuild-$(VERSION),      install-kbuild) \
+-	$(call if_package, linux-rt-keys-$(VERSION),        install-keys) \
++	$(call if_package, linux-rt-keys,                   install-keys) \
+ 	$(call if_package, linux-rt-perf-$(VERSION),        install-perf) \
+ 	$(if $(filter-out x-$(VERSION),x$(SOURCE_SUFFIX)), \
+ 	  $(call if_package, linux-rt-perf$(SOURCE_SUFFIX), install-perf-meta)) \
+@@ -679,7 +679,7 @@ endif
+ 	dh_md5sums
+ 	dh_builddeb
+ 
+-install-keys: PACKAGE_NAME = linux-rt-keys-$(VERSION)
++install-keys: PACKAGE_NAME = linux-rt-keys
+ install-keys: DH_OPTIONS = -p$(PACKAGE_NAME)
+ install-keys: DIR = $(CURDIR)/debian/$(PACKAGE_NAME)
+ install-keys:
+diff --git a/debian/templates/control.extra.in b/debian/templates/control.extra.in
+index 8b45160..9fa3270 100644
+--- a/debian/templates/control.extra.in
++++ b/debian/templates/control.extra.in
+@@ -42,3 +42,19 @@ Priority: extra
+ Depends: linux-rt-image-parisc, ${misc:Depends}
+ Description: Linux for multiprocessor 32-bit PA-RISC (dummy package)
+  This is a dummy transitional package.  It can be safely removed.
++
++Package: linux-rt-image-stx-amd64
++Build-Profiles: <!stage1 !pkg.linux.nokernel>
++Depends: linux-rt-image-@abiname@-amd64-unsigned (= ${binary:Version}), ${misc:Depends}
++Architecture: amd64
++Description: RT Linux for 64-bit PCs (meta-package)
++ This package depends on the latest unsigned Linux kernel and modules
++ for use on PCs with AMD64, Intel 64 or VIA Nano processors.
++
++Package: linux-rt-headers-stx-amd64
++Build-Profiles: <!stage1 !pkg.linux.nokernel>
++Depends: linux-rt-headers-@abiname@-amd64 (= ${binary:Version}), ${misc:Depends}
++Architecture: amd64
++Description: Header files for RT Linux amd64 configuration (meta-package)
++ This package depends on the architecture-specific header files for the latest
++ Linux kernel amd64 configuration.
+diff --git a/debian/templates/control.tools-versioned.in b/debian/templates/control.tools-versioned.in
+index 8d78c9d..232efc1 100644
+--- a/debian/templates/control.tools-versioned.in
++++ b/debian/templates/control.tools-versioned.in
+@@ -6,13 +6,13 @@ Multi-Arch: foreign
+ Description: Kbuild infrastructure for Linux @version@
+  This package provides the kbuild infrastructure for the headers packages for Linux kernel version @version@.
+ 
+-Package: linux-rt-keys-@version@
++Package: linux-rt-keys
+ Build-Profiles: <!stage1 !pkg.linux.notools>
+ Architecture: linux-any
+ Depends: ${shlibs:Depends}, ${misc:Depends}
+ Multi-Arch: foreign
+-Description: Key infrastructure for Linux @version@
+- This package provides the kernel module signing keys for Linux kernel version @version@.
++Description: Key infrastructure for RT Linux @version@
++ This package provides the kernel module signing keys for RT Linux kernel version @version@.
+ 
+ Package: linux-rt-perf-@version@
+ Build-Profiles: <!stage1 !pkg.linux.notools !nopython>
+-- 
+2.17.1
+
