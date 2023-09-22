@@ -1,3 +1,4 @@
 iavf_main-Use-irq_update_affinity_hint.patch
 0001-intel-iavf-pass-linux-common-header-to-check_aux_bus.patch
 0001-Fix-the-invalid-check.patch
+0001-IAVF-Add-the-condition-of-undef-NEED_ETH_HW_ADDR_SET.patch

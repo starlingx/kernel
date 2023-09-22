@@ -22,13 +22,15 @@ different location, requiring a procedure call to obtain
 more calls into iterate_super
 
 Signed-off-by: Jim Somerville <jim.somerville@windriver.com>
+[zp: Adapted the patch for context and code changes.]
+Signed-off-by: Peng Zhang <Peng.Zhang2@windriver.com>
 ---
  fs/dcache.c     | 178 +++++++++++++++++++++++++++++++++++++++++++++++-
  kernel/sysctl.c |  12 ++++
  2 files changed, 188 insertions(+), 2 deletions(-)
 
 diff --git a/fs/dcache.c b/fs/dcache.c
-index 26a187abf13a..ef4e1a7352c2 100644
+index 30dec5522..51bafdd49 100644
 --- a/fs/dcache.c
 +++ b/fs/dcache.c
 @@ -32,6 +32,7 @@
@@ -177,7 +179,7 @@ index 26a187abf13a..ef4e1a7352c2 100644
  static enum lru_status dentry_lru_isolate_shrink(struct list_head *item,
  		struct list_lru_one *lru, spinlock_t *lru_lock, void *arg)
  {
-@@ -1617,6 +1711,86 @@ static enum d_walk_ret umount_check(void *_data, struct dentry *dentry)
+@@ -1618,6 +1712,86 @@ static enum d_walk_ret umount_check(void *_data, struct dentry *dentry)
  	return D_WALK_CONTINUE;
  }
  
@@ -265,7 +267,7 @@ index 26a187abf13a..ef4e1a7352c2 100644
  {
  	shrink_dcache_parent(dentry);
 diff --git a/kernel/sysctl.c b/kernel/sysctl.c
-index afad085960b8..18ea5c796519 100644
+index a45f0dd10..034517367 100644
 --- a/kernel/sysctl.c
 +++ b/kernel/sysctl.c
 @@ -106,6 +106,9 @@
@@ -278,7 +280,7 @@ index afad085960b8..18ea5c796519 100644
  /* Constants used for minimum and  maximum */
  #ifdef CONFIG_LOCKUP_DETECTOR
  static int sixty = 60;
-@@ -3337,6 +3340,15 @@ static struct ctl_table fs_table[] = {
+@@ -3416,6 +3419,15 @@ static struct ctl_table fs_table[] = {
  		.proc_handler	= proc_dointvec_minmax,
  		.extra1		= SYSCTL_ONE,
  	},
@@ -289,11 +291,11 @@ index afad085960b8..18ea5c796519 100644
 +		.mode		= 0644,
 +		.proc_handler	= proc_dcache_negative_dentry_limit,
 +		.extra1		= &zero_ul,
-+		.extra2		= &one_hundred,
++		.extra2		= SYSCTL_ONE_HUNDRED,
 +	},
  	{ }
  };
  
 -- 
-2.25.1
+2.30.2
 

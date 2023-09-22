@@ -1,0 +1,32 @@
+From d014e2cc3ba31b33da875d45b78dbae9b82ba97c Mon Sep 17 00:00:00 2001
+From: Peng Zhang <Peng.Zhang2@windriver.com>
+Date: Thu, 21 Sep 2023 03:42:45 +0800
+Subject: [PATCH] I40E: Add the condition of 'undef NEED_ETH_HW_ADDR_SET' to
+avoid redefinition conflict
+
+For function eth_hw_addr_set has already been defined in
+linux-headers-5.10.0-6-common, add the condition of
+'undef NEED_ETH_HW_ADDR_SET' to avoid redefinition conflict.
+
+Signed-off-by: Peng Zhang <Peng.Zhang2@windriver.com>
+---
+ src/kcompat_std_defs.h | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/src/kcompat_std_defs.h b/src/kcompat_std_defs.h
+index 67aacab..ffa69fd 100644
+--- a/src/kcompat_std_defs.h
++++ b/src/kcompat_std_defs.h
+@@ -289,6 +289,9 @@
+ #define NEED_DEVLINK_ALLOC_SETS_DEV
+ #define HAVE_DEVLINK_REGISTER_SETS_DEV
+ #define NEED_ETH_HW_ADDR_SET
++#if (LINUX_VERSION_CODE < KERNEL_VERSION(5,11,0) && LINUX_VERSION_CODE >= KERNEL_VERSION(5,10,188))
++#undef NEED_ETH_HW_ADDR_SET
++#endif
+ #else /* >= 5.15.0 */
+ #define HAVE_ETHTOOL_COALESCE_EXTACK
+ #define HAVE_NDO_ETH_IOCTL
+-- 
+2.34.1
+

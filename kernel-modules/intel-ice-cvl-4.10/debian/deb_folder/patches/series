@@ -2,3 +2,4 @@
 0002-intel-ice-pass-linux-common-header-to-check_aux_bus.patch
 0003-rename-the-ddp-file-to-avoid-conflict.patch
 0004-Disable-irq_msix_misc-before-ptp-release.patch
+0005-ICE-Add-the-condition-of-undef-NEED_ETH_HW_ADDR_SET-.patch
