@@ -45,7 +45,7 @@ index 2ed05f9..ba886e2 100644
  Priority: optional
  Maintainer: Vladimir Sokolovsky <vlad@mellanox.com>
 -Build-Depends: debhelper (>= 8.0.0), autotools-dev, bzip2, dkms,
-+Build-Depends: debhelper (>= 8.0.0), autotools-dev, bzip2, dkms, linux@KERNEL_TYPE@-headers-5.10.0-6@KERNEL_TYPE@-amd64, linux@KERNEL_TYPE@-kbuild-5.10
++Build-Depends: debhelper (>= 8.0.0), autotools-dev, bzip2, dkms, linux@KERNEL_TYPE@-headers-stx-amd64, linux@KERNEL_TYPE@-keys
  Standards-Version: 3.9.2
  Homepage: http://www.mellanox.com/page/products_dyn?product_family=26&mtag=linux_sw_drivers
  
