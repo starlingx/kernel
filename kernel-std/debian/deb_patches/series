@@ -27,3 +27,4 @@
 0027-config-Enable-Intel-RAPL-and-uncore-frequency-contro.patch
 0028-Upgrade-5.10-kernel-to-5.10.185.patch
 0029-Upgrade-5.10-kernel-to-5.10.189.patch
+0030-kernel-std-Add-pkgs-without-abiname-for-image-header.patch
