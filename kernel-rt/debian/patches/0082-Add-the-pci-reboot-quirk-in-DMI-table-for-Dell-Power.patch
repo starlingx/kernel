@@ -1,0 +1,42 @@
+From b62e354212c768ab4c76a941b1c3e75c6dafe161 Mon Sep 17 00:00:00 2001
+From: Zhixiong Chi <zhixiong.chi@windriver.com>
+Date: Thu, 26 Oct 2023 03:56:11 -0700
+Subject: [PATCH] Add the pci reboot quirk in DMI table for Dell PowerEdge R750
+
+The activated controller will send reboot command to mtcClent on the standby
+controller due to the SM failure(heartbeat missed), and mtcClient tries to
+reboot the system gracefully. But if the standby controller isn't rebooted
+within 120s, mtcClient tries to force reboot it using the following command
+"echo b > /proc/sysrq-trigger". Unfortunately the machine Dell PowerEdge R750
+sometimes will stuck.
+
+Now we add the pci reboot quirk in DMI table for this kind of machine to
+change reboot_type to pci_reboot, so that make sure the kernel reboot properly.
+
+Signed-off-by: Zhixiong Chi <zhixiong.chi@windriver.com>
+---
+ arch/x86/kernel/reboot.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/arch/x86/kernel/reboot.c b/arch/x86/kernel/reboot.c
+index 4d8c0e258..ad0b0efb7 100644
+--- a/arch/x86/kernel/reboot.c
++++ b/arch/x86/kernel/reboot.c
+@@ -419,6 +419,14 @@ static const struct dmi_system_id reboot_dmi_table[] __initconst = {
+ 			DMI_MATCH(DMI_PRODUCT_NAME, "C6100"),
+ 		},
+ 	},
++	{	/* Handle problems with rebooting on the Dell PowerEdge R750. */
++		.callback = set_pci_reboot,
++		.ident = "Dell PowerEdge R750",
++		.matches = {
++			DMI_MATCH(DMI_SYS_VENDOR, "Dell Inc."),
++			DMI_MATCH(DMI_PRODUCT_NAME, "PowerEdge R750"),
++		},
++	},
+ 	{	/* Handle problems with rebooting on the Precision M6600. */
+ 		.callback = set_pci_reboot,
+ 		.ident = "Dell Precision M6600",
+-- 
+2.42.0
+

@@ -76,3 +76,4 @@
 0079-perf-core-Use-perf_cgroup_info-active-to-check-if-cg.patch
 0080-perf-core-Fix-perf_cgroup_switch.patch
 0081-perf-core-Always-set-cpuctx-cgrp-when-enable-cgroup-.patch
+0082-Add-the-pci-reboot-quirk-in-DMI-table-for-Dell-Power.patch
