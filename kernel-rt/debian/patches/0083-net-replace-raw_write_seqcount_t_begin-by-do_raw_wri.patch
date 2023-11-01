@@ -1,0 +1,40 @@
+From 2dccf008aa6513cfd0c437e844bc8c854165cc9f Mon Sep 17 00:00:00 2001
+From: "Luis Claudio R. Goncalves" <lgoncalv@redhat.com>
+Date: Thu, 26 Oct 2023 16:28:30 +0800
+Subject: [PATCH] net: replace raw_write_seqcount_t_begin by
+ do_raw_write_seqcount_begin
+
+commit 3b5b679fc12ca9aa310862d5f0a6e23d6151c6a4 linux-stable-rt v5.10-rt-next
+
+Commit a8dd21118b0fa ("seqlock: Prefix internal seqcount_t-only macros with a
+"do_""), among other changes, renames the function raw_write_seqcount_t_begin
+to do_raw_write_seqcount_begin. That commit did not cover the changes from
+the RT-only commit 81ce24cd24a9e ("net: Properly annotate the try-lock for the
+seqlock"), which are fixed here.
+
+Fixes: 81ce24cd24a9e ("net: Properly annotate the try-lock for the seqlock")
+Signed-off-by: Luis Claudio R. Goncalves <lgoncalv@redhat.com>
+Signed-off-by: Li Wang <li.wang@windriver.com>
+Signed-off-by: Bruce Ashfield <bruce.ashfield@gmail.com>
+(cherry picked from commit 2dccf008aa6513cfd0c437e844bc8c854165cc9f)
+Signed-off-by: Peng Zhang <Peng.Zhang2@windriver.com>
+---
+ include/net/sch_generic.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/include/net/sch_generic.h b/include/net/sch_generic.h
+index 72be68652bb8..eee11a1c9321 100644
+--- a/include/net/sch_generic.h
++++ b/include/net/sch_generic.h
+@@ -195,7 +195,7 @@ static inline bool qdisc_run_begin(struct Qdisc *qdisc)
+ 		 * Variant of write_seqcount_t_begin() telling lockdep that a
+ 		 * trylock was attempted.
+ 		 */
+-		raw_write_seqcount_t_begin(s);
++		do_raw_write_seqcount_begin(s);
+ 		seqcount_acquire(&s->dep_map, 0, 1, _RET_IP_);
+ 		return true;
+ 	}
+-- 
+2.34.1
+

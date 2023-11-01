@@ -1,0 +1,30 @@
+From 5f955e3ab170e1b16bc7055bb30790b9948a319a Mon Sep 17 00:00:00 2001
+From: Peng Zhang <Peng.Zhang2@windriver.com>
+Date: Wed, 18 Oct 2023 08:40:44 +0000
+Subject: [PATCH] Upgrade 5.10 kernel to 5.10.198
+
+Update debian/changelog.
+
+Signed-off-by: Peng Zhang <Peng.Zhang2@windriver.com>
+---
+ debian/changelog | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/debian/changelog b/debian/changelog
+index a1f54166b..ab68b1363 100644
+--- a/debian/changelog
++++ b/debian/changelog
+@@ -1,3 +1,10 @@
++linux (5.10.198-1) unstable; urgency=medium
++
++  * New upstream update:
++    https://git.yoctoproject.org/linux-yocto/log/?h=v5.10%2Fstandard%2Fbase&qt=range&q=5601201f60a8abb5bbb54da99da2a38bfb7a46dd
++
++ -- Peng Zhang <Peng.Zhang2@windriver.com>  Wed, 18 Oct 2023 08:33:53 +0000
++
+ linux (5.10.192-1) unstable; urgency=medium
+ 
+   * New upstream update:
+-- 
+2.30.2
+
