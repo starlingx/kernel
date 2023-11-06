@@ -1,12 +1,11 @@
 ---
-debver: 5.5
+debver: 5.9
 debname: mlnx-ofed-kernel
 dl_path:
-  name: mlnx-ofa-kernel-5.5.tgz
+  name: mlnx-ofa-kernel-5.9.tgz
   url: "https://linux.mellanox.com/public/repo/mlnx_ofed/\
-    5.5-1.0.3.2/SRPMS/mlnx-ofa_kernel-5.5.tgz"
-  md5sum: 5b9b3f9aa7c7207291538a1568c793ef
-  sha256sum: 50674ca9cb2905a0dd2077c782a0fcfe31d64f9e1e1ebdb5e0353a23dd9c36db
+    5.9-0.5.6.0/SRPMS/mlnx-ofa_kernel-5.9.tgz"
+  sha256sum: c25965b336b58116ee8f4ddaf3c858564b00214ab12164a347f2d27d32d79df5
 revision:
   dist: $STX_DIST
   GITREVCOUNT:
