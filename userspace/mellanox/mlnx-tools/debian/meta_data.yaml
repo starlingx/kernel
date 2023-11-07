@@ -4,9 +4,8 @@ debname: mlnx-tools
 dl_path:
   name: mlnx-tools-5.2.0.tar.gz
   url: "https://linux.mellanox.com/public/repo/mlnx_ofed/\
-    5.5-1.0.3.2/SRPMS/mlnx-tools-5.2.0.tar.gz"
-  md5sum: 57523d5944fb936dad4c76311629b04a
-  sha256sum: db0246a22ffe0e75f64dfb41736ea4a21931f4f67fb971f519834eeab9176932
+    5.9-0.5.6.0/SRPMS/mlnx-tools-5.2.0.tar.gz"
+  sha256sum: 98ce9bef16a3ad9a392015bffbf079efe3260519db14912a02f5db59f10bec2e
 revision:
   dist: $STX_DIST
   GITREVCOUNT:

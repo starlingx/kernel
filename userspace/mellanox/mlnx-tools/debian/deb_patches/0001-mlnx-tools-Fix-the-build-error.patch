@@ -1,9 +1,9 @@
-From c41924f7bf26cef66ab1038e5723c56a3a070058 Mon Sep 17 00:00:00 2001
+From 102c8648edf5271262c8488721f61182f0adca54 Mon Sep 17 00:00:00 2001
 From: Jiping Ma <jiping.ma2@windriver.com>
-Date: Mon, 11 Apr 2022 02:07:30 -0700
+Date: Sun, 5 Nov 2023 18:51:31 -0800
 Subject: [PATCH] mlnx-tools: Fix the build error.
 
-This changes 5.2.0 from 5.2.0-OFED.5.5.1.0.3 in changelog to
+This changes 5.2.0 from 5.2.0-OFED.5.9.0.5.5 in changelog to
 fix the following build error.
 
 debrepack - ERROR - dpkg-architecture: warning: cannot determine CC system type, falling back to default (native compilation)
@@ -19,22 +19,21 @@ debrepack - ERROR - dpkg-source: error: can't build with source format '3.0 (nat
 debrepack - ERROR - dpkg-buildpackage: error: dpkg-source -b . subprocess returned exit status 25
 debrepack - ERROR - dpkg-buildpackage: error: dpkg-source -b . subprocess returned exit status 25
 debrepack - ERROR - [ Failed - "cd /localdisk/loadbuild/jma1/stx/std/mlnx-tools/mlnx-tools-5.2.0; dpkg-buildpackage -nc -us -uc -S -d" ]
-
 Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
 ---
  debian/changelog | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/debian/changelog b/debian/changelog
-index c49bb20..c9b4370 100644
+index 41fed5c..c9b4370 100644
 --- a/debian/changelog
 +++ b/debian/changelog
 @@ -1,4 +1,4 @@
--mlnx-tools (5.2.0-OFED.5.5.1.0.3) UNRELEASED; urgency=medium
+-mlnx-tools (5.2.0-OFED.5.9.0.5.5) UNRELEASED; urgency=medium
 +mlnx-tools (5.2.0) UNRELEASED; urgency=medium
  
    * Switched to a MLNX_OFED branch
    * Native package
 -- 
-2.35.1
+2.42.0
 
