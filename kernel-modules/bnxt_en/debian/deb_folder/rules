@@ -36,7 +36,7 @@ pkg_common_name=bnxt-en-common
 #   Version: 5.5-OFED.5.5.1.0.3.1.stx.5.kver.5.10.0-6-amd64
 # Reduce this line to the version number substring "5.5" before
 # the substring "-OFED".
-ofed_version=$(shell dpkg  --status mlnx-ofed-kernel-dev | \
+ofed_version=$(shell dpkg  --status mlnx-ofed-kernel-dev@KERNEL_TYPE@ | \
   grep -e '^Version:' | sed -e 's@^Version: \([0-9]\+\.[0-9]\+\)-OFED.*@\1@')
 
 ifeq ($(ofed_version),)
