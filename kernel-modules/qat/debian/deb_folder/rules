@@ -84,6 +84,14 @@ override_dh_auto_install:
 	dh_installdirs -p$(pkg_name_common) $(_libdir)
 	install -m 750 $(qat_src_dir)build/*.so debian/$(pkg_name_common)$(_libdir)
 
+	set -e; for lib in debian/$(pkg_name_common)$(_libdir)/*.so; do \
+		test -f "$${lib}" || continue; \
+		lib_base="$$(basename -- "$${lib}")"; \
+		\
+		mv -v  "$${lib}"         "$${lib}.0"; \
+		ln -vs "$${lib_base}.0"  "$${lib}"; \
+	done
+
 	dh_installdirs -p$(pkg_name) lib/modules/$(kernel_version)/kernel/drivers/crypto/qat/
 	install -m 750 $(qat_src_dir)build/*qat*.ko $(buildroot)lib/modules/$(kernel_version)/kernel/drivers/crypto/qat/
 	install -m 750 $(qat_src_dir)build/usdm_drv.ko $(buildroot)lib/modules/$(kernel_version)/kernel/drivers/crypto/qat
