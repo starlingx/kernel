@@ -1,0 +1,30 @@
+From e68f10053ad869a56b206ab851d8db0d0565ce4d Mon Sep 17 00:00:00 2001
+From: Peng Zhang <Peng.Zhang2@windriver.com>
+Date: Wed, 3 Jan 2024 01:49:13 +0000
+Subject: [PATCH] Upgrade 5.10 kernel to 5.10.205
+
+Update debian/changelog.
+
+Signed-off-by: Peng Zhang <Peng.Zhang2@windriver.com>
+---
+ debian/changelog | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/debian/changelog b/debian/changelog
+index 9647c7d4c..8f636f071 100644
+--- a/debian/changelog
++++ b/debian/changelog
+@@ -1,3 +1,10 @@
++linux-rt (5.10.205-1) unstable; urgency=medium
++
++  * New upstream update:
++    https://git.yoctoproject.org/linux-yocto/log/?h=v5.10%2Fstandard%2Fpreempt-rt%2Fbase&qt=range&q=26e9b120876a03baa8fed8bf2932be84720ac0a4
++
++ -- Peng Zhang <Peng.Zhang2@windriver.com>  Wed, 03 Jan 2024 01:20:32 +0000
++
+ linux-rt (5.10.198-1) unstable; urgency=medium
+ 
+   * New upstream update:
+-- 
+2.30.2
+
