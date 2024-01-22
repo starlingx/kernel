@@ -1,11 +1,12 @@
 ---
-debver: 112304
+debver: 112311
 debname: octeon-ep
 dl_path:
-  name: octeon_ep-112304.tar.gz
-  url: "https://sourceforge.net/projects/octeon-ep/files/\
-        octeon_ep-112304.tar.gz/download"
-  sha256sum: 7250da17d9829738b010496b1950689725058bd31dd49a95a588a4f823ee883f
+  name: v23.11.tar.gz
+  topdir: pcie_ep_octeon_host-23.11
+  url: "https://github.com/MarvellEmbeddedProcessors/pcie_ep_octeon_host/\
+        archive/refs/tags/v23.11.tar.gz"
+  sha256sum: a4bac7fd40bd77da6cebb3f26ecbb91da304069dc6971d317666ca60f736497b
 revision:
   dist: $STX_DIST
   GITREVCOUNT:

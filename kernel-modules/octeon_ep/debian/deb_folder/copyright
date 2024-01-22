@@ -1,33 +1,47 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-
-Upstream-Name: octeon_ep
+Upstream-Name: pcie_ep_octeon_host
 Upstream-Contact: Marvell Semiconductors
-Source: https://sourceforge.net/projects/octeon-ep/files/octeon_ep-112304.tar.gz/download
-Files: * except host/Makefile
-Copyright: Copyright 2023 Marvell Corporation.
-License: GPL-2
+Source: https://github.com/MarvellEmbeddedProcessors/pcie_ep_octeon_host/archive/refs/tags/v23.11.tar.gz
 
+Files:
+ *
+Copyright: 2024, Marvell Corporation
+License: GPL-2
  This program is free software; you can redistribute it and/or modify it under
  the terms and conditions of the GNU General Public License, version 2, as
  published by the Free Software Foundation.
-
+ .
  This program is distributed in the hope it will be useful, but WITHOUT ANY
- WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
- PARTICULAR PURPOSE. See the GNU General Public License for more details.
-
+ WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ .
  You should have received a copy of the GNU General Public License along with
  this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
  St - Fifth Floor, Boston, MA 02110-1301 USA.
-
+ .
  The full GNU General Public License is included in this distribution in the
  file called "COPYING".
-
+Comment:
  On Debian-based systems the full text of the GNU General Public License
  version 2 license can be found in `/usr/share/common-licenses/GPL-2'.
 
-Files: host/Makefile
-Copyright: Copyright 2023 Marvell Corporation.
-License: BSD-3-Clause
-
- The BSD-3-Clause license can be found at:
- https://opensource.org/licenses/BSD-3-Clause
+Files:
+ apps/*
+Copyright: 2024, Marvell Corporation
+License: Apache-2.0
+ Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ use this file except in compliance with the License. You may obtain a copy of
+ the License at
+ .
+ http://www.apache.org/licenses/LICENSE-2.0
+ .
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ License for the specific language governing permissions and limitations under
+ the License.
+Comment:
+ The program(s) in the "apps" directory are not used in StarlingX.
+ .
+ On Debian-based systems the full text of the Apache License, Version 2.0 can
+ be found in `/usr/share/common-licenses/Apache-2.0'.
