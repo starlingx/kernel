@@ -1,0 +1,93 @@
+linux (6.6.7-1) unstable; urgency=medium
+
+  * New upstream update:
+    https://git.yoctoproject.org/linux-yocto/log/?h=v6.6%2Fstandard%2Fbase&qt=range&q=a7d960cfa075eb93eef1e04e96940a35d1a49d79
+ -- Li Zhou <li.zhou@windriver.com>  Fri, 22 Dec 2023 15:36:30 +0800
+
+linux (5.10.205-1) unstable; urgency=medium
+
+  * New upstream update:
+    https://git.yoctoproject.org/linux-yocto/log/?h=v5.10%2Fstandard%2Fbase&qt=range&q=0e1dfe1d29013deb4cfa75170fa414e75a14c530
+
+ -- Peng Zhang <Peng.Zhang2@windriver.com>  Tue, 16 Jan 2024 06:57:16 +0000
+
+linux (5.10.198-1) unstable; urgency=medium
+
+  * New upstream update:
+    https://git.yoctoproject.org/linux-yocto/log/?h=v5.10%2Fstandard%2Fbase&qt=range&q=5601201f60a8abb5bbb54da99da2a38bfb7a46dd
+
+ -- Peng Zhang <Peng.Zhang2@windriver.com>  Wed, 18 Oct 2023 08:33:53 +0000
+
+linux (5.10.192-1) unstable; urgency=medium
+
+  * New upstream update:
+    https://git.yoctoproject.org/linux-yocto/log/?h=v5.10%2Fstandard%2Fbase&qt=range&q=11b247211e00c610587b27a762e4814f56723958
+
+ -- Peng Zhang <Peng.Zhang2@windriver.com>  Mon, 02 Oct 2023 08:09:11 +0000
+
+linux (5.10.189-1) unstable; urgency=medium
+
+  * New upstream update:
+    https://git.yoctoproject.org/linux-yocto/log/?h=v5.10%2Fstandard%2Fbase&qt=range&q=fc99f5e7ce23e4814c7b41f24c5d0296754be89e
+
+ -- Peng Zhang <Peng.Zhang2@windriver.com>  Mon, 28 Aug 2023 05:56:12 +0000
+
+linux (5.10.185-1) unstable; urgency=medium
+
+  * New upstream update:
+    https://git.yoctoproject.org/linux-yocto/log/?h=v5.10%2Fstandard%2Fbase&qt=range&q=dafc025b033585311d1693255c80b60b690b0e54
+
+ -- Peng Zhang <Peng.Zhang2@windriver.com>  Mon, 17 Jul 2023 10:47:53 +0000
+
+linux (5.10.180-1) unstable; urgency=medium
+
+  * New upstream update:
+    https://git.yoctoproject.org/linux-yocto/log/?h=v5.10%2Fstandard%2Fbase&qt=range&q=c6515d2a698792220bed8fd39ccbcfec64d1130f
+
+ -- Peng Zhang <Peng.Zhang2@windriver.com>  Wed, 31 May 2023 08:56:14 +0000
+
+linux (5.10.177-1) unstable; urgency=medium
+
+  * New upstream update:
+    https://git.yoctoproject.org/linux-yocto/log/?h=v5.10%2Fstandard%2Fbase&qt=range&q=cf160f367e3ceb54cde11392a80413b152ca4e15
+
+ -- Peng Zhang <Peng.Zhang2@windriver.com>  Wed, 26 Apr 2023 19:22:54 +0000
+
+linux (5.10.162-1) unstable; urgency=medium
+
+  * New upstream update:
+    https://git.yoctoproject.org/linux-yocto/log/?h=v5.10%2Fstandard%2Fbase&qt=range&q=353f388471e281c0f387436b035bfdcd2f468505
+
+ -- Jiping Ma <jiping.ma2@windriver.com>  Wed, 11 Jan 2023 9:33:12 +0800
+
+linux (5.10.152-1) unstable; urgency=medium
+
+  * New upstream update:
+    https://git.yoctoproject.org/linux-yocto/log/?h=v5.10%2Fstandard%2Fbase&qt=range&q=7d078581c0f754d6cb38b2bf1952925e0460ef84
+
+ -- Jiping Ma <jiping.ma2@windriver.com>  Fri, 04 Nov 2022 16:43:32 +0800
+
+linux (5.10.112-1) unstable; urgency=medium
+
+  * New upstream update:
+    https://git.yoctoproject.org/cgit/cgit.cgi/linux-yocto/log/?h=v5.10%2Fstandard%2Fbase&qt=range&q=6cf7dea05bd756513cf58c5ced8c6bf1d1f23c15
+  * To fix the follow 2 CVE issues.
+    CVE-2022-0435: kernel: remote stack overflow via kernel panic on systems using TIPC may lead to DoS
+    CVE-2022-0847: kernel: improper initialization of the "flags" member of the new pipe_buffer
+
+ -- Jiping Ma <jiping.ma2@windriver.com>  Wed, 27 Apr 2022 11:13:32 +0800
+
+linux (5.10.99-1) unstable; urgency=medium
+
+  * New upstream update:
+    https://git.yoctoproject.org/cgit/cgit.cgi/linux-yocto/log/?h=v5.10%2Fstandard%2Fbase&qt=range&q=84f6a75f64961e59d61bf3d70ab17e8bb430386b
+
+ -- Li Zhou <li.zhou@windriver.com>  Wed, 13 Apr 2022 11:37:52 +0800
+
+linux (5.10.74-1) unstable; urgency=medium
+
+  * New upstream update:
+    https://git.yoctoproject.org/cgit/cgit.cgi/linux-yocto/log/?h=v5.10%2Fstandard%2Fbase&qt=range&q=9e84a42af61ff9c6feb89ab8d61ee5f25fb35c72
+
+ -- Li Zhou <li.zhou@windriver.com>  Tue, 9 Nov 2021 11:23:35 +0800
+
