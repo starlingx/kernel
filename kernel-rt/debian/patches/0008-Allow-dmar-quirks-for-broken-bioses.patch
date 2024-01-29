@@ -1,7 +1,7 @@
-From 5bfa2de45bd3c7ea524f9cc5f77608f91b0d3267 Mon Sep 17 00:00:00 2001
+From d5ba0852574a57872fd48b4e009e9fbc77533b20 Mon Sep 17 00:00:00 2001
 From: Jim Somerville <Jim.Somerville@windriver.com>
 Date: Wed, 29 Jan 2020 14:19:22 -0500
-Subject: [PATCH 08/11] Allow dmar quirks for broken bioses
+Subject: [PATCH] Allow dmar quirks for broken bioses
 
 Problem:
 Broken bios creates inaccurate DMAR tables,
@@ -27,17 +27,19 @@ https://lkml.org/lkml/2019/12/24/15
 
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+[lz: Adapted the patch for context changes.]
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
 ---
  drivers/iommu/intel/dmar.c | 25 ++++++++++++++++++++++++-
  1 file changed, 24 insertions(+), 1 deletion(-)
 
 diff --git a/drivers/iommu/intel/dmar.c b/drivers/iommu/intel/dmar.c
-index b8d0b56a7..84b8d6e3e 100644
+index f800989ea..f08820cbc 100644
 --- a/drivers/iommu/intel/dmar.c
 +++ b/drivers/iommu/intel/dmar.c
-@@ -66,6 +66,26 @@ static void free_iommu(struct intel_iommu *iommu);
- 
- extern const struct iommu_ops intel_iommu_ops;
+@@ -65,6 +65,26 @@ static DEFINE_IDA(dmar_seq_ids);
+ static int alloc_iommu(struct dmar_drhd_unit *drhd);
+ static void free_iommu(struct intel_iommu *iommu);
  
 +static int scope_mismatch_quirk;
 +static void quirk_dmar_scope_mismatch(struct pci_dev *dev)
@@ -62,7 +64,7 @@ index b8d0b56a7..84b8d6e3e 100644
  static void dmar_register_drhd_unit(struct dmar_drhd_unit *drhd)
  {
  	/*
-@@ -255,7 +275,10 @@ int dmar_insert_dev_scope(struct dmar_pci_notify_info *info,
+@@ -252,7 +272,10 @@ int dmar_insert_dev_scope(struct dmar_pci_notify_info *info,
  		      info->dev->class >> 16 != PCI_BASE_CLASS_BRIDGE))) {
  			pr_warn("Device scope type does not match for %s\n",
  				pci_name(info->dev));

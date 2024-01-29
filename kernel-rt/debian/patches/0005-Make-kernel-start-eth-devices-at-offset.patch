@@ -1,7 +1,7 @@
-From 28e8a4f123ae4d45ad793f45d5bd7dc839893956 Mon Sep 17 00:00:00 2001
+From 130eb445c6abc1dec0cb9d24b2b7e4cba13f7037 Mon Sep 17 00:00:00 2001
 From: Chris Friesen <chris.friesen@windriver.com>
 Date: Thu, 12 May 2016 18:00:00 -0400
-Subject: [PATCH 05/11] Make kernel start eth devices at offset
+Subject: [PATCH] Make kernel start eth devices at offset
 
 In order to avoid naming collisions, we want to make the kernel
 start naming its "ethX" devices at eth1000 instead of eth0.  This
@@ -10,16 +10,18 @@ will let us rename to a range starting at eth0.
 Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
 Signed-off-by: Zhang Zhiguo <zhangzhg@neusoft.com>
 Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+[lz: Adapted the patch for context changes.]
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
 ---
  net/core/dev.c | 6 ++++++
  1 file changed, 6 insertions(+)
 
 diff --git a/net/core/dev.c b/net/core/dev.c
-index b8df85c2e..2eea9b2c0 100644
+index 9bf90b2a7..9526361a0 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -1218,6 +1218,12 @@ static int __dev_alloc_name(struct net *net, const char *name, char *buf)
- 				set_bit(i, inuse);
+@@ -1119,6 +1119,12 @@ static int __dev_alloc_name(struct net *net, const char *name, char *buf)
+ 				__set_bit(i, inuse);
  		}
  
 +		/* STX extension, want kernel to start at eth1000 */
@@ -29,7 +31,7 @@ index b8df85c2e..2eea9b2c0 100644
 +		}
 +
  		i = find_first_zero_bit(inuse, max_netdevices);
- 		free_page((unsigned long) inuse);
+ 		bitmap_free(inuse);
  	}
 -- 
 2.17.1

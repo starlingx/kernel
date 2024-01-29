@@ -1,0 +1,94 @@
+linux-rt (6.6.7-1) unstable; urgency=medium
+
+  * New upstream update:
+    https://git.yoctoproject.org/linux-yocto/log/?h=v6.6%2Fstandard%2Fpreempt-rt%2Fbase&qt=range&q=0539614ef9daa0949cfe4855234dbe1c9f1da432
+ -- Li Zhou <li.zhou@windriver.com>  Mon, 25 Dec 2023 16:50:30 +0800
+
+linux-rt (5.10.205-1) unstable; urgency=medium
+
+  * New upstream update:
+    https://git.yoctoproject.org/linux-yocto/log/?h=v5.10%2Fstandard%2Fpreempt-rt%2Fbase&qt=range&q=26e9b120876a03baa8fed8bf2932be84720ac0a4
+
+ -- Peng Zhang <Peng.Zhang2@windriver.com>  Wed, 03 Jan 2024 01:20:32 +0000
+
+linux-rt (5.10.198-1) unstable; urgency=medium
+
+  * New upstream update:
+    https://git.yoctoproject.org/linux-yocto/log/?h=v5.10%2Fstandard%2Fpreempt-rt%2Fbase&qt=range&q=2da7024055c1fb827608ef2529c22356612f6ddd
+
+ -- Peng Zhang <Peng.Zhang2@windriver.com>  Mon, 16 Oct 2023 13:21:32 +0000
+
+linux-rt (5.10.192-1) unstable; urgency=medium
+
+  * New upstream update:
+    https://git.yoctoproject.org/linux-yocto/log/?h=v5.10%2Fstandard%2Fpreempt-rt%2Fbase&qt=range&q=b56fef81989515b6107c389373158235efa26138
+
+ -- Peng Zhang <Peng.Zhang2@windriver.com>  Mon, 02 Oct 2023 08:21:50 +0000
+
+linux-rt (5.10.189-1) unstable; urgency=medium
+
+  * New upstream update:
+    https://git.yoctoproject.org/linux-yocto/log/?h=v5.10%2Fstandard%2Fpreempt-rt%2Fbase&qt=range&q=42680acb5fa5bb8ec4582e2bc50dd16aa71394a6
+
+ -- Peng Zhang <Peng.Zhang2@windriver.com>  Mon, 28 Aug 2023 07:38:50 +0000
+
+linux-rt (5.10.185-1) unstable; urgency=medium
+
+  * New upstream update:
+    https://git.yoctoproject.org/linux-yocto/log/?h=v5.10%2Fstandard%2Fpreempt-rt%2Fbase&qt=range&q=46fb028ad9413cfa8d47a6dc8bf9a57d9d5edf8b
+
+ -- Peng Zhang <Peng.Zhang2@windriver.com>  Sat, 15 Jul 2023 07:23:36 +0000
+
+linux-rt (5.10.180-1) unstable; urgency=medium
+
+  * New upstream update:
+    https://git.yoctoproject.org/linux-yocto/log/?h=v5.10%2Fstandard%2Fpreempt-rt%2Fbase&qt=range&q=288dde44f13d9c4e997737c1dfbe4d835d28868e
+
+ -- Peng Zhang <Peng.Zhang2@windriver.com>  Wed, 31 May 2023 05:52:46 +0000
+
+linux-rt (5.10.177-1) unstable; urgency=medium
+
+  * New upstream update:
+    https://git.yoctoproject.org/linux-yocto/log/?h=v5.10%2Fstandard%2Fpreempt-rt%2Fbase&qt=range&q=f6146935c0b2cb2d342d8d188e7779c8244883a3
+
+ -- Peng Zhang <Peng.Zhang2@windriver.com>  Wed, 26 Apr 2023 19:13:42 +0000
+
+linux-rt (5.10.162-1) unstable; urgency=medium
+
+  * New upstream update:
+    https://git.yoctoproject.org/linux-yocto/log/?h=v5.10%2Fstandard%2Fpreempt-rt%2Fbase&qt=range&q=58d7abb88dadc31a3bdcaabc324ae015d77642b7
+
+ -- Jiping Ma <jiping.ma2@windriver.com>  Wed, 11 Jan 2023 10:56:12 +0800
+
+linux-rt (5.10.152-1) unstable; urgency=medium
+
+  * New upstream update:
+    https://git.yoctoproject.org/linux-yocto/log/?h=v5.10%2Fstandard%2Fpreempt-rt%2Fbase&qt=range&q=899cf349eab4ac3020c6bad06f889e679509a1d2
+
+ -- Jiping Ma <jiping.ma2@windriver.com>  Fri, 04 Nov 2022 16:43:32 +0800
+
+
+linux-rt (5.10.112-1) unstable; urgency=medium
+
+  * New upstream update:
+    https://git.yoctoproject.org/cgit/cgit.cgi/linux-yocto/log/?h=v5.10%2Fstandard%2Fbase&qt=range&q=6cf7dea05bd756513cf58c5ced8c6bf1d1f23c15
+  * To fix the follow 2 CVE issues.
+    CVE-2022-0435: kernel: remote stack overflow via kernel panic on systems using TIPC may lead to DoS
+    CVE-2022-0847: kernel: improper initialization of the "flags" member of the new pipe_buffer
+
+ -- Jiping Ma <jiping.ma2@windriver.com>  Wed, 27 Apr 2022 11:13:32 +0800
+
+linux-rt (5.10.99-1) unstable; urgency=medium
+
+  * New upstream update:
+    https://git.yoctoproject.org/linux-yocto/log/?h=v5.10%2Fstandard%2Fpreempt-rt%2Fbase&qt=range&q=53a27dc510c8d9152ffa4d2d95b888db7d3d97b6
+
+ -- Li Zhou <li.zhou@windriver.com>  Wed, 13 Apr 2022 11:48:53 +0800
+
+linux-rt (5.10.74-1) unstable; urgency=medium
+
+  * New upstream update:
+    https://git.yoctoproject.org/linux-yocto/log/?h=v5.10%2Fstandard%2Fpreempt-rt%2Fbase&qt=range&q=8048444fc7e44c6fc04a5e0b35d6117fe51c17fc
+
+ -- Li Zhou <li.zhou@windriver.com>  Tue, 29 Nov 2021 10:22:35 +0800
+

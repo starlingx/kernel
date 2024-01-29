@@ -1,20 +1,20 @@
 ---
-debver: 5.10.205
+debver: 6.6.7
 debname: linux-rt
 dl_hook: dl_hook
 dl_files:
-  linux-yocto-26e9b120876a03baa8fed8bf2932be84720ac0a4.tar.gz:
+  linux-yocto-0539614ef9daa0949cfe4855234dbe1c9f1da432.tar.gz:
     topdir: null
     url:
       "https://git.yoctoproject.org/linux-yocto/snapshot/\
-       linux-yocto-26e9b120876a03baa8fed8bf2932be84720ac0a4.tar.gz"
-    sha256sum: 53024b9e3153c36a99c3489a2da16dbdb58a06f607e3ec999ff657e65f53ca39
-  linux_5.10.28-1.debian.tar.xz:
+       linux-yocto-0539614ef9daa0949cfe4855234dbe1c9f1da432.tar.gz"
+    sha256sum: 8bd5948529e8771e031af680848797cf172724b3a136efec5c74d9cd4b5c19d0
+  linux_6.1.27-1~bpo11%2B1.debian.tar.xz:
     topdir: null
     url:
-      "http://snapshot.debian.org/archive/debian/20210410T143728Z/pool/main/\
-       l/linux/linux_5.10.28-1.debian.tar.xz"
-    sha256sum: 1367a40724054a540c4d9c92f0ea6f73e9e50b2a99e46b59a987be15bdc4c4b7
+      "https://snapshot.debian.org/archive/debian/20230718T030758Z/pool/main/\
+       l/linux/linux_6.1.27-1~bpo11%2B1.debian.tar.xz"
+    sha256sum: 903cc8184efe94fa8f67bc85e12264b3e4c299153091ab88130c15c272d09478
 revision:
   dist: $STX_DIST
   GITREVCOUNT:
