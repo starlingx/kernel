@@ -1,7 +1,7 @@
-From 680d45fdbc9a9c8256801e49af9c607d223e7856 Mon Sep 17 00:00:00 2001
+From cd317ab94d47726632145fb6296872648d6c13a2 Mon Sep 17 00:00:00 2001
 From: Chris Friesen <chris.friesen@windriver.com>
 Date: Thu, 17 Jun 2021 01:28:11 -0700
-Subject: [PATCH 01/11] Notification of death of arbitrary processes
+Subject: [PATCH] Notification of death of arbitrary processes
 
 Note: this commit was copied from Titanium Cloud Rel2
 
@@ -24,8 +24,10 @@ Signed-off-by: Shuicheng Lin <shuicheng.lin@intel.com>
 Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
 [zp: Adapted the patch for context changes.]
 Signed-off-by: Peng Zhang <Peng.Zhang2@windriver.com>
+[lz: Adapted the patch for context changes.]
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
 ---
- include/linux/init_task.h  |   9 ++
+ include/linux/init_task.h  |   8 ++
  include/linux/sched.h      |   6 +
  include/uapi/linux/prctl.h |  16 +++
  init/Kconfig               |  15 +++
@@ -37,19 +39,18 @@ Signed-off-by: Peng Zhang <Peng.Zhang2@windriver.com>
  kernel/fork.c              |   4 +
  kernel/signal.c            |  11 ++
  kernel/sys.c               |   8 ++
- 12 files changed, 351 insertions(+)
+ 12 files changed, 350 insertions(+)
  create mode 100644 kernel/death_notify.c
  create mode 100644 kernel/death_notify.h
 
 diff --git a/include/linux/init_task.h b/include/linux/init_task.h
-index b2412b4d4..7a0828daf 100644
+index 40fc5813c..f1c786382 100644
 --- a/include/linux/init_task.h
 +++ b/include/linux/init_task.h
-@@ -25,6 +25,15 @@
- extern struct files_struct init_files;
- extern struct fs_struct init_fs;
+@@ -27,6 +27,14 @@ extern struct fs_struct init_fs;
  extern struct nsproxy init_nsproxy;
-+
+ extern struct cred init_cred;
+ 
 +#ifdef CONFIG_SIGEXIT
 +#define INIT_SIGEXIT(tsk) \
 +	.notify         = LIST_HEAD_INIT(tsk.notify),                   \
@@ -58,14 +59,14 @@ index b2412b4d4..7a0828daf 100644
 +#define INIT_SIGEXIT(tsk)
 +#endif
 +
- extern struct group_info init_groups;
- extern struct cred init_cred;
- 
+ #ifndef CONFIG_VIRT_CPU_ACCOUNTING_NATIVE
+ #define INIT_PREV_CPUTIME(x)	.prev_cputime = {			\
+ 	.lock = __RAW_SPIN_LOCK_UNLOCKED(x.prev_cputime.lock),		\
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 34c86a285..81bba855f 100644
+index ffb6eb55c..cf7f5602a 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -1156,6 +1156,12 @@ struct task_struct {
+@@ -1256,6 +1256,12 @@ struct task_struct {
  	short				il_prev;
  	short				pref_node_fork;
  #endif
@@ -79,7 +80,7 @@ index 34c86a285..81bba855f 100644
  	int				numa_scan_seq;
  	unsigned int			numa_scan_period;
 diff --git a/include/uapi/linux/prctl.h b/include/uapi/linux/prctl.h
-index 7f0827705..dbd5a8b6e 100644
+index a5e06dcbb..0478d9868 100644
 --- a/include/uapi/linux/prctl.h
 +++ b/include/uapi/linux/prctl.h
 @@ -63,6 +63,22 @@
@@ -106,12 +107,12 @@ index 7f0827705..dbd5a8b6e 100644
  #define PR_GET_SECCOMP	21
  #define PR_SET_SECCOMP	22
 diff --git a/init/Kconfig b/init/Kconfig
-index ccec53dd4..200efd9db 100644
+index 2028ed4d5..818da5aa3 100644
 --- a/init/Kconfig
 +++ b/init/Kconfig
-@@ -1867,6 +1867,21 @@ config VM_EVENT_COUNTERS
- 	  on EXPERT systems.  /proc/vmstat will only show page counts
- 	  if VM event counters are disabled.
+@@ -1882,6 +1882,21 @@ config DEBUG_PERF_USE_VMALLOC
+ 
+ endmenu
  
 +config SIGEXIT
 +        bool "Notification of death of arbitrary processes"
@@ -128,14 +129,14 @@ index ccec53dd4..200efd9db 100644
 +          This is exposed to userspace via the prctl()
 +          call with the PR_DO_NOTIFY_TASK_STATE option
 +
- config SLUB_DEBUG
- 	default y
- 	bool "Enable SLUB debugging support" if EXPERT
+ config SYSTEM_DATA_VERIFICATION
+ 	def_bool n
+ 	select SYSTEM_TRUSTED_KEYRING
 diff --git a/init/init_task.c b/init/init_task.c
-index 5fa18ed59..e1a245782 100644
+index ff6c4b9bf..ce2240882 100644
 --- a/init/init_task.c
 +++ b/init/init_task.c
-@@ -128,6 +128,7 @@ struct task_struct init_task
+@@ -129,6 +129,7 @@ struct task_struct init_task
  	.alloc_lock	= __SPIN_LOCK_UNLOCKED(init_task.alloc_lock),
  	.journal_info	= NULL,
  	INIT_CPU_TIMERS(init_task)
@@ -144,17 +145,17 @@ index 5fa18ed59..e1a245782 100644
  	.timer_slack_ns = 50000, /* 50 usec default slack */
  	.thread_pid	= &init_struct_pid,
 diff --git a/kernel/Makefile b/kernel/Makefile
-index 82e9c8436..4ad61d5c9 100644
+index ebc692242..269dbd3ca 100644
 --- a/kernel/Makefile
 +++ b/kernel/Makefile
-@@ -108,6 +108,7 @@ obj-$(CONFIG_BPF) += bpf/
- obj-$(CONFIG_KCSAN) += kcsan/
+@@ -111,6 +111,7 @@ obj-$(CONFIG_KCSAN) += kcsan/
  obj-$(CONFIG_SHADOW_CALL_STACK) += scs.o
- obj-$(CONFIG_HAVE_STATIC_CALL_INLINE) += static_call.o
+ obj-$(CONFIG_HAVE_STATIC_CALL) += static_call.o
+ obj-$(CONFIG_HAVE_STATIC_CALL_INLINE) += static_call_inline.o
 +obj-$(CONFIG_SIGEXIT) += death_notify.o
+ obj-$(CONFIG_CFI_CLANG) += cfi.o
  
  obj-$(CONFIG_PERF_EVENTS) += events/
- 
 diff --git a/kernel/death_notify.c b/kernel/death_notify.c
 new file mode 100644
 index 000000000..5819d35a2
@@ -442,10 +443,10 @@ index 000000000..14a0995b7
 +#endif
 +
 diff --git a/kernel/exit.c b/kernel/exit.c
-index b86f388d3..82d019293 100644
+index bccfa4218..df6601e54 100644
 --- a/kernel/exit.c
 +++ b/kernel/exit.c
-@@ -69,6 +69,9 @@
+@@ -72,6 +72,9 @@
  #include <linux/uaccess.h>
  #include <asm/unistd.h>
  #include <asm/mmu_context.h>
@@ -455,7 +456,7 @@ index b86f388d3..82d019293 100644
  
  /*
   * The default value should be high enough to not crash a system that randomly
-@@ -241,6 +244,9 @@ void release_task(struct task_struct *p)
+@@ -250,6 +253,9 @@ void release_task(struct task_struct *p)
  	cgroup_release(p);
  
  	write_lock_irq(&tasklist_lock);
@@ -466,12 +467,12 @@ index b86f388d3..82d019293 100644
  	thread_pid = get_pid(p->thread_pid);
  	__exit_signal(p);
 diff --git a/kernel/fork.c b/kernel/fork.c
-index 214697bc3..5d3b9a9d9 100644
+index 94f3f5947..91f1345b3 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -2106,6 +2106,10 @@ static __latent_entropy struct task_struct *copy_process(
- 	p->sequential_io	= 0;
- 	p->sequential_io_avg	= 0;
+@@ -2224,6 +2224,10 @@ static __latent_entropy struct task_struct *copy_process(
+ 	RCU_INIT_POINTER(p->bpf_storage, NULL);
+ 	p->bpf_ctx = NULL;
  #endif
 +#ifdef CONFIG_SIGEXIT
 +	INIT_LIST_HEAD(&p->notify);
@@ -481,20 +482,20 @@ index 214697bc3..5d3b9a9d9 100644
  	/* Perform scheduler related setup. Assign this task to a CPU. */
  	retval = sched_fork(clone_flags, p);
 diff --git a/kernel/signal.c b/kernel/signal.c
-index a1eeecb49..5059e0482 100644
+index 5d45f5da2..dc8e3ff49 100644
 --- a/kernel/signal.c
 +++ b/kernel/signal.c
-@@ -56,6 +56,9 @@
- #include <asm/unistd.h>
+@@ -55,6 +55,9 @@
  #include <asm/siginfo.h>
  #include <asm/cacheflush.h>
+ #include <asm/syscall.h>	/* for syscall_get_* */
 +#ifdef CONFIG_SIGEXIT
 +#include "death_notify.h"
 +#endif
  
  /*
   * SLAB caches for signal bits.
-@@ -2088,6 +2091,10 @@ bool do_notify_parent(struct task_struct *tsk, int sig)
+@@ -2121,6 +2124,10 @@ bool do_notify_parent(struct task_struct *tsk, int sig)
  	__wake_up_parent(tsk, tsk->parent);
  	spin_unlock_irqrestore(&psig->siglock, flags);
  
@@ -505,7 +506,7 @@ index a1eeecb49..5059e0482 100644
  	return autoreap;
  }
  
-@@ -2160,6 +2167,10 @@ static void do_notify_parent_cldstop(struct task_struct *tsk,
+@@ -2193,6 +2200,10 @@ static void do_notify_parent_cldstop(struct task_struct *tsk,
  	 */
  	__wake_up_parent(tsk, parent);
  	spin_unlock_irqrestore(&sighand->siglock, flags);
@@ -515,12 +516,12 @@ index a1eeecb49..5059e0482 100644
 +#endif
  }
  
- static inline bool may_ptrace_stop(void)
+ /*
 diff --git a/kernel/sys.c b/kernel/sys.c
-index 9f59cc8ab..c41abaaf4 100644
+index c85e1abf7..cd1cb1d33 100644
 --- a/kernel/sys.c
 +++ b/kernel/sys.c
-@@ -73,6 +73,9 @@
+@@ -75,6 +75,9 @@
  #include <asm/unistd.h>
  
  #include "uid16.h"
@@ -530,7 +531,7 @@ index 9f59cc8ab..c41abaaf4 100644
  
  #ifndef SET_UNALIGN_CTL
  # define SET_UNALIGN_CTL(a, b)	(-EINVAL)
-@@ -2418,6 +2421,11 @@ SYSCALL_DEFINE5(prctl, int, option, unsigned long, arg2, unsigned long, arg3,
+@@ -2504,6 +2507,11 @@ SYSCALL_DEFINE5(prctl, int, option, unsigned long, arg2, unsigned long, arg3,
  		else
  			error = PR_MCE_KILL_DEFAULT;
  		break;
@@ -543,5 +544,5 @@ index 9f59cc8ab..c41abaaf4 100644
  		error = prctl_set_mm(arg2, arg3, arg4, arg5);
  		break;
 -- 
-2.30.2
+2.17.1
 
