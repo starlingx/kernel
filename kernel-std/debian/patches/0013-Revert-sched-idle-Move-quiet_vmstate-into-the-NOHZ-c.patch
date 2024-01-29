@@ -1,0 +1,120 @@
+From ed051d788e0f7d177bec80d7b594e7b889b975bd Mon Sep 17 00:00:00 2001
+From: "M. Vefa Bicakci" <vefa.bicakci@windriver.com>
+Date: Wed, 4 Jan 2023 20:41:54 -0500
+Subject: [PATCH] Revert "sched/idle: Move quiet_vmstate() into the NOHZ code"
+
+This reverts commit 62cb1188ed86a9cf082fd2f757d4dd9b54741f24.
+
+We received a bug report indicating that the "Dirty" field in
+/proc/meminfo was increasing without bounds, to the point that the
+number of dirty file pages would eventually reach what is enforced by
+the vm.dirty_bytes threshold (which is set to 800_000_000 bytes in
+StarlingX) and cause any task attempting to carry out disk I/O to get
+blocked.
+
+Upon further debugging, we noticed that this issue occurred on nohz_full
+CPUs where a user application was carrying out disk I/O by writing to
+and rotating log files, with a usleep(0) call between every log file
+rotation. The issue was reproducible with the preempt-rt patch set very
+reliably.
+
+The reverted commit moved the quiet_vmstat() call from the entry of the
+idle loop (do_idle function) to the tick_nohz_stop_tick function.
+However, the tick_nohz_stop_tick function is called very frequently from
+hard IRQ context via the following call chain:
+
+  irq_exit_rcu
+    tick_irq_exit (has a condition to check for nohz_full CPUs)
+      tick_nohz_irq_exit
+        tick_nohz_full_update_tick
+          tick_nohz_stop_sched_tick
+            tick_nohz_stop_tick
+              quiet_vmstat
+
+The check for nohz_full CPUs in tick_irq_exit() explains why this issue
+occurred with nohz_full CPUs more reliably.
+
+Calling quiet_vmstat from hard IRQ context is problematic.
+quiet_vmstat() makes the following calls to update vm_node_stat as well
+as other statistics such as vm_zone_stat and vm_numa_stat. Recall that
+an element in the vm_node_stat array tracks the number of dirty file
+pages:
+
+  quiet_vmstat
+    refresh_cpu_vm_stats
+      fold_diff (Updates vm_node_stat and other statistics)
+
+However, __mod_node_page_state() (and fellow functions) also update
+vm_node_stat, and although it is called with interrupts disabled in most
+contexts (via spin_lock_irqsave), there are instances where it is called
+with interrupts enabled (as evidenced by instrumenting the function with
+counters that count the number of times the function was called with and
+without interrupts disabled). Also, the fact that __mod_node_page_state
+and its sibling function __mod_zone_page_state should not be called with
+interrupts enabled is evidenced by the following comment in mm/vmstat.c
+above __mod_zone_page_state():
+
+  For use when we know that interrupts are disabled, or when we know
+  that preemption is disabled and that particular counter cannot be
+  updated from interrupt context.
+
+Furthermore, recall that the preempt-rt patch set makes most spinlocks
+sleeping locks and changes the implementation of spin_lock_irqsave in
+such a way that IRQs are *not* disabled by spin_lock_irqsave. With the
+preempt-rt patch set, this corresponds to a significant increase in the
+number of calls to __mod_node_page_state() with interrupts *enabled*.
+This in turn significantly increases the possibility of incorrectly
+modifying global statistics variables such the ones in the vm_node_stat
+array.
+
+To avoid this issue, we revert commit 62cb1188ed86 ("sched/idle: Move
+quiet_vmstate() into the NOHZ code") and therefore move the quiet_vmstat
+call back into the idle loop's entry point, where it is *not* called
+from an hard IRQ context. With this revert applied, the issue is no
+longer reproducible.
+
+I would like to acknowledge the extensive help and guidance provided by
+Jim Somerville <jim.somerville@windriver.com> during the debugging and
+investigation of this issue.
+
+Signed-off-by: M. Vefa Bicakci <vefa.bicakci@windriver.com>
+---
+ kernel/sched/idle.c      | 1 +
+ kernel/time/tick-sched.c | 2 --
+ 2 files changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/kernel/sched/idle.c b/kernel/sched/idle.c
+index f26ab2675..9298330c5 100644
+--- a/kernel/sched/idle.c
++++ b/kernel/sched/idle.c
+@@ -274,6 +274,7 @@ static void do_idle(void)
+ 	 */
+ 
+ 	__current_set_polling();
++	quiet_vmstat();
+ 	tick_nohz_idle_enter();
+ 
+ 	while (!need_resched()) {
+diff --git a/kernel/time/tick-sched.c b/kernel/time/tick-sched.c
+index 1ad89eec2..468e756f1 100644
+--- a/kernel/time/tick-sched.c
++++ b/kernel/time/tick-sched.c
+@@ -25,7 +25,6 @@
+ #include <linux/irq_work.h>
+ #include <linux/posix-timers.h>
+ #include <linux/context_tracking.h>
+-#include <linux/mm.h>
+ 
+ #include <asm/irq_regs.h>
+ 
+@@ -932,7 +931,6 @@ static void tick_nohz_stop_tick(struct tick_sched *ts, int cpu)
+ 	 */
+ 	if (!ts->tick_stopped) {
+ 		calc_load_nohz_start();
+-		quiet_vmstat();
+ 
+ 		ts->last_tick = hrtimer_get_expires(&ts->sched_timer);
+ 		ts->tick_stopped = 1;
+-- 
+2.17.1
+
