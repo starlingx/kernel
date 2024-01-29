@@ -1,7 +1,7 @@
-From 451738188482a34603a184e868893f407998bdd4 Mon Sep 17 00:00:00 2001
+From d386d64f1cb47f5050586a446c9f045a1fcf9cce Mon Sep 17 00:00:00 2001
 From: Nayna Jain <nayna@linux.vnet.ibm.com>
 Date: Fri, 10 Nov 2017 17:16:35 -0500
-Subject: [PATCH 08/10] tpm: ignore burstcount to improve tpm_tis send()
+Subject: [PATCH] tpm: ignore burstcount to improve tpm_tis send()
  performance
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -27,23 +27,25 @@ Tested-by: Jarkko Sakkinen <jarkko.sakkinen@linux.intel.com>
 Signed-off-by: Jarkko Sakkinen <jarkko.sakkinen@linux.intel.com>
 Signed-off-by: Dongqi Chen <chen.dq@neusoft.com>
 Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+[lz: Adapted the patch for context changes.]
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
 ---
  drivers/char/tpm/tpm_tis_core.c | 43 ++++++++++++---------------------
  1 file changed, 15 insertions(+), 28 deletions(-)
 
 diff --git a/drivers/char/tpm/tpm_tis_core.c b/drivers/char/tpm/tpm_tis_core.c
-index a2e0395cbe61..2c69fde1e4e5 100644
+index 44f71f2c8..4dcf33b39 100644
 --- a/drivers/char/tpm/tpm_tis_core.c
 +++ b/drivers/char/tpm/tpm_tis_core.c
-@@ -330,7 +330,6 @@ static int tpm_tis_send_data(struct tpm_chip *chip, const u8 *buf, size_t len)
+@@ -402,7 +402,6 @@ static int tpm_tis_send_data(struct tpm_chip *chip, const u8 *buf, size_t len)
  {
  	struct tpm_tis_data *priv = dev_get_drvdata(&chip->dev);
  	int rc, status, burstcnt;
 -	size_t count = 0;
- 	bool itpm = priv->flags & TPM_TIS_ITPM_WORKAROUND;
+ 	bool itpm = test_bit(TPM_TIS_ITPM_WORKAROUND, &priv->flags);
  
  	status = tpm_tis_status(chip);
-@@ -343,36 +342,24 @@ static int tpm_tis_send_data(struct tpm_chip *chip, const u8 *buf, size_t len)
+@@ -415,36 +414,24 @@ static int tpm_tis_send_data(struct tpm_chip *chip, const u8 *buf, size_t len)
  			goto out_err;
  		}
  	}
@@ -96,5 +98,5 @@ index a2e0395cbe61..2c69fde1e4e5 100644
  		goto out_err;
  
 -- 
-2.29.2
+2.17.1
 

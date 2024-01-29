@@ -1,7 +1,7 @@
-From 8d508571597d4e2d8c64621015c375ce0a346748 Mon Sep 17 00:00:00 2001
+From 4a7d20a9744955b56e63c9d36ba0938d3087ca83 Mon Sep 17 00:00:00 2001
 From: Dahir Osman <dahir.osman@windriver.com>
 Date: Wed, 13 Jan 2016 10:01:11 -0500
-Subject: [PATCH 02/10] PCI: Add ACS quirk for Intel Fortville NICs
+Subject: [PATCH] PCI: Add ACS quirk for Intel Fortville NICs
 
 Use quirks to determine isolation for now until a later kernel can
 properly read the Fortville ACS capabilities.
@@ -14,10 +14,10 @@ Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
  1 file changed, 4 insertions(+)
 
 diff --git a/drivers/pci/quirks.c b/drivers/pci/quirks.c
-index b570f297e3ec..910026923549 100644
+index 472fa2c8e..344735c52 100644
 --- a/drivers/pci/quirks.c
 +++ b/drivers/pci/quirks.c
-@@ -4740,6 +4740,10 @@ static const struct pci_dev_acs_enabled {
+@@ -4941,6 +4941,10 @@ static const struct pci_dev_acs_enabled {
  	{ PCI_VENDOR_ID_INTEL, 0x15b7, pci_quirk_mf_endpoint_acs },
  	{ PCI_VENDOR_ID_INTEL, 0x15b8, pci_quirk_mf_endpoint_acs },
  	{ PCI_VENDOR_ID_INTEL, PCI_ANY_ID, pci_quirk_rciep_acs },
@@ -29,5 +29,5 @@ index b570f297e3ec..910026923549 100644
  	{ PCI_VENDOR_ID_QCOM, 0x0400, pci_quirk_qcom_rp_acs },
  	{ PCI_VENDOR_ID_QCOM, 0x0401, pci_quirk_qcom_rp_acs },
 -- 
-2.29.2
+2.17.1
 
