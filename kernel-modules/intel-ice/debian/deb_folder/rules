@@ -48,11 +48,11 @@ pubkey ?= $(_keydir)/signing_key.x509
 endif
 
 override_dh_auto_install:
-	dh_install src/$(kmod_name).ko /lib/modules/$(kversion)/updates/$(kmod_name)-$(bundle_version)/
-	dh_install -p$(pkg_common_name) pci.updates $(_defaultdocdir)/kmod-$(kmod_name)-$(version)/
-	dh_install -p$(pkg_common_name) README $(_defaultdocdir)/kmod-$(kmod_name)-$(version)/
-	dh_install -p$(pkg_common_name) $(kmod_name).7 $(_mandir)/man7/
-	dh_install -p$(pkg_common_name) debian/extra/ice.conf $(_sysconfdir)/modules-load.d/
+#	dh_install src/$(kmod_name).ko /lib/modules/$(kversion)/updates/$(kmod_name)-$(bundle_version)/
+#	dh_install -p$(pkg_common_name) pci.updates $(_defaultdocdir)/kmod-$(kmod_name)-$(version)/
+#	dh_install -p$(pkg_common_name) README $(_defaultdocdir)/kmod-$(kmod_name)-$(version)/
+#	dh_install -p$(pkg_common_name) $(kmod_name).7 $(_mandir)/man7/
+#	dh_install -p$(pkg_common_name) debian/extra/ice.conf $(_sysconfdir)/modules-load.d/
 	# Install both the OS default regular DDP fw and the COMMS version
 	dh_installdirs -p$(pkg_common_name) /lib/firmware/updates/intel/ice/ddp/
 	install -m 644 ddp/README debian/$(pkg_common_name)/lib/firmware/updates/intel/ice/ddp/
@@ -62,18 +62,18 @@ override_dh_auto_install:
 	install -m644 ice_comms/ice_comms*.pkg debian/$(pkg_common_name)/lib/firmware/updates/intel/ice/ddp/
 	# Make the regular DDP fw be the default one to load
 	dh_installdirs -p$(pkg_common_name) /lib/firmware/intel/ice/ddp/
-	ln -frs debian/$(pkg_common_name)/lib/firmware/updates/intel/ice/ddp/ice-*.pkg debian/$(pkg_common_name)/lib/firmware/intel/ice/ddp/stx-ice.pkg
+	ln -frs debian/$(pkg_common_name)/lib/firmware/updates/intel/ice/ddp/ice-*.pkg debian/$(pkg_common_name)/lib/firmware/intel/ice/ddp/ice.pkg
 
 override_dh_strip:
-	dh_strip
-	find debian -name '*.ko' | xargs strip -g
+#	dh_strip
+#	find debian -name '*.ko' | xargs strip -g
 ifeq ($(WITH_MOD_SIGN),1)
-	@echo "Sign the modules!"
-	/usr/lib/linux@KERNEL_TYPE@-kbuild-*/scripts/sign-file sha256 $(privkey) $(pubkey) \
+#	@echo "Sign the modules!"
+#	/usr/lib/linux@KERNEL_TYPE@-kbuild-*/scripts/sign-file sha256 $(privkey) $(pubkey) \
 		./debian/$(pkg_name)/lib/modules/$(kversion)/updates/$(kmod_name)-$(bundle_version)/$(kmod_name).ko
 endif
 
 override_dh_auto_build:
 	unzip -d ddp_comms 800-Series-DDP-Comms-Package-*.zip
 	unzip -d ice_comms ddp_comms/ice_comms*.zip
-	dh_auto_build -D ./src
+#	dh_auto_build -D ./src

@@ -1,51 +1,51 @@
 # List of packages to be included/installed in ISO
 
 # bnxt_en - Broadcom kernel modules
-bnxt-en
-bnxt-en-rt
+#bnxt-en
+#bnxt-en-rt
 
 #intel-i40e
-i40e
-i40e-rt
-i40e-cvl-2.54
-i40e-cvl-2.54-rt
-i40e-cvl-4.10
-i40e-cvl-4.10-rt
+#i40e
+#i40e-rt
+#i40e-cvl-2.54
+#i40e-cvl-2.54-rt
+#i40e-cvl-4.10
+#i40e-cvl-4.10-rt
 
 #intel-iavf
-iavf
-iavf-rt
-iavf-cvl-2.54
-iavf-cvl-2.54-rt
-iavf-cvl-4.10
-iavf-cvl-4.10-rt
+#iavf
+#iavf-rt
+#iavf-cvl-2.54
+#iavf-cvl-2.54-rt
+#iavf-cvl-4.10
+#iavf-cvl-4.10-rt
 
 #intel-ice
-ice
-ice-rt
-ice-cvl-2.54
-ice-cvl-2.54-rt
-ice-cvl-4.10
-ice-cvl-4.10-rt
+#ice
+#ice-rt
+#ice-cvl-2.54
+#ice-cvl-2.54-rt
+#ice-cvl-4.10
+#ice-cvl-4.10-rt
 
 # Marvell kernel modules
-octeon-ep
-octeon-ep-rt
+#octeon-ep
+#octeon-ep-rt
 
 #intel-igb_uio
-igb-uio
-igb-uio-rt
+#igb-uio
+#igb-uio-rt
 
 #initramfs-trigger
 initramfs-trigger
 
 # Intel Quartzville Linux Driver
-iqvlinux
-iqvlinux-rt
+#iqvlinux
+#iqvlinux-rt
 
 #intel-opae-fpgaa
-kmod-opae-fpga-driver
-kmod-opae-fpga-driver-rt
+#kmod-opae-fpga-driver
+#kmod-opae-fpga-driver-rt
 
 # libbnxt_re - Broadcom Infiniband verbs library
 libbnxt-re
@@ -64,13 +64,13 @@ linux-libc-dev
 linux-perf
 
 #mlnx-ofa_kernel
-mlnx-ofed-kernel-modules
-mlnx-ofed-kernel-modules-rt
-mlnx-ofed-kernel-utils
+#mlnx-ofed-kernel-modules
+#mlnx-ofed-kernel-modules-rt
+#mlnx-ofed-kernel-utils
 
 #qat20
-qat2.0.l
-qat2.0.l-rt
+#qat2.0.l
+#qat2.0.l-rt
 
 #rdma-core
 ibacm
