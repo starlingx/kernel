@@ -1,0 +1,46 @@
+From c341e9c8e35d1babc63102921869b807d6126174 Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Mon, 18 Mar 2024 05:56:47 -0700
+Subject: [PATCH 5/5] make remove callback a void function
+
+This commit accommodates commit a0386bba7093 ("spi: make remove callback
+a void function") which was merged in the v5.18 development cycle. The
+commit in question makes the "spi_driver" structure's "remove" callback a
+void function. Apply a similar change to the intel-opae-fpga driver to
+allow it to build against kernel version 6.6.
+
+drivers/mfd/intel-max10-main.c:3162:12: error: initialization of \
+ void (*)(struct spi_device *) from incompatible pointer type \
+ int (*)(struct spi_device *) [-Werror=incompatible-pointer-types]
+ 3162 |  .remove = intel_max10_spi_remove,
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ drivers/mfd/intel-max10-main.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/drivers/mfd/intel-max10-main.c b/drivers/mfd/intel-max10-main.c
+index 5f52682..5368c82 100644
+--- a/drivers/mfd/intel-max10-main.c
++++ b/drivers/mfd/intel-max10-main.c
+@@ -3141,7 +3141,7 @@ rm_br:
+ 	return ret;
+ }
+ 
+-static int intel_max10_spi_remove(struct spi_device *spi)
++static void intel_max10_spi_remove(struct spi_device *spi)
+ {
+ 	struct intel_max10 *max10 = spi_get_drvdata(spi);
+ 
+@@ -3153,8 +3153,6 @@ static int intel_max10_spi_remove(struct spi_device *spi)
+ 		max10_hardware_uinit(max10);
+ 
+ 	spi_avmm_bridge_destroy(max10->bridge);
+-
+-	return 0;
+ }
+ 
+ static struct spi_driver intel_max10_spi_driver = {
+-- 
+2.42.0
+

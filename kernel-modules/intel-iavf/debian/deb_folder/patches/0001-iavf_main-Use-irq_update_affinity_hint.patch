@@ -1,7 +1,7 @@
-From 1b24525e2971c01eafe7ac0f950dfb3a012035cf Mon Sep 17 00:00:00 2001
+From f6ac2de1f031994764d5bed39b79298929ef5b67 Mon Sep 17 00:00:00 2001
 From: "M. Vefa Bicakci" <vefa.bicakci@windriver.com>
 Date: Fri, 14 Jan 2022 17:39:52 -0500
-Subject: [PATCH] iavf_main: Use irq_update_affinity_hint
+Subject: [PATCH 1/8] iavf_main: Use irq_update_affinity_hint
 
 This commit makes iavf_main use irq_update_affinity_hint instead of
 irq_set_affinity_hint to set the CPU affinity hints. This is done
@@ -22,10 +22,10 @@ Signed-off-by: M. Vefa Bicakci <vefa.bicakci@windriver.com>
  1 file changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/src/iavf_main.c b/src/iavf_main.c
-index 8af856576e34..65bf4e939ea3 100644
+index 69059ac..cc5ca85 100644
 --- a/src/iavf_main.c
 +++ b/src/iavf_main.c
-@@ -435,10 +435,10 @@ iavf_request_traffic_irqs(struct iavf_adapter *adapter, char *basename)
+@@ -544,10 +544,10 @@ iavf_request_traffic_irqs(struct iavf_adapter *adapter, char *basename)
  #ifdef HAVE_IRQ_AFFINITY_HINT
  		/* Spread the IRQ affinity hints across online CPUs. Note that
  		 * get_cpu_mask returns a mask with a permanent lifetime so
@@ -38,7 +38,7 @@ index 8af856576e34..65bf4e939ea3 100644
  #endif /* HAVE_IRQ_AFFINITY_HINT */
  	}
  
-@@ -452,7 +452,7 @@ free_queue_irqs:
+@@ -561,7 +561,7 @@ free_queue_irqs:
  		irq_set_affinity_notifier(irq_num, NULL);
  #endif
  #ifdef HAVE_IRQ_AFFINITY_HINT
@@ -47,7 +47,7 @@ index 8af856576e34..65bf4e939ea3 100644
  #endif
  		free_irq(irq_num, &adapter->q_vectors[vector]);
  	}
-@@ -508,7 +508,7 @@ static void iavf_free_traffic_irqs(struct iavf_adapter *adapter)
+@@ -617,7 +617,7 @@ static void iavf_free_traffic_irqs(struct iavf_adapter *adapter)
  		irq_set_affinity_notifier(irq_num, NULL);
  #endif
  #ifdef HAVE_IRQ_AFFINITY_HINT
@@ -57,5 +57,5 @@ index 8af856576e34..65bf4e939ea3 100644
  		free_irq(irq_num, &adapter->q_vectors[vector]);
  	}
 -- 
-2.29.2
+2.42.0
 

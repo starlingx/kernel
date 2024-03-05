@@ -1,0 +1,71 @@
+From 0bb74ba85653d869b4a28dcb0f8e834a170dad9a Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Mon, 18 Mar 2024 05:54:48 -0700
+Subject: [PATCH 4/5] Remove redundant pci_enable_pcie_error_reporting()
+
+We remove the calls to the pci_enable_pcie_error_reporting and
+pci_disable_pcie_error_reporting API functions, which were made redundant
+with commit f26e58bf6f54 ("PCI/AER: Enable error reporting when AER is
+native") and removed from the kernel with commit 69b264df8a41 ("PCI/AER:
+Drop unused pci_disable_pcie_error_reporting()") in the v6.6 development
+cycle.
+
+The approach taken in this commit was adapted from commit ba153552c18d
+("ice: Remove redundant pci_enable_pcie_error_reporting()"), as the
+nature of the encountered build failure (listed below) is the same.
+
+References:
+* https://git.yoctoproject.org/linux-yocto/commit/?h=f26e58bf6f54
+* https://git.yoctoproject.org/linux-yocto/commit/?h=69b264df8a41
+* https://git.yoctoproject.org/linux-yocto/commit/?h=ba153552c18d
+
+Resolved compilation errors:
+
+drivers/fpga/intel/pcie.c:1396:8: error: implicit declaration of function\
+ pci_enable_pcie_error_reporting [-Werror=implicit-function-declaration]
+ 1396 |  ret = pci_enable_pcie_error_reporting(pcidev);
+      |        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+drivers/fpga/intel/pcie.c:1443:2: error: implicit declaration of function\
+ pci_disable_pcie_error_reporting [-Werror=implicit-function-declaration]
+ 1443 |  pci_disable_pcie_error_reporting(pcidev);
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ drivers/fpga/intel/pcie.c | 7 -------
+ 1 file changed, 7 deletions(-)
+
+diff --git a/drivers/fpga/intel/pcie.c b/drivers/fpga/intel/pcie.c
+index bf92747..cf25e07 100644
+--- a/drivers/fpga/intel/pcie.c
++++ b/drivers/fpga/intel/pcie.c
+@@ -1393,10 +1393,6 @@ int cci_pci_probe(struct pci_dev *pcidev, const struct pci_device_id *pcidevid)
+ 		goto exit;
+ 	}
+ 
+-	ret = pci_enable_pcie_error_reporting(pcidev);
+-	if (ret && ret != -EINVAL)
+-		dev_info(&pcidev->dev, "PCIE AER unavailable %d.\n", ret);
+-
+ 	ret = pci_request_regions(pcidev, DRV_NAME);
+ 	if (ret) {
+ 		dev_err(&pcidev->dev, "Failed to request regions.\n");
+@@ -1440,7 +1436,6 @@ destroy_drvdata_exit:
+ release_region_exit:
+ 	pci_release_regions(pcidev);
+ disable_error_report_exit:
+-	pci_disable_pcie_error_reporting(pcidev);
+ 	pci_disable_device(pcidev);
+ exit:
+ 	return ret;
+@@ -1463,8 +1458,6 @@ void cci_pci_remove(struct pci_dev *pcidev)
+ 
+ 	remove_all_devs(pcidev);
+ 
+-	pci_disable_pcie_error_reporting(pcidev);
+-
+ 	cci_pci_free_irq(pcidev);
+ 	destroy_drvdata(pcidev);
+ 	pci_release_regions(pcidev);
+-- 
+2.42.0
+

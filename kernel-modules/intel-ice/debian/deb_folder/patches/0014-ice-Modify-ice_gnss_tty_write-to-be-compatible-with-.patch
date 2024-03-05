@@ -1,0 +1,45 @@
+From f075637a03a7ca7143a8b3247237d6526b389dbf Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Mon, 18 Mar 2024 08:24:37 +0000
+Subject: [PATCH 14/16] ice: Modify ice_gnss_tty_write() to be compatible with
+ 6.6.7 kernel
+
+This commit accommodates commit 95713967ba52 ("tty: make
+tty_operations::write()'s count size_t"), which was merged in the v6.6
+development cycle, and which use size_t for counts and ssize_t for
+retval. This causes build errors to be encountered, which are listed below.
+
+References:
+* https://git.yoctoproject.org/linux-yocto/commit/?id=95713967ba52
+
+Resolved compilation errors:
+
+src/ice_gnss.c:430:11: error: initialization of ssize_t (*)(struct tty_struct *,\
+ const u8 *, size_t) {aka long int (*)(struct tty_struct *, const unsigned char *,\
+ long unsigne pointer type int (*)(struct tty_struct *, const unsigned char *, int)\
+ [-Werror=incompatible-pointer-types]
+ 430 |  .write = ice_gnss_tty_write,
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ src/ice_gnss.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/ice_gnss.c b/src/ice_gnss.c
+index aa2c55b..161faa2 100644
+--- a/src/ice_gnss.c
++++ b/src/ice_gnss.c
+@@ -328,8 +328,8 @@ exit:
+  * If any errors happen during the write call, a negative error value should be
+  * returned instead of the number of characters that were written.
+  */
+-static int
+-ice_gnss_tty_write(struct tty_struct *tty, const unsigned char *buf, int count)
++static ssize_t
++ice_gnss_tty_write(struct tty_struct *tty, const u8 *buf, size_t count)
+ {
+ 	struct gnss_write_buf *write_buf;
+ 	struct gnss_serial *gnss;
+-- 
+2.43.0
+

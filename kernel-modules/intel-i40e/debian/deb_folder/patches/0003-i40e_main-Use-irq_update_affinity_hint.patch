@@ -1,7 +1,7 @@
-From 2ae84a0ff5b9d12aac1394965ff21d636fc3162b Mon Sep 17 00:00:00 2001
+From 209dceb1559491b4415645df53fa3949f1e3a6db Mon Sep 17 00:00:00 2001
 From: "M. Vefa Bicakci" <vefa.bicakci@windriver.com>
 Date: Fri, 14 Jan 2022 17:25:25 -0500
-Subject: [PATCH] i40e_main: Use irq_update_affinity_hint
+Subject: [PATCH 03/10] i40e_main: Use irq_update_affinity_hint
 
 This commit makes i40e_main use irq_update_affinity_hint instead of
 irq_set_affinity_hint to set the CPU affinity hints. This is done
@@ -22,10 +22,10 @@ Signed-off-by: M. Vefa Bicakci <vefa.bicakci@windriver.com>
  1 file changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/src/i40e_main.c b/src/i40e_main.c
-index 874644bc0c1a..0bb06d3172b7 100644
+index 88050c6..1319cfa 100644
 --- a/src/i40e_main.c
 +++ b/src/i40e_main.c
-@@ -4761,10 +4761,10 @@ int i40e_vsi_request_irq_msix(struct i40e_vsi *vsi, char *basename)
+@@ -5034,10 +5034,10 @@ int i40e_vsi_request_irq_msix(struct i40e_vsi *vsi, char *basename)
  		 *
  		 * get_cpu_mask returns a static constant mask with
  		 * a permanent lifetime so it's ok to pass to
@@ -38,7 +38,7 @@ index 874644bc0c1a..0bb06d3172b7 100644
  #endif /* HAVE_IRQ_AFFINITY_HINT */
  	}
  
-@@ -4779,7 +4779,7 @@ free_queue_irqs:
+@@ -5052,7 +5052,7 @@ free_queue_irqs:
  		irq_set_affinity_notifier(irq_num, NULL);
  #endif
  #ifdef HAVE_IRQ_AFFINITY_HINT
@@ -47,7 +47,7 @@ index 874644bc0c1a..0bb06d3172b7 100644
  #endif
  		free_irq(irq_num, &vsi->q_vectors[vector]);
  	}
-@@ -5594,7 +5594,7 @@ static void i40e_vsi_free_irq(struct i40e_vsi *vsi)
+@@ -5868,7 +5868,7 @@ static void i40e_vsi_free_irq(struct i40e_vsi *vsi)
  #endif
  #ifdef HAVE_IRQ_AFFINITY_HINT
  			/* remove our suggested affinity mask for this IRQ */
@@ -57,5 +57,5 @@ index 874644bc0c1a..0bb06d3172b7 100644
  			synchronize_irq(irq_num);
  			free_irq(irq_num, vsi->q_vectors[i]);
 -- 
-2.29.2
+2.42.0
 
