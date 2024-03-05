@@ -1,8 +1,7 @@
-From f4d74cf58d2285d8b3ee6ab5cff7c21e54518d3d Mon Sep 17 00:00:00 2001
-Message-Id: <f4d74cf58d2285d8b3ee6ab5cff7c21e54518d3d.1655410427.git.Jim.Somerville@windriver.com>
+From 68f827860aa6e54a9ad0f7991635d582774414b1 Mon Sep 17 00:00:00 2001
 From: Jackie Huang <jackie.huang@windriver.com>
 Date: Fri, 20 May 2022 03:23:25 -0400
-Subject: [PATCH] rename the ddp file to avoid conflict
+Subject: [PATCH 03/16] rename the ddp file to avoid conflict
 
 Rename the ddp file to avoid conflict with the one
 provided by linux-firmware.
@@ -14,7 +13,7 @@ Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/ice_main.c b/src/ice_main.c
-index ca761bd..260cc03 100644
+index 8f143ae..fca6668 100644
 --- a/src/ice_main.c
 +++ b/src/ice_main.c
 @@ -47,7 +47,7 @@ static const char ice_copyright[] = "Copyright (C) 2018-2021, Intel Corporation.
@@ -27,5 +26,5 @@ index ca761bd..260cc03 100644
  MODULE_AUTHOR("Intel Corporation, <linux.nics@intel.com>");
  MODULE_DESCRIPTION(DRV_SUMMARY);
 -- 
-2.29.2
+2.43.0
 

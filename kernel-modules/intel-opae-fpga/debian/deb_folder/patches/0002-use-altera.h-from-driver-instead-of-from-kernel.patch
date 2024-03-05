@@ -1,7 +1,7 @@
-From 6371907d1b4809fe6c1cb02a4a9dc8b2a18999fa Mon Sep 17 00:00:00 2001
+From e673fd7df86ceebe7bb8d197be10e1b441bc2610 Mon Sep 17 00:00:00 2001
 From: Jiping Ma <jiping.ma2@windriver.com>
 Date: Wed, 23 Jun 2021 23:38:47 -0700
-Subject: [PATCH] use altera.h from driver instead of from kernel
+Subject: [PATCH 2/5] use altera.h from driver instead of from kernel
 
 linux/spi/altera.h in Kernel is very different from
 the file in opae-intel-fpga-driver. So we use the
@@ -97,7 +97,7 @@ index 29b2cc0..857cf87 100644
  #include <linux/version.h>
  
 diff --git a/drivers/spi/spi-altera-4-12.c b/drivers/spi/spi-altera-4-12.c
-index 9cc2f27..a67b87b 100644
+index 9cc2f27..0a87040 100644
 --- a/drivers/spi/spi-altera-4-12.c
 +++ b/drivers/spi/spi-altera-4-12.c
 @@ -19,7 +19,7 @@
@@ -110,5 +110,5 @@ index 9cc2f27..a67b87b 100644
  #include <linux/of.h>
  #include <linux/version.h>
 -- 
-2.31.1
+2.42.0
 

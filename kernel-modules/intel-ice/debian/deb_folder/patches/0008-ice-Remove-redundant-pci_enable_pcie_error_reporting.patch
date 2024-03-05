@@ -1,0 +1,66 @@
+From 83e6106cac698c253c54fc6410b7005b13d64565 Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Mon, 18 Mar 2024 00:15:20 -0700
+Subject: [PATCH 08/16] ice: Remove redundant pci_enable_pcie_error_reporting()
+
+This commit accommodates commit 7ec4b34be423 ("PCI/AER: Unexport
+pci_enable_pcie_error_reporting()") merged in the v6.6 development cycle,
+by applying changes similar to the ones found in commit ba153552c18d
+("ice: Remove redundant pci_enable_pcie_error_reporting()") to resolve the
+ice driver compilation failures encountered with the v6.6 kernel, which are
+listed below.
+
+References:
+* https://git.yoctoproject.org/linux-yocto/commit/?h=7ec4b34be423
+* https://git.yoctoproject.org/linux-yocto/commit/?h=ba153552c18d
+
+Resolved compilation errors:
+
+/src/ice_main.c:6013:2: error: implicit declaration of function \
+ pci_enable_pcie_error_reporting [-Werror=implicit-function-declaration]
+ 6013 |  pci_enable_pcie_error_reporting(pdev);
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ src/ice_main.c | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/src/ice_main.c b/src/ice_main.c
+index 96ac8c3..24a77fd 100644
+--- a/src/ice_main.c
++++ b/src/ice_main.c
+@@ -1101,7 +1101,6 @@ static void ice_remove_recovery_mode(struct ice_pf *pf)
+ 	}
+ 
+ 	ice_reset(&pf->hw, ICE_RESET_PFR);
+-	pci_disable_pcie_error_reporting(pf->pdev);
+ #ifndef HAVE_DEVLINK_NOTIFY_REGISTER
+ 	ice_devlink_unregister(pf);
+ #endif /* !HAVE_DEVLINK_NOTIFY_REGISTER */
+@@ -6010,7 +6009,6 @@ ice_probe(struct pci_dev *pdev, const struct pci_device_id __always_unused *ent)
+ 		return err;
+ 	}
+ 
+-	pci_enable_pcie_error_reporting(pdev);
+ 	pci_set_master(pdev);
+ 
+ 	pf->pdev = pdev;
+@@ -6377,7 +6375,6 @@ err_rec_mode:
+ #ifndef HAVE_DEVLINK_NOTIFY_REGISTER
+ 	ice_devlink_unregister(pf);
+ #endif /* !HAVE_DEVLINK_NOTIFY_REGISTER */
+-	pci_disable_pcie_error_reporting(pdev);
+ 	pci_disable_device(pdev);
+ 	return err;
+ }
+@@ -6554,7 +6551,6 @@ static void ice_remove(struct pci_dev *pdev)
+ 	ice_reset(hw, ICE_RESET_PFR);
+ 	pci_wait_for_pending_transaction(pdev);
+ 	ice_clear_interrupt_scheme(pf);
+-	pci_disable_pcie_error_reporting(pdev);
+ 	pci_disable_device(pdev);
+ }
+ 
+-- 
+2.43.0
+

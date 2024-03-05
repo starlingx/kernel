@@ -1,7 +1,7 @@
-From 262f8cbac0e4699edfcc5d1027479f85f9c8177f Mon Sep 17 00:00:00 2001
+From 79e1ca15d18ba9f7f60c96d04c35935f15ac4075 Mon Sep 17 00:00:00 2001
 From: Jiping Ma <jiping.ma2@windriver.com>
 Date: Sun, 27 Jun 2021 23:13:51 -0700
-Subject: [PATCH 1/2] Fix build errors.
+Subject: [PATCH 1/5] Fix build errors.
 
 Fix the following issues.
 1. readx_poll_timeout redefined
@@ -100,5 +100,5 @@ index 4183125..25d6d84 100644
  #include <linux/mtd/intel-generic-qspi.h>
  #include <linux/mtd/mtd.h>
 -- 
-2.31.1
+2.42.0
 

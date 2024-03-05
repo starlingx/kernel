@@ -1,7 +1,7 @@
-From de86a2f22230d3193ba08afe02b5bdfe75575089 Mon Sep 17 00:00:00 2001
+From 6d543d3fae602daabb3e768b8f8d813f89e29ce1 Mon Sep 17 00:00:00 2001
 From: Vadim Suraev <vsuraev@northforgeinc.com>
 Date: Mon, 8 Feb 2016 15:57:30 -0500
-Subject: [PATCH] i40e: Enable getting link status from VF
+Subject: [PATCH 01/10] i40e: Enable getting link status from VF
 
 Add handling of custom OP code sent from the PMD VF to get link status via the
 virtual channel interface.
@@ -19,10 +19,10 @@ Signed-off-by: M. Vefa Bicakci <vefa.bicakci@windriver.com>
  2 files changed, 79 insertions(+)
 
 diff --git a/src/i40e_virtchnl_pf.c b/src/i40e_virtchnl_pf.c
-index 5ec2a78b937d..11190fb94c29 100644
+index 63a643b..4b0fee6 100644
 --- a/src/i40e_virtchnl_pf.c
 +++ b/src/i40e_virtchnl_pf.c
-@@ -3249,6 +3249,81 @@ err_out:
+@@ -3237,6 +3237,81 @@ err_out:
  				       aq_ret);
  }
  
@@ -104,7 +104,7 @@ index 5ec2a78b937d..11190fb94c29 100644
  /**
   * i40e_vc_config_queues_msg
   * @vf: pointer to the VF info
-@@ -5331,6 +5406,9 @@ int i40e_vc_process_vf_msg(struct i40e_pf *pf, s16 vf_id, u32 v_opcode,
+@@ -5783,6 +5858,9 @@ int i40e_vc_process_vf_msg(struct i40e_pf *pf, s16 vf_id, u32 v_opcode,
  	case VIRTCHNL_OP_REQUEST_QUEUES:
  		ret = i40e_vc_request_queues_msg(vf, msg);
  		break;
@@ -115,10 +115,10 @@ index 5ec2a78b937d..11190fb94c29 100644
  	case VIRTCHNL_OP_ENABLE_CHANNELS:
  		ret = i40e_vc_add_qch_msg(vf, msg);
 diff --git a/src/virtchnl.h b/src/virtchnl.h
-index e72daf5130de..07f6d8a88db9 100644
+index 7754040..def666a 100644
 --- a/src/virtchnl.h
 +++ b/src/virtchnl.h
-@@ -150,6 +150,7 @@ enum virtchnl_ops {
+@@ -174,6 +174,7 @@ enum virtchnl_ops {
  	VIRTCHNL_OP_ENABLE_QUEUES_V2 = 107,
  	VIRTCHNL_OP_DISABLE_QUEUES_V2 = 108,
  	VIRTCHNL_OP_MAP_QUEUE_VECTOR = 111,
@@ -127,5 +127,5 @@ index e72daf5130de..07f6d8a88db9 100644
  };
  
 -- 
-2.29.2
+2.42.0
 
