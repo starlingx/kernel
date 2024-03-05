@@ -1,0 +1,51 @@
+From 6beb8717db54d692389272cffbb437c24db5bf6a Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Sun, 17 Mar 2024 23:37:16 -0700
+Subject: [PATCH 8/8] iavf: Remove redundant pci_enable_pcie_error_reporting()
+
+This commit accommodates commit 7ec4b34be423 ("PCI/AER: Unexport
+pci_enable_pcie_error_reporting()") merged in the v6.6 development cycle,
+by applying changes similar to the ones found in commit bc4fddc3b306
+("iavf: Remove redundant pci_enable_pcie_error_reporting()") to resolve the
+iavf driver compilation failures encountered with the v6.6 kernel, which are
+listed below.
+
+References:
+* https://git.yoctoproject.org/linux-yocto/commit/?h=bc4fddc3b306
+
+Resolved compilation errors:
+
+src/iavf_main.c:5859:2: error: implicit declaration of function \
+ pci_disable_pcie_error_reporting [-Werror=implicit-function-declaration]
+ 5859 |  pci_disable_pcie_error_reporting(pdev);
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ src/iavf_main.c | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/src/iavf_main.c b/src/iavf_main.c
+index e0862ad..8f7c2b8 100644
+--- a/src/iavf_main.c
++++ b/src/iavf_main.c
+@@ -5487,8 +5487,6 @@ static int iavf_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
+ 		goto err_pci_reg;
+ 	}
+ 
+-	pci_enable_pcie_error_reporting(pdev);
+-
+ 	pci_set_master(pdev);
+ 
+ 	netdev = alloc_etherdev_mq(sizeof(struct iavf_adapter),
+@@ -5856,8 +5854,6 @@ static void iavf_remove(struct pci_dev *pdev)
+ 
+ 	free_netdev(netdev);
+ 
+-	pci_disable_pcie_error_reporting(pdev);
+-
+ 	pci_disable_device(pdev);
+ }
+ 
+-- 
+2.42.0
+

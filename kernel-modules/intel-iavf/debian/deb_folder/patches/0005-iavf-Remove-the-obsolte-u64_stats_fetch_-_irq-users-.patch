@@ -1,0 +1,52 @@
+From 5bb575e7e2caf352e5ee9a476ed134746984fb15 Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Sun, 17 Mar 2024 23:30:36 -0700
+Subject: [PATCH 5/8] iavf: Remove the obsolte u64_stats_fetch_*_irq() users
+ (drivers).
+
+This commit accommodates commit dec5efcffad4 ("u64_stat: Remove
+the obsolete fetch_irq() variants.") merged in the v6.3 development
+cycle, which causes the compilation errors listed below with the
+new v6.6 kernel.
+
+Our changes are inspired from the ones in commit 068c38ad88cc ("net:
+Remove the obsolte u64_stats_fetch_*_irq() users (drivers)."), which
+removes the use of the API functions in question from the iavf driver.
+We use C macros to alias the older API function names to the currently
+available API function names.
+
+References:
+* https://git.yoctoproject.org/linux-yocto/commit/?h=dec5efcffad4
+* https://git.yoctoproject.org/linux-yocto/commit/?h=068c38ad88cc
+
+Resolved compilation errors:
+
+src/iavf_ethtool_stats.h:281:23: error: implicit declaration of\
+ function u64_stats_fetch_begin_irq; did you mean u64_stats_fetch_begin?\
+ [-Werror=implicit-function-declaration]
+  281 |   start = !ring ? 0 : u64_stats_fetch_begin_irq(&ring->syncp);
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ src/kcompat.h | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/src/kcompat.h b/src/kcompat.h
+index c91951d..43b83f2 100644
+--- a/src/kcompat.h
++++ b/src/kcompat.h
+@@ -5183,6 +5183,11 @@ static inline __u32 skb_get_hash_raw(const struct sk_buff *skb)
+ #endif /* 3.14.0 */
+ 
+ /*****************************************************************************/
++#if ( LINUX_VERSION_CODE > KERNEL_VERSION(6,6,0) )
++#define u64_stats_fetch_begin_irq u64_stats_fetch_begin
++#define u64_stats_fetch_retry_irq u64_stats_fetch_retry
++#endif
++
+ #if ( LINUX_VERSION_CODE < KERNEL_VERSION(3,15,0) )
+ #if ( LINUX_VERSION_CODE < KERNEL_VERSION(2,6,35) )
+ #define HAVE_SKBUFF_RXHASH
+-- 
+2.42.0
+

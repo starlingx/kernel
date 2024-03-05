@@ -1,7 +1,7 @@
-From 1c303402cf0fec469097fab8a4b898703c596831 Mon Sep 17 00:00:00 2001
+From cb27bf3ae02dde94988f643e71f59d94943c8798 Mon Sep 17 00:00:00 2001
 From: Jiping Ma <jiping.ma2@windriver.com>
 Date: Tue, 4 Apr 2023 23:40:48 -0700
-Subject: [PATCH] Fix the invalid check in iavf_remove()
+Subject: [PATCH 3/8] Fix the invalid check in iavf_remove()
 
 If the netdev pointer is NULL, then iavf_remove() returns early to
 ensure that it does not proceed with an already-freed netdev instance.
@@ -86,10 +86,10 @@ Signed-off-by: Jiping Ma <Jiping.ma2@windriver.com>
  1 file changed, 3 insertions(+)
 
 diff --git a/src/iavf_main.c b/src/iavf_main.c
-index 779e752..54d697c 100644
+index cc5ca85..8f8c459 100644
 --- a/src/iavf_main.c
 +++ b/src/iavf_main.c
-@@ -5727,6 +5727,9 @@ static void iavf_remove(struct pci_dev *pdev)
+@@ -5757,6 +5757,9 @@ static void iavf_remove(struct pci_dev *pdev)
  	struct iavf_mac_filter *f, *ftmp;
  	struct iavf_hw *hw = &adapter->hw;
  
@@ -100,5 +100,5 @@ index 779e752..54d697c 100644
  	set_bit(__IAVF_IN_REMOVE_TASK, &adapter->crit_section);
  	cancel_work_sync(&adapter->adminq_task);
 -- 
-2.40.0
+2.42.0
 

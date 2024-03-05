@@ -1,0 +1,48 @@
+From c4f81132dfaf28fb215db27ba476cc6f15ac6124 Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Mon, 18 Mar 2024 07:56:01 +0000
+Subject: [PATCH 10/16] ice: add extack support in fdb del handlers
+
+Accommodate the changes made in commit ca4567f1e6f6 ("rtnetlink: add extack
+support in fdb del handlers"), which was merged in the v5.19 development
+cycle, and which introduces an additional argument to the .ndo_fdb_del
+callback function in the net_device_ops structure. This causes build
+errors to be encountered, which are listed below.
+
+References:
+* https://git.yoctoproject.org/linux-yocto/commit/?id=ca4567f1e6f6
+
+Resolved compilation errors:
+
+src/ice_main.c:11936:17: error: initialization of int (*)(struct ndmsg *,\
+ struct nlattr **, struct net_device *, const unsigned char *, u16,  \
+ struct netlink_ext_ack *) int (*)(struct ndmsg *, struct nlattr **, \
+ struct net_device *, const unsigned char *, short unsigned int,  \
+ struct netlink_ext_ack *) from incompatible pointer type int (*)\
+ (struct ndmsg *, struct nlattr **, struct net_device *, const \
+ unsigned char *, u16) int (*)(struct ndmsg *, struct nlattr **,\
+ struct net_device *, const unsigned char *, short unsigned int)\
+ [-Werror=incompatible-pointer-types]
+11936 |  .ndo_fdb_del = ice_fdb_del,
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ src/ice_main.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/ice_main.c b/src/ice_main.c
+index 24a77fd..3cbbe17 100644
+--- a/src/ice_main.c
++++ b/src/ice_main.c
+@@ -7302,7 +7302,7 @@ ice_fdb_add(struct ndmsg *ndm, struct nlattr __always_unused *tb[],
+ static int
+ ice_fdb_del(struct ndmsg *ndm, __always_unused struct nlattr *tb[],
+ 	    struct net_device *dev, const unsigned char *addr,
+-	    __always_unused u16 vid)
++	    __always_unused u16 vid, struct netlink_ext_ack *extack)
+ #else
+ static int
+ ice_fdb_del(struct ndmsg *ndm, __always_unused struct nlattr *tb[],
+-- 
+2.43.0
+

@@ -1,7 +1,9 @@
-From 3a104f93982a7e2ab08556303c6417f8b416d36d Mon Sep 17 00:00:00 2001
+From 6f42a57b9e4dd9bfacc88422247d774a17e78ff0 Mon Sep 17 00:00:00 2001
 From: Peng Zhang <Peng.Zhang2@windriver.com>
-Date: Thu, 21 Sep 2023 05:43:31 +0800
-Subject: [PATCH] IAVF: Add the condition of 'undef NEED_ETH_HW_ADDR_SET' to
+Date: Thu, 21 Sep 2023 04:14:55 +0800
+Subject: [PATCH 04/10] I40E: Add the condition of 'undef NEED_ETH_HW_ADDR_SET'
+ to
+
 avoid redefinition conflict
 
 For function eth_hw_addr_set has already been defined in
@@ -10,14 +12,14 @@ linux-headers-5.10.0-6-common, add the condition of
 
 Signed-off-by: Peng Zhang <Peng.Zhang2@windriver.com>
 ---
- kcompat_std_defs.h | 3 +++
+ src/kcompat_std_defs.h | 3 +++
  1 file changed, 3 insertions(+)
 
 diff --git a/src/kcompat_std_defs.h b/src/kcompat_std_defs.h
-index a751779..6fb71dc 100644
+index 1d8d2c7..b7534fb 100644
 --- a/src/kcompat_std_defs.h
 +++ b/src/kcompat_std_defs.h
-@@ -263,6 +263,9 @@
+@@ -252,6 +252,9 @@
  #define NEED_DEVLINK_ALLOC_SETS_DEV
  #define HAVE_DEVLINK_REGISTER_SETS_DEV
  #define NEED_ETH_HW_ADDR_SET
@@ -28,5 +30,5 @@ index a751779..6fb71dc 100644
  #define HAVE_ETHTOOL_COALESCE_EXTACK
  #define HAVE_NDO_ETH_IOCTL
 -- 
-2.34.1
+2.42.0
 

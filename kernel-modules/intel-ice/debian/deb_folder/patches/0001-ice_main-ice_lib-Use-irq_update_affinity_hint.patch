@@ -1,7 +1,7 @@
-From 722c51d207ea30388dfc63cec635e1d3e7d9d681 Mon Sep 17 00:00:00 2001
+From 089ab05c3aeff62f189e19a6960c2d9e80e33b62 Mon Sep 17 00:00:00 2001
 From: "M. Vefa Bicakci" <vefa.bicakci@windriver.com>
 Date: Fri, 14 Jan 2022 17:50:39 -0500
-Subject: [PATCH] ice_main, ice_lib: Use irq_update_affinity_hint
+Subject: [PATCH 01/16] ice_main, ice_lib: Use irq_update_affinity_hint
 
 This commit makes the ice device driver use the irq_update_affinity_hint
 function instead of the irq_set_affinity_hint function. This is done
@@ -31,10 +31,10 @@ Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
  2 files changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/src/ice_lib.c b/src/ice_lib.c
-index 034a064..313273f 100644
+index e47d255..50a287c 100644
 --- a/src/ice_lib.c
 +++ b/src/ice_lib.c
-@@ -2900,7 +2900,7 @@ void ice_vsi_free_irq(struct ice_vsi *vsi)
+@@ -3033,7 +3033,7 @@ void ice_vsi_free_irq(struct ice_vsi *vsi)
  		irq_set_affinity_notifier(irq_num, NULL);
  
  		/* clear the affinity_mask in the IRQ descriptor */
@@ -44,10 +44,10 @@ index 034a064..313273f 100644
  		devm_free_irq(ice_pf_to_dev(pf), irq_num, vsi->q_vectors[i]);
  	}
 diff --git a/src/ice_main.c b/src/ice_main.c
-index e00d7f8..ca761bd 100644
+index 6aaddd0..8f143ae 100644
 --- a/src/ice_main.c
 +++ b/src/ice_main.c
-@@ -3417,8 +3417,8 @@ static int ice_vsi_req_irq_msix(struct ice_vsi *vsi, char *basename)
+@@ -3498,8 +3498,8 @@ static int ice_vsi_req_irq_msix(struct ice_vsi *vsi, char *basename)
  			irq_set_affinity_notifier(irq_num, affinity_notify);
  		}
  
@@ -58,7 +58,7 @@ index e00d7f8..ca761bd 100644
  	}
  
  	vsi->irqs_ready = true;
-@@ -3430,7 +3430,7 @@ free_q_irqs:
+@@ -3511,7 +3511,7 @@ free_q_irqs:
  		irq_num = ice_get_irq_num(pf, base + vector);
  		if (!IS_ENABLED(CONFIG_RFS_ACCEL))
  			irq_set_affinity_notifier(irq_num, NULL);
@@ -68,5 +68,5 @@ index e00d7f8..ca761bd 100644
  	}
  	return err;
 -- 
-2.31.1
+2.43.0
 

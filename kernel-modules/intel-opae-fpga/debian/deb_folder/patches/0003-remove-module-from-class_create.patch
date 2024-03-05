@@ -1,0 +1,77 @@
+From 5b12b6b093d22773943b49d907ab78b2c643dde1 Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Mon, 18 Mar 2024 05:51:27 -0700
+Subject: [PATCH 3/5] remove module * from class_create()
+
+This commit accommodates commit dcfbb67e48a2 ("driver core: class:
+use lock_class_key already present in struct subsys_private"),
+which removes the module pointer. This commit was merged in the
+v6.4 development cycle and causes compilation failures with the
+v6.6 kernel, which are listed below.
+
+References:
+* https://git.yoctoproject.org/linux-yocto/commit/?h=1aaba11da9aa
+* https://git.yoctoproject.org/linux-yocto/commit/?h=dcfbb67e48a2
+
+Resolved compilation errors:
+
+drivers/fpga/intel/pcie.c:1494:28: note: in expansion of macro THIS_MODULE
+ 1494 |  fpga_class = class_create(THIS_MODULE, "fpga");
+      |                            ^~~~~~~~~~~
+
+In file included from /usr/src/linux-rt-headers-6.6.0-1-rt-common/include/linux/device.h:31,
+                 from /usr/src/linux-rt-headers-6.6.0-1-rt-common/include/linux/pci.h:37,
+                 from /<<PKGBUILDDIR>>/drivers/fpga/intel/pcie.c:21:
+/usr/src/linux-rt-headers-6.6.0-1-rt-common/include/linux/device/class.h:230:54:
+ note: expected const char * but argument is of type struct module *
+  230 | struct class * __must_check class_create(const char *name);
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ drivers/fpga/fpga-mgr.c            | 2 +-
+ drivers/fpga/intel/ifpga-sec-mgr.c | 2 +-
+ drivers/fpga/intel/pcie.c          | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/fpga/fpga-mgr.c b/drivers/fpga/fpga-mgr.c
+index bd08b0b..5870127 100644
+--- a/drivers/fpga/fpga-mgr.c
++++ b/drivers/fpga/fpga-mgr.c
+@@ -564,7 +564,7 @@ static int __init fpga_mgr_class_init(void)
+ {
+ 	pr_info("FPGA manager framework\n");
+ 
+-	fpga_mgr_class = class_create(THIS_MODULE, "fpga_manager");
++	fpga_mgr_class = class_create("fpga_manager");
+ 	if (IS_ERR(fpga_mgr_class))
+ 		return PTR_ERR(fpga_mgr_class);
+ 
+diff --git a/drivers/fpga/intel/ifpga-sec-mgr.c b/drivers/fpga/intel/ifpga-sec-mgr.c
+index 432a175..d58a209 100644
+--- a/drivers/fpga/intel/ifpga-sec-mgr.c
++++ b/drivers/fpga/intel/ifpga-sec-mgr.c
+@@ -283,7 +283,7 @@ static int __init ifpga_sec_mgr_class_init(void)
+ 
+ 	pr_info("Intel FPGA Security Manager\n");
+ 
+-	ifpga_sec_mgr_class = class_create(THIS_MODULE, "ifpga_sec_mgr");
++	ifpga_sec_mgr_class = class_create("ifpga_sec_mgr");
+ 	if (IS_ERR(ifpga_sec_mgr_class))
+ 		return PTR_ERR(ifpga_sec_mgr_class);
+ 
+diff --git a/drivers/fpga/intel/pcie.c b/drivers/fpga/intel/pcie.c
+index 36d54b5..bf92747 100644
+--- a/drivers/fpga/intel/pcie.c
++++ b/drivers/fpga/intel/pcie.c
+@@ -1491,7 +1491,7 @@ static int __init ccidrv_init(void)
+ 	if (ret)
+ 		goto exit_ids;
+ 
+-	fpga_class = class_create(THIS_MODULE, "fpga");
++	fpga_class = class_create("fpga");
+ 	if (IS_ERR(fpga_class)) {
+ 		ret = PTR_ERR(fpga_class);
+ 		goto exit_chardev;
+-- 
+2.42.0
+

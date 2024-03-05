@@ -1,4 +1,8 @@
-iavf_main-Use-irq_update_affinity_hint.patch
-0001-intel-iavf-pass-linux-common-header-to-check_aux_bus.patch
-0001-Fix-the-invalid-check.patch
-0001-IAVF-Add-the-condition-of-undef-NEED_ETH_HW_ADDR_SET.patch
+0001-iavf_main-Use-irq_update_affinity_hint.patch
+0002-intel-iavf-pass-linux-common-header-to-check_aux_bus.patch
+0003-Fix-the-invalid-check-in-iavf_remove.patch
+0004-IAVF-Add-the-condition-of-undef-NEED_ETH_HW_ADDR_SET.patch
+0005-iavf-Remove-the-obsolte-u64_stats_fetch_-_irq-users-.patch
+0006-iavf-include-xdp.h-where-required.patch
+0007-iavf-drop-the-weight-argument-from-netif_napi_add.patch
+0008-iavf-Remove-redundant-pci_enable_pcie_error_reportin.patch
