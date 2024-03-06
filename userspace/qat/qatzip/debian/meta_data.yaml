@@ -1,0 +1,12 @@
+---
+debver: 1.1.2
+debname: qatzip
+dl_path:
+  name: v1.1.2.tar.gz
+  url: https://github.com/intel/QATzip/archive/refs/tags/v1.1.2.tar.gz
+  sha256sum: 31419fa4b42d217b3e55a70a34545582cbf401a4f4d44738d21b4a3944b1e1ef
+revision:
+  dist: $STX_DIST
+  GITREVCOUNT:
+    BASE_SRCREV: 3a55c2449120d1682351c4b9af671768ba3dae51
+    SRC_DIR: ${MY_REPO}/stx/kernel/userspace/qat/qatzip
