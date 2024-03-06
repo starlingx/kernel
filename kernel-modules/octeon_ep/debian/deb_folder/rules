@@ -29,11 +29,10 @@ pubkey ?= $(_keydir)/signing_key.x509
 endif
 
 override_dh_auto_install:
-	dh_install host/drivers/octeon_ep/*.ko /lib/modules/$(kversion)/updates/$(kmod_name)
-	dh_install host/drivers/octeon_ep_vf/*.ko /lib/modules/$(kversion)/updates/$(kmod_name)
-	dh_install host/drivers/phc/*.ko /lib/modules/$(kversion)/updates/$(kmod_name)
-	dh_install -p$(pkg_common_name) debian/extra/octeon-ep-phc.conf $(_sysconfdir)/modules-load.d/
-	dh_install -p$(pkg_common_name) debian/extra/blacklist-octeon-ep.conf $(_sysconfdir)/modprobe.d/
+	dh_install drivers/octeon_ep/*.ko /lib/modules/$(kversion)/updates/$(kmod_name)
+	dh_install drivers/octeon_ep_vf/*.ko /lib/modules/$(kversion)/updates/$(kmod_name)
+	dh_install drivers/phc/*.ko /lib/modules/$(kversion)/updates/$(kmod_name)
+	dh_install -p$(pkg_common_name) debian/extra/octeon-ep.conf $(_sysconfdir)/modprobe.d/
 
 override_dh_strip:
 	dh_strip
@@ -50,7 +49,11 @@ ifeq ($(WITH_MOD_SIGN),1)
 endif
 
 override_dh_auto_clean:
-	dh_auto_build -D ./host -- clean KVER=$(kversion)
+	dh_auto_build -D ./drivers/octeon_ep    -- clean KVER=$(kversion) CONFIG_OCTEON_EP=m
+	dh_auto_build -D ./drivers/octeon_ep_vf -- clean KVER=$(kversion) CONFIG_OCTEON_EP_VF=m
+	dh_auto_build -D ./drivers/phc          -- clean KVER=$(kversion)
 
 override_dh_auto_build:
-	dh_auto_build -D ./host -- KVER=$(kversion)
+	dh_auto_build -D ./drivers/octeon_ep    -- KVER=$(kversion) CONFIG_OCTEON_EP=m
+	dh_auto_build -D ./drivers/octeon_ep_vf -- KVER=$(kversion) CONFIG_OCTEON_EP_VF=m
+	dh_auto_build -D ./drivers/phc          -- KVER=$(kversion)

@@ -1,3 +1,9 @@
+octeon-ep (112311-1) unstable; urgency=medium
+
+  * Update the PF, VF and PHC drivers to release v23.11; refresh patches.
+
+ -- M. Vefa Bicakci <vefa.bicakci@windriver.com>  Mon, 22 Jan 2024 17:14:00 +0000
+
 octeon-ep (112304-1) unstable; urgency=medium
 
   * Updated PF, VF and PHC driver for Octeon PCIe NIC
