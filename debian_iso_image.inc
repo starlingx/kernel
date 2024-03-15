@@ -113,3 +113,4 @@ srptools
 mstflint
 
 qatzip
+qatengine

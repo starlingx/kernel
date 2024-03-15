@@ -18,3 +18,9 @@ Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: This package provides the common files of Intel(r) QuickAssist Technology API
  This package provides the common files of Intel(r) QuickAssist Technology API
+
+Package: qat2.0.l-dev
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: This package provides the dev files of Intel(r) QuickAssist Technology API
+ This package provides the dev files of Intel(r) QuickAssist Technology API

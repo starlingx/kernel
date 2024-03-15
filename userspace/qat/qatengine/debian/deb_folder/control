@@ -1,0 +1,14 @@
+source: qatengine
+Section: net
+Priority: optional
+Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
+Build-Depends: debhelper-compat (= 13), libudev-dev, yasm, libz-dev, libssl-dev, openssl, libboost-dev, autoconf, build-essential, libtool, cmake, pciutils, libkmod2, libboost-regex-dev, nasm, pkg-config, qat2.0.l-dev, qat2.0.l-common
+Standards-Version: 4.5.1
+Rules-Requires-Root: no
+
+package: qatengine
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Intel QuickAssist Technology (QAT) OpenSSL Engine
+ This package provides cryptographic acceleration for both hardware and optimized software
+ using Intel QuickAssist Technology enabled Intel platforms.

@@ -1,0 +1,12 @@
+---
+debver: 1.5.0
+debname: qatengine
+dl_path:
+  name: v1.5.0.tar.gz
+  url: https://github.com/intel/QAT_Engine/archive/refs/tags/v1.5.0.tar.gz
+  sha256sum: 6ab57615d9e08b1eb61374e767d553b6c1103bd44e6f6719d3fe9e2b413614c9
+revision:
+  dist: $STX_DIST
+  GITREVCOUNT:
+    BASE_SRCREV: 3a55c2449120d1682351c4b9af671768ba3dae51
+    SRC_DIR: ${MY_REPO}/stx/kernel/userspace/qat/qatengine

@@ -2,12 +2,14 @@ source: qatzip
 Section: net
 Priority: optional
 Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
-Build-Depends: debhelper-compat (= 13), autotools-dev, pkg-config, libudev-dev, yasm, libssl-dev, libz-dev, pciutils, libboost-dev, openssl, libboost-regex-dev, nasm, qat2.0.l-common, liblz4-dev
-Standards-Version: 4.5.2
+Build-Depends: debhelper-compat (= 13), autotools-dev, pkg-config, libudev-dev, yasm, libssl-dev, libz-dev, pciutils, libboost-dev, openssl, libboost-regex-dev, nasm, qat2.0.l-dev, qat2.0.l-common, liblz4-dev
+Standards-Version: 4.5.1
 Rules-Requires-Root: no
 
 package: qatzip
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: This package provides extended accelerated compression and decompression services by offloading the actual compression and decompression request(s) to the Intel® Chipset Series
- This package provides extended accelerated compression and decompression services by offloading the actual compression and decompression request(s) to the Intel® Chipset Series
+Description: Compression Library accelerated by Intel QuickAssist Technology
+ QATzip is a user space library, to provide extended accelerated compression and
+ decompression services by offloading the actual compression and decompression
+ request(s) to the Intel Chipset Series.
