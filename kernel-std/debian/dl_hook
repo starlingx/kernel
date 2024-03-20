@@ -6,7 +6,7 @@
 # Tools needed: tar
 
 KERNEL_HEAD_COMMIT=a7d960cfa075eb93eef1e04e96940a35d1a49d79
-DEBIAN_FILE=linux_6.1.27-1~bpo11%2B1.debian.tar.xz
+DEBIAN_FILE=linux_6.1.27-1.debian.tar.xz
 
 tar xvf linux-yocto-${KERNEL_HEAD_COMMIT}.tar.gz
 if [ $? -ne 0 ]
@@ -30,6 +30,6 @@ cp "${MY_REPO_ROOT_DIR}"/cgcs-root/stx/kernel/kernel-std/\
 /debian/source/config ./config/amd64/none
 cd -
 
-# The abiname is changed from "0.deb11.9" to "1", so replace
-# "6.1.0-0.deb11.9" with "6.6.0-1" in init control file.
-sed -i "s/6\.1\.0-0\.deb11\.9/6.6.0-1/g" ./debian/control
+# The abiname is changed from "9" to "1", so replace
+# "6.1.0-9" with "6.6.0-1" in init control file.
+sed -i "s/6\.1\.0-9/6.6.0-1/g" ./debian/control

@@ -1,8 +1,8 @@
-From 99709bdebbd6c6280f3e7a0cea2362da8d8530cb Mon Sep 17 00:00:00 2001
+From 170166779e68082ac95e18efd9d16aca0f1073e1 Mon Sep 17 00:00:00 2001
 From: Ben Hutchings <benh@debian.org>
 Date: Mon, 15 May 2023 01:05:54 +0200
-Subject: [PATCH 09/10] linux-perf: Update build rules and dependencies for
- change to demangling
+Subject: [PATCH] linux-perf: Update build rules and dependencies for change to
+ demangling
 
 - Upstream commit dd317df07207 "perf build: Make binutil libraries opt
   in" disabled use of both libbfd's bfd_demangle() and libiberty's
@@ -34,7 +34,7 @@ Signed-off-by: Li Zhou <li.zhou@windriver.com>
  2 files changed, 2 insertions(+), 8 deletions(-)
 
 diff --git a/debian/rules.d/tools/perf/Makefile b/debian/rules.d/tools/perf/Makefile
-index b8d73d6..27f29b7 100644
+index 5b08b30..c1c8a75 100644
 --- a/debian/rules.d/tools/perf/Makefile
 +++ b/debian/rules.d/tools/perf/Makefile
 @@ -10,11 +10,6 @@ MAKE_PERF += feature-jvmti=0
@@ -49,7 +49,7 @@ index b8d73d6..27f29b7 100644
  # perf can link against libdebuginfod if available, but the result is
  # undistributable for the same reason.  Override detection of
  # libdebuginfod.
-@@ -58,8 +53,8 @@ endif
+@@ -57,8 +52,8 @@ endif
  # Check that perf didn't get linked against incompatibly-licensed libraries
  	type ldd
  	! ldd $(CURDIR)/perf | grep -E '\blib(bfd|crypto|debuginfod)'
@@ -61,7 +61,7 @@ index b8d73d6..27f29b7 100644
  install:
  	+$(MAKE_PERF) -C $(top_srcdir)/tools/perf -f Makefile.perf install install-python_ext
 diff --git a/debian/templates/tools-unversioned.control.in b/debian/templates/tools-unversioned.control.in
-index 5922b01..e899567 100644
+index 5860e97..9f0e7f4 100644
 --- a/debian/templates/tools-unversioned.control.in
 +++ b/debian/templates/tools-unversioned.control.in
 @@ -66,7 +66,6 @@ Build-Depends:
@@ -71,7 +71,7 @@ index 5922b01..e899567 100644
 - libiberty-dev,
   libnewt-dev,
   libnuma-dev,
- # version in bullseye is too old
+  libopencsd-dev (>= 1.1.1),
 -- 
 2.17.1
 

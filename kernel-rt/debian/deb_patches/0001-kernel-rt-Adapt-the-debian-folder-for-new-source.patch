@@ -1,7 +1,7 @@
-From 7e3c5b74c46bd25f4f3885b9f0a4777239d01a85 Mon Sep 17 00:00:00 2001
+From 3bf029cc5d8cc8a9b06019610ae392b36ccaa7e7 Mon Sep 17 00:00:00 2001
 From: Li Zhou <li.zhou@windriver.com>
 Date: Fri, 26 Nov 2021 20:17:45 +0800
-Subject: [PATCH 1/5] kernel-rt: Adapt the debian folder for new source
+Subject: [PATCH] kernel-rt: Adapt the debian folder for new source
 
 Below are the changes on DEBIAN's kernel release's "debian" folder
 for building linux-yocto kernel-rt source 6.6.7, besides the changes
@@ -41,9 +41,9 @@ Signed-off-by: Li Zhou <li.zhou@windriver.com>
  debian/config/defines                    |  10 +-
  debian/control                           |   2 +-
  debian/lib/python/debian_linux/debian.py |  24 ++--
- debian/patches/series                    | 134 -----------------------
+ debian/patches/series                    | 133 -----------------------
  debian/rules                             |   9 +-
- 6 files changed, 21 insertions(+), 166 deletions(-)
+ 6 files changed, 21 insertions(+), 165 deletions(-)
 
 diff --git a/debian/config/amd64/none/defines b/debian/config/amd64/none/defines
 index 1717c99..090dc41 100644
@@ -62,18 +62,18 @@ index 1717c99..090dc41 100644
 - config.cloud
 - amd64/config.cloud-amd64
 diff --git a/debian/config/defines b/debian/config/defines
-index 1b4ee8f..37ee655 100644
+index d0d4107..1f6a3d9 100644
 --- a/debian/config/defines
 +++ b/debian/config/defines
 @@ -1,5 +1,5 @@
  [abi]
--abiname: 0.deb11.9
+-abiname: 9
 +abiname: 1
  ignore-changes:
   __cpuhp_*
   __udp_gso_segment
 @@ -145,7 +145,6 @@ arches:
- compiler: gcc-10
+ compiler: gcc-12
  featuresets:
   none
 - rt
@@ -89,7 +89,7 @@ index 1b4ee8f..37ee655 100644
  
  [description]
  part-long-up: This kernel is not suitable for SMP (multi-processor,
-@@ -171,3 +170,8 @@ gcc-10: gcc-10 <!stage1 !cross !pkg.linux.nokernel>, gcc-10-@gnu-type-package@ <
+@@ -171,3 +170,8 @@ gcc-12: gcc-12 <!stage1 !cross !pkg.linux.nokernel>, gcc-12-@gnu-type-package@ <
  # initramfs-generators
  initramfs-fallback: linux-initramfs-tool
  initramfs-tools: initramfs-tools (>= 0.120+deb8u2)
@@ -99,7 +99,7 @@ index 1b4ee8f..37ee655 100644
 +installer: false
 +tools-unversioned: false
 diff --git a/debian/control b/debian/control
-index 493e8f3..f3e4742 100644
+index 704dcb1..d28b4d0 100644
 --- a/debian/control
 +++ b/debian/control
 @@ -1,4 +1,4 @@
@@ -144,10 +144,10 @@ index 8fca8fb..296c1e2 100644
  class Version(object):
      _epoch_re = re.compile(r'\d+$')
 diff --git a/debian/patches/series b/debian/patches/series
-index 1f915ac..7326cee 100644
+index 274fc02..7326cee 100644
 --- a/debian/patches/series
 +++ b/debian/patches/series
-@@ -1,146 +1,12 @@
+@@ -1,145 +1,12 @@
 -debian/gitignore.patch
 -
 -# Disable features broken by exclusion of upstream files
@@ -254,7 +254,6 @@ index 1f915ac..7326cee 100644
 -# Miscellaneous bug fixes
 -bugfix/all/disable-some-marvell-phys.patch
 -bugfix/all/fs-add-module_softdep-declarations-for-hard-coded-cr.patch
--bugfix/all/media-cx18-avoid-strlen-call-that-triggers-ice-in-gc.patch
  
  # Miscellaneous features
  
@@ -295,7 +294,7 @@ index 1f915ac..7326cee 100644
 -
 -# ABI maintenance
 diff --git a/debian/rules b/debian/rules
-index b39c230..0234128 100755
+index d5ab44b..385c9d5 100755
 --- a/debian/rules
 +++ b/debian/rules
 @@ -130,12 +130,7 @@ debian/control-real: debian/bin/gencontrol.py $(CONTROL_FILES)

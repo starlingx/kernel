@@ -1,4 +1,4 @@
-From 95ab9d6bdf33e047307163a41e6fa9124be1573b Mon Sep 17 00:00:00 2001
+From aa1f1163c245dc0e70281cc612ad6db9f350db96 Mon Sep 17 00:00:00 2001
 From: Li Zhou <li.zhou@windriver.com>
 Date: Thu, 11 Nov 2021 17:24:01 +0800
 Subject: [PATCH] kernel-std: Adapt the debian folder for new source
@@ -20,7 +20,7 @@ and the debian/changelog file:
  DEBIAN release.
 -Update debian/rules to solve the issue that build paused after
  gencontrol.
--Update abiname from "0.deb11.9" to "1" for new STX kernel.
+-Update abiname from "9" to "1" for new STX kernel.
 
 Signed-off-by: Li Zhou <li.zhou@windriver.com>
 [lz: adapted the patch for porting kernel from 5.10 to 6.6]
@@ -29,9 +29,9 @@ Signed-off-by: Li Zhou <li.zhou@windriver.com>
  debian/config/amd64/none/defines         |   8 --
  debian/config/defines                    |   9 +-
  debian/lib/python/debian_linux/debian.py |  23 ++--
- debian/patches/series                    | 134 -----------------------
+ debian/patches/series                    | 133 -----------------------
  debian/rules                             |   9 +-
- 5 files changed, 19 insertions(+), 164 deletions(-)
+ 5 files changed, 19 insertions(+), 163 deletions(-)
 
 diff --git a/debian/config/amd64/none/defines b/debian/config/amd64/none/defines
 index 1717c99..090dc41 100644
@@ -50,18 +50,18 @@ index 1717c99..090dc41 100644
 - config.cloud
 - amd64/config.cloud-amd64
 diff --git a/debian/config/defines b/debian/config/defines
-index 1b4ee8f..6e38cd8 100644
+index d0d4107..e3e6a6e 100644
 --- a/debian/config/defines
 +++ b/debian/config/defines
 @@ -1,5 +1,5 @@
  [abi]
--abiname: 0.deb11.9
+-abiname: 9
 +abiname: 1
  ignore-changes:
   __cpuhp_*
   __udp_gso_segment
 @@ -145,7 +145,6 @@ arches:
- compiler: gcc-10
+ compiler: gcc-12
  featuresets:
   none
 - rt
@@ -77,7 +77,7 @@ index 1b4ee8f..6e38cd8 100644
  
  [description]
  part-long-up: This kernel is not suitable for SMP (multi-processor,
-@@ -171,3 +170,7 @@ gcc-10: gcc-10 <!stage1 !cross !pkg.linux.nokernel>, gcc-10-@gnu-type-package@ <
+@@ -171,3 +170,7 @@ gcc-12: gcc-12 <!stage1 !cross !pkg.linux.nokernel>, gcc-12-@gnu-type-package@ <
  # initramfs-generators
  initramfs-fallback: linux-initramfs-tool
  initramfs-tools: initramfs-tools (>= 0.120+deb8u2)
@@ -120,10 +120,10 @@ index 8fca8fb..2e41715 100644
  
  class Version(object):
 diff --git a/debian/patches/series b/debian/patches/series
-index 1f915ac..7326cee 100644
+index 274fc02..7326cee 100644
 --- a/debian/patches/series
 +++ b/debian/patches/series
-@@ -1,146 +1,12 @@
+@@ -1,145 +1,12 @@
 -debian/gitignore.patch
 -
 -# Disable features broken by exclusion of upstream files
@@ -230,7 +230,6 @@ index 1f915ac..7326cee 100644
 -# Miscellaneous bug fixes
 -bugfix/all/disable-some-marvell-phys.patch
 -bugfix/all/fs-add-module_softdep-declarations-for-hard-coded-cr.patch
--bugfix/all/media-cx18-avoid-strlen-call-that-triggers-ice-in-gc.patch
  
  # Miscellaneous features
  
