@@ -1,7 +1,7 @@
-From 9c8a4be36cf93039931c01970943420b787d37bc Mon Sep 17 00:00:00 2001
+From 499da82984524d0840aae4f7847eaa01c733d35d Mon Sep 17 00:00:00 2001
 From: Li Zhou <li.zhou@windriver.com>
 Date: Thu, 7 Apr 2022 11:42:47 +0800
-Subject: [PATCH] intel-iavf: pass linux common header to check_aux_bus
+Subject: [PATCH 02/16] intel-ice: pass linux common header to check_aux_bus
 
 For debian, there are two header pkgs, e.g. linux-headers-5.10.0-6-amd64
 and linux-headers-5.10.0-6-common. linux-headers-5.10.0-6-amd64 is
@@ -11,14 +11,14 @@ path as the KSRC for check_aux_bus when KSRC_COMMON is exported in
 debian rules.
 
 Signed-off-by: Li Zhou <li.zhou@windriver.com>
-[jpm: Refresh patch for iavf v4.5.3)]
+[jpm: Refresh patch for ice v1.9.11)]
 Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
 ---
  src/common.mk | 7 ++++++-
  1 file changed, 6 insertions(+), 1 deletion(-)
 
 diff --git a/src/common.mk b/src/common.mk
-index 0b2ad05..a0b65d6 100644
+index 960c15e..2ecff1b 100644
 --- a/src/common.mk
 +++ b/src/common.mk
 @@ -410,9 +410,14 @@ export INSTALL_MOD_DIR ?= updates/drivers/net/ethernet/intel/${DRIVER}
@@ -38,5 +38,5 @@ index 0b2ad05..a0b65d6 100644
  
  # The out-of-tree auxiliary module we ship should be moved into this
 -- 
-2.30.2
+2.43.0
 

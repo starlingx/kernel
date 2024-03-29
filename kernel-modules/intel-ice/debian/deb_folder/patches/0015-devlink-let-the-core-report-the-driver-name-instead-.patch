@@ -1,0 +1,51 @@
+From 604857fd1f50aeaa756386eaa51b54172652ab6e Mon Sep 17 00:00:00 2001
+From: Vincent Mailhol <mailhol.vincent@wanadoo.fr>
+Date: Tue, 29 Nov 2022 18:51:38 +0900
+Subject: [PATCH 15/16] devlink: let the core report the driver name instead of
+ the drivers
+
+The driver name is available in device_driver::name. Right now,
+drivers still have to report this piece of information themselves in
+their devlink_ops::info_get callback function.
+
+In order to factorize code, make devlink_nl_info_fill() add the driver
+name attribute.
+
+Now that the core sets the driver name attribute, drivers are not
+supposed to call devlink_info_driver_name_put() anymore. Remove
+devlink_info_driver_name_put() and clean-up all the drivers using this
+function in their callback.
+
+Signed-off-by: Vincent Mailhol <mailhol.vincent@wanadoo.fr>
+Tested-by: Ido Schimmel <idosch@nvidia.com> # mlxsw
+Reviewed-by: Jacob Keller  <jacob.e.keller@intel.com>
+Reviewed-by: Jiri Pirko <jiri@nvidia.com>
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+(cherry picked from commit 226bf980550627c88549b112ac6c8fb40873afb4)
+[jma: This commit was cherry-picked from
+ https://git.yoctoproject.org/linux-yocto/commit/?h=226bf980]
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ src/ice_devlink.c | 6 ------
+ 1 file changed, 6 deletions(-)
+
+diff --git a/src/ice_devlink.c b/src/ice_devlink.c
+index 4878626..b166187 100644
+--- a/src/ice_devlink.c
++++ b/src/ice_devlink.c
+@@ -357,12 +357,6 @@ static int ice_devlink_info_get(struct devlink *devlink,
+ 		}
+ 	}
+ 
+-	err = devlink_info_driver_name_put(req, KBUILD_MODNAME);
+-	if (err) {
+-		NL_SET_ERR_MSG_MOD(extack, "Unable to set driver name");
+-		goto out_free_ctx;
+-	}
+-
+ 	ice_info_get_dsn(pf, ctx);
+ 
+ 	err = devlink_info_serial_number_put(req, ctx->buf);
+-- 
+2.43.0
+

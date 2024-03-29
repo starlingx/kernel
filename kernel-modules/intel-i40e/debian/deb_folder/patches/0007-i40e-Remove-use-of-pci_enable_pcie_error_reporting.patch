@@ -1,0 +1,58 @@
+From ac442ea3a8642c9d0f557ac996b252a48c93248b Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Sun, 17 Mar 2024 20:36:25 -0700
+Subject: [PATCH 07/10] i40e: Remove use of pci_enable_pcie_error_reporting()
+
+This commit accommodates commit 7ec4b34be423 ("PCI/AER: Unexport
+pci_enable_pcie_error_reporting()") merged in the v6.6 development cycle,
+by applying changes similar to the ones found in commit d04d9e769993
+("i40e: Remove redundant pci_enable_pcie_error_reporting()") to resolve the
+i40e driver compilation failures encountered with the v6.6 kernel, which are
+listed below.
+
+References:
+* https://git.yoctoproject.org/linux-yocto/commit/?h=d04d9e769993
+
+Resolved compilation errors:
+
+src/i40e_main.c:17154:2: error: implicit declaration of function \
+ pci_enable_pcie_error_reporting [-Werror=implicit-function-declaration]
+17154 |  pci_enable_pcie_error_reporting(pdev);
+      |  ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ src/i40e_main.c | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/src/i40e_main.c b/src/i40e_main.c
+index 4c64e3e..7c86b01 100644
+--- a/src/i40e_main.c
++++ b/src/i40e_main.c
+@@ -17150,7 +17150,6 @@ static int i40e_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
+ 		goto err_pci_reg;
+ 	}
+ 
+-	pci_enable_pcie_error_reporting(pdev);
+ 	pci_set_master(pdev);
+ 
+ 	/* Now that we have a PCI connection, we need to do the
+@@ -17768,7 +17767,6 @@ err_pf_reset:
+ err_ioremap:
+ 	kfree(pf);
+ err_pf_alloc:
+-	pci_disable_pcie_error_reporting(pdev);
+ 	pci_release_mem_regions(pdev);
+ err_pci_reg:
+ err_dma:
+@@ -17934,7 +17932,6 @@ debug_mode_clear:
+ 	kfree(pf);
+ 	pci_release_mem_regions(pdev);
+ 
+-	pci_disable_pcie_error_reporting(pdev);
+ 	pci_disable_device(pdev);
+ }
+ 
+-- 
+2.42.0
+

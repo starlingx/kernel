@@ -5,47 +5,35 @@
 #bnxt-en-rt
 
 #intel-i40e
-#i40e
-#i40e-rt
-#i40e-cvl-2.54
-#i40e-cvl-2.54-rt
-#i40e-cvl-4.10
-#i40e-cvl-4.10-rt
+i40e
+i40e-rt
 
 #intel-iavf
-#iavf
-#iavf-rt
-#iavf-cvl-2.54
-#iavf-cvl-2.54-rt
-#iavf-cvl-4.10
-#iavf-cvl-4.10-rt
+iavf
+iavf-rt
 
 #intel-ice
-#ice
-#ice-rt
-#ice-cvl-2.54
-#ice-cvl-2.54-rt
-#ice-cvl-4.10
-#ice-cvl-4.10-rt
+ice
+ice-rt
 
 # Marvell kernel modules
 #octeon-ep
 #octeon-ep-rt
 
 #intel-igb_uio
-#igb-uio
-#igb-uio-rt
+igb-uio
+igb-uio-rt
 
 #initramfs-trigger
 initramfs-trigger
 
 # Intel Quartzville Linux Driver
-#iqvlinux
-#iqvlinux-rt
+iqvlinux
+iqvlinux-rt
 
 #intel-opae-fpgaa
-#kmod-opae-fpga-driver
-#kmod-opae-fpga-driver-rt
+kmod-opae-fpga-driver
+kmod-opae-fpga-driver-rt
 
 # libbnxt_re - Broadcom Infiniband verbs library
 libbnxt-re

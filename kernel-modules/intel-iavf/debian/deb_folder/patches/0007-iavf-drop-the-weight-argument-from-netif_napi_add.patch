@@ -1,0 +1,47 @@
+From 59af78038f9fcb61852e44701fb040f836359a5d Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Sun, 17 Mar 2024 23:34:59 -0700
+Subject: [PATCH 7/8] iavf: drop the weight argument from netif_napi_add
+
+This patch accommodates commit b48b89f9c189 ("net: drop the weight argument
+from netif_napi_add") merged in the v6.1 development cycle, by applying a
+similar change to the out-of-tree iavf driver to resolve the compilation
+errors encountered with the v6.6 kernel, which are listed below.
+
+References:
+* https://git.yoctoproject.org/linux-yocto/commit/?h=b48b89f9c189
+
+Resolved compilation errors:
+
+src/iavf_main.c: In function iavf_alloc_q_vectors:
+src/iavf_main.c:1730:3: error: too many arguments to function\
+  netif_napi_add
+ 1730 |   netif_napi_add(adapter->netdev, &q_vector->napi,
+      |   ^~~~~~~~~~~~~~
+In file included from /<<PKGBUILDDIR>>/src/iavf.h:10,
+                 from /<<PKGBUILDDIR>>/src/iavf_main.c:4:
+/usr/src/linux-headers-6.1.0-1-common/include/linux/netdevice.h:2575:1: note: \
+ declared here
+ 2575 | netif_napi_add(struct net_device *dev, struct napi_struct *napi,
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ src/iavf_main.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/iavf_main.c b/src/iavf_main.c
+index 8f8c459..e0862ad 100644
+--- a/src/iavf_main.c
++++ b/src/iavf_main.c
+@@ -1731,7 +1731,7 @@ static int iavf_alloc_q_vectors(struct iavf_adapter *adapter)
+ 		cpumask_copy(&q_vector->affinity_mask, cpu_possible_mask);
+ #endif
+ 		netif_napi_add(adapter->netdev, &q_vector->napi,
+-			       iavf_napi_poll, NAPI_POLL_WEIGHT);
++			       iavf_napi_poll);
+ 	}
+ 
+ 	return 0;
+-- 
+2.42.0
+

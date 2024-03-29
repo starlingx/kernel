@@ -1,0 +1,78 @@
+From 386677b4a6a41a50741b290d30cf0cc257183609 Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Mon, 18 Mar 2024 00:12:48 -0700
+Subject: [PATCH 07/16] ice: drop the weight argument from netif_napi_add
+
+This patch accommodates commit b48b89f9c189 ("net: drop the weight argument
+from netif_napi_add") merged in the v6.1 development cycle, by applying a
+similar change to the out-of-tree ice driver to resolve the compilation
+errors encountered with the v6.6 kernel, which are listed below.
+
+References:
+* https://git.yoctoproject.org/linux-yocto/commit/?h=b48b89f9c189
+
+Resolved compilation errors:
+
+/src/ice_main.c:4375:3: error: too many arguments to function netif_napi_add
+ 4375 |   netif_napi_add(vsi->netdev, &vsi->q_vectors[v_idx]->napi,
+      |   ^~~~~~~~~~~~~~
+In file included from /usr/src/linux-headers-6.1.0-1-common/include/linux/\
+ etherdevice.h:21,
+                 from /<<PKGBUILDDIR>>/src/kcompat.h:16,
+                 from /<<PKGBUILDDIR>>/src/ice.h:7,
+                 from /<<PKGBUILDDIR>>/src/ice_main.c:8:
+/usr/src/linux-headers-6.1.0-1-common/include/linux/netdevice.h:2575:1: \
+ note: declared here
+ 2575 | netif_napi_add(struct net_device *dev, struct napi_struct *napi,
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ src/ice_base.c    | 3 +--
+ src/ice_eswitch.c | 3 +--
+ src/ice_main.c    | 2 +-
+ 3 files changed, 3 insertions(+), 5 deletions(-)
+
+diff --git a/src/ice_base.c b/src/ice_base.c
+index b43752e..d9c9d42 100644
+--- a/src/ice_base.c
++++ b/src/ice_base.c
+@@ -127,8 +127,7 @@ static int ice_vsi_alloc_q_vector(struct ice_vsi *vsi, u16 v_idx)
+ 	 * handler here (i.e. resume, reset/rebuild, etc.)
+ 	 */
+ 	if (vsi->netdev)
+-		netif_napi_add(vsi->netdev, &q_vector->napi, ice_napi_poll,
+-			       NAPI_POLL_WEIGHT);
++		netif_napi_add(vsi->netdev, &q_vector->napi, ice_napi_poll);
+ 
+ out:
+ 	/* tie q_vector and VSI together */
+diff --git a/src/ice_eswitch.c b/src/ice_eswitch.c
+index 6e44820..3c8f65b 100644
+--- a/src/ice_eswitch.c
++++ b/src/ice_eswitch.c
+@@ -330,8 +330,7 @@ static int ice_eswitch_setup_reprs(struct ice_pf *pf)
+ 		if (max_vsi_num < vsi->vsi_num)
+ 			max_vsi_num = vsi->vsi_num;
+ 
+-		netif_napi_add(vf->repr->netdev, &vf->repr->q_vector->napi, ice_napi_poll,
+-			       NAPI_POLL_WEIGHT);
++		netif_napi_add(vf->repr->netdev, &vf->repr->q_vector->napi, ice_napi_poll);
+ 
+ 		netif_keep_dst(vf->repr->netdev);
+ 	}
+diff --git a/src/ice_main.c b/src/ice_main.c
+index 40b01ae..96ac8c3 100644
+--- a/src/ice_main.c
++++ b/src/ice_main.c
+@@ -4373,7 +4373,7 @@ static void ice_napi_add(struct ice_vsi *vsi)
+ 
+ 	ice_for_each_q_vector(vsi, v_idx)
+ 		netif_napi_add(vsi->netdev, &vsi->q_vectors[v_idx]->napi,
+-			       ice_napi_poll, NAPI_POLL_WEIGHT);
++			       ice_napi_poll);
+ }
+ 
+ /**
+-- 
+2.43.0
+

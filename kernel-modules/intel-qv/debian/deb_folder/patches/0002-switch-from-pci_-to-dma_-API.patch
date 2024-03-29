@@ -1,0 +1,118 @@
+From 1de2057d668621d1de8a37e0cca7e583b531ae16 Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Tue, 5 Mar 2024 08:48:53 +0000
+Subject: [PATCH] switch from 'pci_' to 'dma_' API
+
+The wrappers in include/linux/pci-dma-compat.h had gone away.
+
+It has been hand modified to use 'dma_set_mask_and_coherent()' instead of
+'pci_set_dma_mask()/pci_set_consistent_dma_mask()' when applicable.
+This is less verbose.
+
+expression e1, e2, e3, e4;
+@@
+-    pci_free_consistent(e1, e2, e3, e4)
++    dma_free_coherent(&e1->dev, e2, e3, e4)
+
+@@
+expression e1, e2, e3;
+@@
+-    pci_alloc_consistent(e1, e2, e3)
++    dma_alloc_coherent(&e1->dev, e2, e3, GFP_)
+
+Refer link:
+https://git.yoctoproject.org/linux-yocto/commit/?h=d56baf6ef
+
+src/linux/driver/linuxdrivermemory_i.c:210:22: error: implicit declaration of\
+ function pci_alloc_consistent [-Werror=implicit-function-declaration]
+  210 |         Allocation = pci_alloc_consistent(LinuxPciDevice, ByteCount, &Dma);
+      |                      ^~~~~~~~~~~~~~~~~~~~
+src/linux/driver/linuxdrivermemory_i.c:210:20: warning: assignment to void from\
+ int makes pointer from integer without a cast [-Wint-conversion]
+  210 |         Allocation = pci_alloc_consistent(LinuxPciDevice, ByteCount, &Dma);
+      |                    ^
+src/linux/driver/linuxdriverdevice_i.c: In function _NalEnableDevice:
+src/linux/driver/linuxdriverdevice_i.c:541:13: error: implicit declaration of\
+ function pci_set_dma_mask; did you mean ipi_send_mask \
+ [-Werror=implicit-function-declaration]
+  541 |         if (pci_set_dma_mask(PciDevice, DMA_BIT_MASK(64)) ||
+      |             ^~~~~~~~~~~~~~~~
+      |             ipi_send_mask
+src/linux/driver/linuxdrivermemory_i.c:218:13: error: implicit declaration \
+ of function pci_free_consistent [-Werror=implicit-function-declaration]
+  218 |             pci_free_consistent(LinuxPciDevice, ByteCount, Allocation, Dma);
+      |             ^~~~~~~~~~~~~~~~~~~
+src/linux/driver/linuxdriverdevice_i.c:542:13: error: implicit declaration of \
+ function pci_set_consistent_dma_mask [-Werror=implicit-function-declaration]
+  542 |             pci_set_consistent_dma_mask(PciDevice, DMA_BIT_MASK(64)))
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ src/linux/driver/linuxdriverdevice_i.c | 10 ++++------
+ src/linux/driver/linuxdrivermemory_i.c |  6 +++---
+ 2 files changed, 7 insertions(+), 9 deletions(-)
+
+diff --git a/src/linux/driver/linuxdriverdevice_i.c b/src/linux/driver/linuxdriverdevice_i.c
+index 06db185..6025649 100644
+--- a/src/linux/driver/linuxdriverdevice_i.c
++++ b/src/linux/driver/linuxdriverdevice_i.c
+@@ -538,11 +538,9 @@ _NalEnableDevice(
+             break;
+         }
+ 
+-        if (pci_set_dma_mask(PciDevice, DMA_BIT_MASK(64)) ||
+-            pci_set_consistent_dma_mask(PciDevice, DMA_BIT_MASK(64)))
++        if (dma_set_mask_and_coherent(&PciDevice->dev, DMA_BIT_MASK(64)))
+         {
+-            if (pci_set_dma_mask(PciDevice, DMA_BIT_MASK(32)) ||
+-                pci_set_consistent_dma_mask(PciDevice, DMA_BIT_MASK(32)))
++            if (dma_set_mask_and_coherent(&PciDevice->dev, DMA_BIT_MASK(32)))
+             {
+                     printk(KERN_DEBUG "No usable DMA configuration, aborting\n");
+                     NalStatus = NAL_DMA_NOT_SUPPORTED;
+@@ -624,9 +622,9 @@ _NalFillDeviceResource(
+             break;
+         }
+ 
+-        if (pci_set_dma_mask(PciDevice, DMA_BIT_MASK(64)))
++        if (dma_set_mask(&PciDevice->dev, DMA_BIT_MASK(64)))
+         {
+-            if (pci_set_dma_mask(PciDevice, DMA_BIT_MASK(32)))
++            if (dma_set_mask(&PciDevice->dev, DMA_BIT_MASK(32)))
+             {
+                 printk(KERN_DEBUG "No usable DMA configuration, aborting\n");
+                 NalStatus = NAL_DMA_NOT_SUPPORTED;
+diff --git a/src/linux/driver/linuxdrivermemory_i.c b/src/linux/driver/linuxdrivermemory_i.c
+index 93771d0..6393d39 100644
+--- a/src/linux/driver/linuxdrivermemory_i.c
++++ b/src/linux/driver/linuxdrivermemory_i.c
+@@ -207,7 +207,7 @@ _NalAllocateMemoryNonPagedPci(
+             break;
+         }
+ 
+-        Allocation = pci_alloc_consistent(LinuxPciDevice, ByteCount, &Dma);
++        Allocation = dma_alloc_coherent(&LinuxPciDevice->dev, ByteCount, &Dma, GFP_ATOMIC);
+         if(Allocation == NULL)
+         {
+             break;
+@@ -215,7 +215,7 @@ _NalAllocateMemoryNonPagedPci(
+ 
+         if(Dma % Alignment != 0)
+         {
+-            pci_free_consistent(LinuxPciDevice, ByteCount, Allocation, Dma);
++            dma_free_coherent(&LinuxPciDevice->dev, ByteCount, Allocation, Dma);
+             Allocation = NULL;
+             break;
+         }
+@@ -297,7 +297,7 @@ NalFreeMemoryNonPagedPci(
+             if((Global_DmaPciMemoryTable[i].ReferenceCount != 0) &&
+                (Global_DmaPciMemoryTable[i].KernelAddress == Address))
+             {
+-                pci_free_consistent(LinuxPciDevice,
++                dma_free_coherent(&LinuxPciDevice->dev,
+                                     Global_DmaPciMemoryTable[i].Size,
+                                     Global_DmaPciMemoryTable[i].KernelAddress,
+                                     Global_DmaPciMemoryTable[i].PhysicalAddress);
+-- 
+2.43.0
+

@@ -1,2 +1,5 @@
-Fix-build-errors.patch
-use-altera.h-from-driver-instead-of-from-kernel.patch
+0001-Fix-build-errors.patch
+0002-use-altera.h-from-driver-instead-of-from-kernel.patch
+0003-remove-module-from-class_create.patch
+0004-Remove-redundant-pci_enable_pcie_error_reporting.patch
+0005-make-remove-callback-a-void-function.patch

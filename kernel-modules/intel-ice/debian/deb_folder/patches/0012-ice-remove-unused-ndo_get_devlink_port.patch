@@ -1,0 +1,90 @@
+From a648b9ab1f5b7fb04765977d724cc8fc12356d66 Mon Sep 17 00:00:00 2001
+From: Jiri Pirko <jiri@nvidia.com>
+Date: Wed, 2 Nov 2022 17:02:10 +0100
+Subject: [PATCH 12/16] ice: remove unused ndo_get_devlink_port
+
+Remove ndo_get_devlink_port which is no longer used alongside with the
+implementations in drivers.
+
+Signed-off-by: Jiri Pirko <jiri@nvidia.com>
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+(cherry picked from commit 77df1db80da384c565106321f5934967690da7dd)
+[jma: This commit was cherry-picked from
+ https://git.yoctoproject.org/linux-yocto/commit/?h=77df1db80d]
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ src/ice_main.c | 21 ---------------------
+ src/ice_repr.c | 12 ------------
+ 2 files changed, 33 deletions(-)
+
+diff --git a/src/ice_main.c b/src/ice_main.c
+index 728eab2..5d7a814 100644
+--- a/src/ice_main.c
++++ b/src/ice_main.c
+@@ -608,24 +608,6 @@ static int ice_clear_promisc(struct ice_vsi *vsi, u8 promisc_m)
+ 	return 0;
+ }
+ 
+-#if IS_ENABLED(CONFIG_NET_DEVLINK)
+-#ifdef HAVE_NDO_GET_DEVLINK_PORT
+-/**
+- * ice_get_devlink_port - Get devlink port from netdev
+- * @netdev:  the netdevice structure
+- */
+-static struct devlink_port *ice_get_devlink_port(struct net_device *netdev)
+-{
+-	struct ice_pf *pf = ice_netdev_to_pf(netdev);
+-
+-	if (!ice_is_switchdev_running(pf))
+-		return NULL;
+-
+-	return &pf->devlink_port;
+-}
+-#endif /* HAVE_NDO_GET_DEVLINK_PORT */
+-#endif /* CONFIG_NET_DEVLINK */
+-
+ /**
+  * ice_vsi_sync_fltr - Update the VSI filter list to the HW
+  * @vsi: ptr to the VSI
+@@ -12008,8 +11990,5 @@ static const struct net_device_ops ice_netdev_ops = {
+ #endif /* HAVE_RHEL7_NET_DEVICE_OPS_EXT */
+ #endif /* HAVE_NDO_DFWD_OPS */
+ #if IS_ENABLED(CONFIG_NET_DEVLINK)
+-#ifdef HAVE_NDO_GET_DEVLINK_PORT
+-	.ndo_get_devlink_port = ice_get_devlink_port,
+-#endif /* HAVE_NDO_GET_DEVLINK_PORT */
+ #endif /* CONFIG_NET_DEVLINK */
+ };
+diff --git a/src/ice_repr.c b/src/ice_repr.c
+index 26e254e..655ae46 100644
+--- a/src/ice_repr.c
++++ b/src/ice_repr.c
+@@ -153,15 +153,6 @@ static int ice_repr_stop(struct net_device *netdev)
+ 	return 0;
+ }
+ 
+-#if IS_ENABLED(CONFIG_NET_DEVLINK) && defined(HAVE_DEVLINK_PORT_ATTR_PCI_VF)
+-static struct devlink_port *
+-ice_repr_get_devlink_port(struct net_device *netdev)
+-{
+-	struct ice_repr *repr = ice_netdev_to_repr(netdev);
+-
+-	return &repr->vf->devlink_port;
+-}
+-#endif /* CONFIG_NET_DEVLINK && HAVE_DEVLINK_PORT_ATTR_PCI_VF*/
+ #if defined(HAVE_NDO_OFFLOAD_STATS) || defined(HAVE_RHEL7_EXTENDED_OFFLOAD_STATS)
+ /**
+  * ice_repr_sp_stats64 - get slow path stats for port representor
+@@ -322,9 +313,6 @@ static const struct net_device_ops ice_repr_netdev_ops = {
+ #else
+ 	.ndo_change_mtu = ice_repr_change_mtu,
+ #endif /* HAVE_RHEL7_EXTENDED_MIN_MAX_MTU */
+-#ifdef HAVE_DEVLINK_PORT_ATTR_PCI_VF
+-	.ndo_get_devlink_port = ice_repr_get_devlink_port,
+-#endif /* HAVE_DEVLINK_PORT_ATTR_PCI_VF */
+ #ifdef HAVE_TC_SETUP_CLSFLOWER
+ #ifdef HAVE_RHEL7_NETDEV_OPS_EXT_NDO_SETUP_TC
+ 	.extended.ndo_setup_tc_rh = ice_repr_setup_tc,
+-- 
+2.43.0
+

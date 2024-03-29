@@ -1,0 +1,58 @@
+From 8800ef77fd08fcc7f5d0491517bb7f566a4395b4 Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Mon, 18 Mar 2024 00:06:12 -0700
+Subject: [PATCH 06/16] ice: Accommodate removal of u64_stats_fetch_*_irq()
+
+This commit accommodates commit dec5efcffad4 ("u64_stat: Remove
+the obsolete fetch_irq() variants.") merged in the v6.3 development
+cycle, which causes the compilation errors listed below with the
+new v6.6 kernel.
+
+Our changes are inspired from the ones in commit 068c38ad88cc ("net:
+Remove the obsolte u64_stats_fetch_*_irq() users (drivers)."), which
+removes the use of the API functions in question from the ice driver.
+We use C macros to alias the older API function names to the currently
+available API function names.
+
+References:
+* https://git.yoctoproject.org/linux-yocto/commit/?h=dec5efcffad4
+* https://git.yoctoproject.org/linux-yocto/commit/?h=068c38ad88cc
+
+Resolved compilation errors:
+
+/src/ice_main.c:8266:11: error: implicit declaration of function \
+ u64_stats_fetch_begin_irq; did you mean u64_stats_fetch_begin \
+ [-Werror=implicit-function-declaration]
+ 8266 |   start = u64_stats_fetch_begin_irq(&ring->syncp);
+      |           ^~~~~~~~~~~~~~~~~~~~~~~~~
+      |           u64_stats_fetch_begin
+/src/ice_main.c:8269:11: error: implicit declaration of function \
+ u64_stats_fetch_retry_irq; did you mean u64_stats_fetch_retry \
+ [-Werror=implicit-function-declaration]
+ 8269 |  } while (u64_stats_fetch_retry_irq(&ring->syncp, start));
+      |           ^~~~~~~~~~~~~~~~~~~~~~~~~
+      |           u64_stats_fetch_retry
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ src/kcompat.h | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/src/kcompat.h b/src/kcompat.h
+index 469094f..239054b 100644
+--- a/src/kcompat.h
++++ b/src/kcompat.h
+@@ -1480,6 +1480,10 @@ char *_kc_devm_kstrdup(struct device *dev, const char *s, gfp_t gfp);
+ #define HAVE_NET_GET_RANDOM_ONCE
+ #define HAVE_PTP_1588_CLOCK_PINS
+ #define HAVE_NETDEV_PORT
++#if ( LINUX_VERSION_CODE > KERNEL_VERSION(6,6,0) )
++#define u64_stats_fetch_begin_irq u64_stats_fetch_begin
++#define u64_stats_fetch_retry_irq u64_stats_fetch_retry
++#endif
+ #endif /* 3.15.0 */
+ 
+ /*****************************************************************************/
+-- 
+2.43.0
+
