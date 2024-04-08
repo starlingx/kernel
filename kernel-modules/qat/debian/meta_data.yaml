@@ -1,10 +1,10 @@
 ---
-debver: 1.0.20-00008
+debver: 1.1.40-00018
 debname: qat2.0.l
 dl_path:
-  name: QAT2.0.L.1.0.20-00008.tar.gz
-  url: https://downloadmirror.intel.com/777529/QAT20.L.1.0.20-00008.tar.gz
-  sha256sum: 8b8a46897217a806eeca911fe7a5040183fb32897ad20bafedcc07d711436799
+  name: QAT20.L.1.1.40-00018.tar.gz
+  url: https://downloadmirror.intel.com/818498/QAT20.L.1.1.40-00018.tar.gz
+  sha256sum: 941cd7aed2081b36e84d157510b7c31a5121e9df7a676ecfbc92be71ae395884
 revision:
   dist: $STX_DIST
   GITREVCOUNT:

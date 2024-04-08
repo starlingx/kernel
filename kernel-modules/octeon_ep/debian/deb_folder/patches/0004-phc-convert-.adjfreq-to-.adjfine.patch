@@ -1,0 +1,56 @@
+From b8e844961181909fcb44549ac47e3217276108a8 Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Sun, 10 Mar 2024 22:50:06 -0700
+Subject: [PATCH 4/4] phc: convert .adjfreq to .adjfine
+
+This commit accommodates commit 75ab70ec5cef ("ptp: remove the
+.adjfreq interface function"), which removes .adjfreq interface
+function. This commit was merged in the v6.4 development cycle
+and causes compilation failures with the v6.6 kernel, which are
+listed below.
+
+References:
+* https://git.yoctoproject.org/linux-yocto/commit/?h=2e77eded8ec3
+* https://git.yoctoproject.org/linux-yocto/commit/?h=75ab70ec5cef
+
+Resolved compilation errors:
+
+drivers/phc/ep_phc.c:265:3: error: struct ptp_clock_info has no member \
+ named adjfreq
+  265 |  .adjfreq = oct_ep_ptp_adjfreq,
+      |   ^~~~~~~
+drivers/phc/ep_phc.c:265:13: error: initialization of struct ptp_pin_desc\
+ from incompatible pointer type int (*)(struct ptp_clock_info *, s32) \
+ {int (*)(struct ptp_clock_info *, int)} [-Werror=incompatible-pointer-types]
+  265 |  .adjfreq = oct_ep_ptp_adjfreq,
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ drivers/phc/ep_phc.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/phc/ep_phc.c b/drivers/phc/ep_phc.c
+index d381e36..cc4917f 100644
+--- a/drivers/phc/ep_phc.c
++++ b/drivers/phc/ep_phc.c
+@@ -238,7 +238,7 @@ static int oct_ep_ptp_enable(struct ptp_clock_info *ptp,
+ 	/* Nothing to do here, PTP hardware is enabled by EP */
+ 	return 0;
+ }
+-static int oct_ep_ptp_adjfreq(struct ptp_clock_info *ptp, s32 ppb)
++static int oct_ep_ptp_adjfine(struct ptp_clock_info *ptp, long ppb)
+ {
+ 	return -ENOTSUPP;
+ }
+@@ -262,7 +262,7 @@ static struct ptp_clock_info oct_ep_ptp_caps = {
+ 	.n_ext_ts	= 0,
+ 	.n_pins		= 0,
+ 	.pps		= 0,
+-	.adjfreq	= oct_ep_ptp_adjfreq,
++	.adjfine	= oct_ep_ptp_adjfine,
+ 	.adjtime	= oct_ep_ptp_adjtime,
+ 	.gettime64	= oct_ep_ptp_gettime_cn9xxx,
+ 	.settime64	= oct_ep_ptp_settime,
+-- 
+2.42.0
+

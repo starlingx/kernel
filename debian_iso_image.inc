@@ -17,8 +17,8 @@ ice
 ice-rt
 
 # Marvell kernel modules
-#octeon-ep
-#octeon-ep-rt
+octeon-ep
+octeon-ep-rt
 
 #intel-igb_uio
 igb-uio
@@ -57,8 +57,8 @@ linux-perf
 #mlnx-ofed-kernel-utils
 
 #qat20
-#qat2.0.l
-#qat2.0.l-rt
+qat2.0.l
+qat2.0.l-rt
 
 #rdma-core
 ibacm

@@ -1,3 +1,3 @@
-0001-crypto-qat-Silence-smp_processor_id-warning.patch
-0002-Add-mcx16-cflag-to-solve-linking-issue.patch
-0003-Add-placeholder-version-to-shared-library-soname.patch
+0001-Add-placeholder-version-to-shared-library-soname.patch
+0002-Remove-redundant-pci_enable_pcie_error_reporting.patch
+0003-qat-rename-invalidate_range-notifier.patch

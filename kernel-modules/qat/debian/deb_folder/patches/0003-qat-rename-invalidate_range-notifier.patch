@@ -1,0 +1,60 @@
+From 9dbbbde60fe73b2f0b17062a6b775d2fae1317ff Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Thu, 28 Mar 2024 22:12:23 -0700
+Subject: [PATCH 3/3] qat: rename invalidate_range notifier
+
+This commit accommodates commit 1af5a8109904 ("mmu_notifiers: rename
+invalidate_range notifier") which renames invalidate_range to
+arch_invalidate_secondary_tlbs. This commit was merged in the v6.6
+development cycle and causes compilation failures with the v6.6 kernel,
+which are listed below.
+
+References:
+* https://git.yoctoproject.org/linux-yocto/commit/?h=1af5a8109904
+
+Resolved compilation errors:
+
+quickassist/qat/drivers/crypto/qat/qat_common/adf_pasid.c:184:3: error:\
+ const struct mmu_notifier_ops has no member named invalidate_range; did\
+ you mean invalidate_range_end?
+          184 |  .invalidate_range = adf_dev_mm_invalidate_range,
+              |   ^~~~~~~~~~~~~~~~
+              |   invalidate_range_end
+quickassist/qat/drivers/crypto/qat/qat_common/adf_pasid.c:184:22: \
+ error: initialization of int (*)(struct mmu_notifier *, struct \
+ mm_struct *, long unsigned int,  long unsigned int) from \
+ incompatible pointer type void (*)(struct mmu_notifier *, \
+ struct mm_struct *, long unsigned int,  long unsigned int)\
+  [-Werror=incompatible-pointer-types]
+          184 |  .invalidate_range = adf_dev_mm_invalidate_range,
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ quickassist/qat/drivers/crypto/qat/qat_common/adf_pasid.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/quickassist/qat/drivers/crypto/qat/qat_common/adf_pasid.c b/quickassist/qat/drivers/crypto/qat/qat_common/adf_pasid.c
+index 1871663..64586d9 100644
+--- a/quickassist/qat/drivers/crypto/qat/qat_common/adf_pasid.c
++++ b/quickassist/qat/drivers/crypto/qat/qat_common/adf_pasid.c
+@@ -171,7 +171,7 @@ static void adf_dev_mm_release(struct mmu_notifier *mn,
+ 	}
+ }
+ 
+-static void adf_dev_mm_invalidate_range(struct mmu_notifier *mn,
++static void adf_dev_mm_arch_invalidate_secondary_tlbs(struct mmu_notifier *mn,
+ 					struct mm_struct *mm,
+ 					unsigned long start,
+ 					unsigned long end)
+@@ -181,7 +181,7 @@ static void adf_dev_mm_invalidate_range(struct mmu_notifier *mn,
+ 
+ static const struct mmu_notifier_ops adf_dev_mmu_notifier_ops = {
+ 	.release = adf_dev_mm_release,
+-	.invalidate_range = adf_dev_mm_invalidate_range,
++	.arch_invalidate_secondary_tlbs = adf_dev_mm_arch_invalidate_secondary_tlbs,
+ };
+ 
+ #if (KERNEL_VERSION(5, 7, 0) <= LINUX_VERSION_CODE)
+-- 
+2.42.0
+
