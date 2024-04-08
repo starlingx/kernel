@@ -1,0 +1,65 @@
+From 7e55a0aa8c148f34ec342ec6e26d19319d99eebf Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Wed, 13 Mar 2024 23:31:56 -0700
+Subject: [PATCH 2/3] Remove redundant pci_enable_pcie_error_reporting()
+
+This commit accommodates commit 7ec4b34be423 ("PCI/AER: Unexport
+pci_enable_pcie_error_reporting()") merged in the v6.6 development cycle,
+by applying changes similar to the ones found in commit ba153552c18d
+("ice: Remove redundant pci_enable_pcie_error_reporting()") to resolve the
+qat driver compilation failures encountered with the v6.6 kernel, which are
+listed below.
+
+References:
+* https://git.yoctoproject.org/linux-yocto/commit/?h=7ec4b34be423
+* https://git.yoctoproject.org/linux-yocto/commit/?h=ba153552c18d
+
+Resolved compilation errors:
+
+quickassist/qat/drivers/crypto/qat/qat_common/adf_aer.c:378:8: error: \
+ implicit declaration of function pci_enable_pcie_error_reporting \
+ [-Werror=implicit-function-declaration]
+  378 |  ret = pci_enable_pcie_error_reporting(pdev);
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ .../qat/drivers/crypto/qat/qat_common/adf_aer.c       | 11 -----------
+ 1 file changed, 11 deletions(-)
+
+diff --git a/quickassist/qat/drivers/crypto/qat/qat_common/adf_aer.c b/quickassist/qat/drivers/crypto/qat/qat_common/adf_aer.c
+index ba277e0..4c56074 100644
+--- a/quickassist/qat/drivers/crypto/qat/qat_common/adf_aer.c
++++ b/quickassist/qat/drivers/crypto/qat/qat_common/adf_aer.c
+@@ -370,19 +370,11 @@ void adf_exit_fatal_error_wq(void)
+  */
+ int adf_enable_aer(struct adf_accel_dev *accel_dev, struct pci_driver *adf)
+ {
+-	int ret;
+-	struct pci_dev *pdev = accel_to_pci_dev(accel_dev);
+-
+ #ifdef QAT_UIO
+ 	adf->err_handler = (struct pci_error_handlers *)(&adf_err_handler);
+ #else
+ 	adf->err_handler = &adf_err_handler;
+ #endif
+-	ret = pci_enable_pcie_error_reporting(pdev);
+-	if (ret)
+-		dev_warn(&pdev->dev,
+-			 "QAT: Failed to enable AER, error code %d\n", ret);
+-
+ 	return 0;
+ }
+ EXPORT_SYMBOL_GPL(adf_enable_aer);
+@@ -399,9 +391,6 @@ EXPORT_SYMBOL_GPL(adf_enable_aer);
+  */
+ void adf_disable_aer(struct adf_accel_dev *accel_dev)
+ {
+-	struct pci_dev *pdev = accel_to_pci_dev(accel_dev);
+-
+-	pci_disable_pcie_error_reporting(pdev);
+ }
+ EXPORT_SYMBOL_GPL(adf_disable_aer);
+ 
+-- 
+2.42.0
+

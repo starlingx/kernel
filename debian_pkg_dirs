@@ -7,8 +7,8 @@ kernel-modules/intel-igb_uio
 kernel-modules/intel-opae-fpga
 kernel-modules/intel-qv
 #kernel-modules/mlnx-ofa_kernel
-#kernel-modules/qat
-#kernel-modules/octeon_ep
+kernel-modules/qat
+kernel-modules/octeon_ep
 userspace/broadcom/libbnxt_re
 userspace/mellanox/rdma-core
 userspace/mellanox/mstflint
