@@ -1,0 +1,88 @@
+From b9ce5c292b8cc4da2fa2f4ee7ea0220242447991 Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Tue, 9 Apr 2024 06:54:11 +0000
+Subject: [PATCH 02/10] bnxt_en: Rename page_pool.h to page_pool/helpers.h
+
+This patch accommodates commit a9ca9f9ceff3 ("page_pool: split types and
+declarations from page_pool.h") merged in the v6.6 development cycle, by
+applying a similar change to the out-of-tree bnxt_en driver to resolve
+the compilation errors encountered with the v6.6 kernel, which are listed
+below.
+
+References:
+* https://git.yoctoproject.org/linux-yocto/commit/?h=a9ca9f9ceff3
+
+Resolved compilation errors:
+
+bnxt_en-1.10.2-227.0.130.0/bnxt_compat.h:2581: error: "page_pool_release_page"\
+ redefined [-Werror]
+ 2581 | #define page_pool_release_page(pp, page)
+      |
+In file included from /<<PKGBUILDDIR>>/bnxt_en-1.10.2-227.0.130.0/bnxt.c:80:
+bnxt_en-1.10.2-227.0.130.0/bnxt_compat.h:1893: note: this is the location of\
+ the previous definition
+ 1893 | #define page_pool_release_page(page_pool, page)
+      |
+bnxt_en-1.10.2-227.0.130.0/bnxt.c:102:10: fatal error: net/page_pool.h: No\
+ such file or directory
+  102 | #include <net/page_pool.h>
+      |          ^~~~~~~~~~~~~~~~~
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ bnxt_en-1.10.2-227.0.130.0/Makefile   | 4 ++--
+ bnxt_en-1.10.2-227.0.130.0/bnxt.c     | 2 +-
+ bnxt_en-1.10.2-227.0.130.0/bnxt_xdp.c | 2 +-
+ 3 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/bnxt_en-1.10.2-227.0.130.0/Makefile b/bnxt_en-1.10.2-227.0.130.0/Makefile
+index 6237767..2331171 100644
+--- a/bnxt_en-1.10.2-227.0.130.0/Makefile
++++ b/bnxt_en-1.10.2-227.0.130.0/Makefile
+@@ -753,7 +753,7 @@ ifneq ($(shell grep -so "xdp_data_hard_end" $(LINUXSRC)/include/net/xdp.h),)
+   DISTRO_CFLAG += -DHAVE_XDP_FRAME_SZ
+ endif
+ 
+-ifneq ($(shell grep -so "page_pool_release_page" $(LINUXSRC)/include/net/page_pool.h),)
++ifneq ($(shell grep -so "page_pool_release_page" $(LINUXSRC)/include/net/page_pool/helpers.h),)
+   DISTRO_CFLAG += -DHAVE_PAGE_POOL_RELEASE_PAGE
+ endif
+ 
+@@ -1224,7 +1224,7 @@ ifneq ($(shell grep -so "hwmon_notify_event" $(LINUXSRC)/include/linux/hwmon.h),
+   DISTRO_CFLAG += -DHAVE_HWMON_NOTIFY_EVENT
+ endif
+ 
+-ifneq ($(shell grep -so "page_pool_dev_alloc_frag" $(LINUXSRC)/include/net/page_pool.h),)
++ifneq ($(shell grep -so "page_pool_dev_alloc_frag" $(LINUXSRC)/include/net/page_pool/helpers.h),)
+   DISTRO_CFLAG += -DHAVE_PAGE_POOL_PAGE_FRAG
+ endif
+ 
+diff --git a/bnxt_en-1.10.2-227.0.130.0/bnxt.c b/bnxt_en-1.10.2-227.0.130.0/bnxt.c
+index 611dcaa..f464809 100644
+--- a/bnxt_en-1.10.2-227.0.130.0/bnxt.c
++++ b/bnxt_en-1.10.2-227.0.130.0/bnxt.c
+@@ -99,7 +99,7 @@
+ #include "bnxt_debugfs.h"
+ #include "bnxt_coredump.h"
+ #ifdef CONFIG_PAGE_POOL
+-#include <net/page_pool.h>
++#include <net/page_pool/helpers.h>
+ #ifdef HAVE_XDP_MULTI_BUFF
+ #include <linux/align.h>
+ #endif
+diff --git a/bnxt_en-1.10.2-227.0.130.0/bnxt_xdp.c b/bnxt_en-1.10.2-227.0.130.0/bnxt_xdp.c
+index 4b15c9a..42469c7 100644
+--- a/bnxt_en-1.10.2-227.0.130.0/bnxt_xdp.c
++++ b/bnxt_en-1.10.2-227.0.130.0/bnxt_xdp.c
+@@ -25,7 +25,7 @@
+ #include "bnxt.h"
+ #include "bnxt_xdp.h"
+ #ifdef CONFIG_PAGE_POOL
+-#include <net/page_pool.h>
++#include <net/page_pool/helpers.h>
+ #endif
+ 
+ DEFINE_STATIC_KEY_FALSE(bnxt_xdp_locking_key);
+-- 
+2.43.0
+

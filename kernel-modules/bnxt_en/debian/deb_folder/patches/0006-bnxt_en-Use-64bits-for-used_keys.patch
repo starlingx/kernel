@@ -1,0 +1,41 @@
+From d7b26be91901d084d78b97583f328efb09b5d637 Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Tue, 9 Apr 2024 07:55:36 +0000
+Subject: [PATCH 06/10] bnxt_en: Use 64bits for used_keys
+
+As 32bits of dissector->used_keys are exhausted,
+increase the size to 64bits. change 0x%x to 0x%llx to fix the
+following build error.
+
+References:
+* https://git.yoctoproject.org/linux-yocto/commit/?h=2b3082c6ef3b
+
+bnxt_en-1.10.2-227.0.130.0/bnxt_tc.c:679:24: error: format \
+ expects argument of type unsigned int, but argument 4 has \
+ type long long unsigned int [-Werror=format=]
+  679 |   netdev_info(bp->dev, "cannot form TC key: used_keys = 0x%x\n",
+      |                        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  680 |        dissector->used_keys);
+      |        ~~~~~~~~~~~~~~~~~~~~
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ bnxt_en-1.10.2-227.0.130.0/bnxt_tc.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/bnxt_en-1.10.2-227.0.130.0/bnxt_tc.c b/bnxt_en-1.10.2-227.0.130.0/bnxt_tc.c
+index 6a1bcac..39879be 100644
+--- a/bnxt_en-1.10.2-227.0.130.0/bnxt_tc.c
++++ b/bnxt_en-1.10.2-227.0.130.0/bnxt_tc.c
+@@ -676,7 +676,7 @@ static int bnxt_tc_parse_flow(struct bnxt *bp,
+ 	/* KEY_CONTROL and KEY_BASIC are needed for forming a meaningful key */
+ 	if ((dissector->used_keys & BIT(FLOW_DISSECTOR_KEY_CONTROL)) == 0 ||
+ 	    (dissector->used_keys & BIT(FLOW_DISSECTOR_KEY_BASIC)) == 0) {
+-		netdev_info(bp->dev, "cannot form TC key: used_keys = 0x%x\n",
++		netdev_info(bp->dev, "cannot form TC key: used_keys = 0x%llx\n",
+ 			    dissector->used_keys);
+ 		return -EOPNOTSUPP;
+ 	}
+-- 
+2.43.0
+

@@ -30,6 +30,7 @@ kheaders_name=$(shell ls /usr/src | grep linux@KERNEL_TYPE@-headers | grep commo
 kbuild_name=$(shell ls /usr/src | grep linux@KERNEL_TYPE@-headers | grep amd64)
 kversion=$(shell echo $(kbuild_name) | sed 's/linux@KERNEL_TYPE@-headers-//g')
 pkg_common_name=bnxt-en-common
+export KSRC_COMMON=/usr/src/$(kheaders_name)
 
 # "dpkg --status mlnx-ofed-kernel-dev" prints a version line
 # like the following:

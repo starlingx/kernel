@@ -1,0 +1,62 @@
+From cbeba2c17eb7bc5a64e90eceae08908e6be16e36 Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Tue, 9 Apr 2024 07:15:18 +0000
+Subject: [PATCH 03/10] bnxt_en: fix the build errors
+
+We encounter the following two build errors.
+
+1. "page_pool_release_page" redefined.
+bnxt_en-1.10.2-227.0.130.0/bnxt_compat.h:2581: error: "page_pool_release_page"\
+ redefined [-Werror]
+ 2581 | #define page_pool_release_page(pp, page)
+      |
+In file included from /<<PKGBUILDDIR>>/bnxt_en-1.10.2-227.0.130.0/bnxt.c:80:
+bnxt_en-1.10.2-227.0.130.0/bnxt_compat.h:1893: note: this is the location of \
+ the previous definition
+ 1893 | #define page_pool_release_page(page_pool, page)
+
+2. conversion from enum cfa_tcam_mgr_device_type to enum
+   cfa_tcam_mgr_tbl_type.
+bnxt_en-1.10.2-227.0.130.0/tf_core/cfa_tcam_mgr.c:982:32: error: implicit \
+ conversion from enum cfa_tcam_mgr_device_type to enum cfa_tcam_mgr_tbl_type\
+ [-Werror=enum-conversion]
+  982 |         cfa_tcam_mgr_tbl_2_str(type),
+      |                                ^~~~
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ bnxt_en-1.10.2-227.0.130.0/bnxt_compat.h          | 4 ----
+ bnxt_en-1.10.2-227.0.130.0/tf_core/cfa_tcam_mgr.c | 2 +-
+ 2 files changed, 1 insertion(+), 5 deletions(-)
+
+diff --git a/bnxt_en-1.10.2-227.0.130.0/bnxt_compat.h b/bnxt_en-1.10.2-227.0.130.0/bnxt_compat.h
+index 652724f..df93a73 100644
+--- a/bnxt_en-1.10.2-227.0.130.0/bnxt_compat.h
++++ b/bnxt_en-1.10.2-227.0.130.0/bnxt_compat.h
+@@ -2577,10 +2577,6 @@ struct netlink_ext_ack {
+ #define skb_mark_for_recycle(skb) skb_mark_for_recycle(skb, page, rxr->page_pool)
+ #endif
+ 
+-#ifdef HAVE_SKB_MARK_RECYCLE
+-#define page_pool_release_page(pp, page)
+-#endif
+-
+ #ifdef CONFIG_BNXT_HWMON
+ #include <linux/hwmon.h>
+ #ifndef HWMON_CHANNEL_INFO
+diff --git a/bnxt_en-1.10.2-227.0.130.0/tf_core/cfa_tcam_mgr.c b/bnxt_en-1.10.2-227.0.130.0/tf_core/cfa_tcam_mgr.c
+index 08b90d4..7a0d9fc 100644
+--- a/bnxt_en-1.10.2-227.0.130.0/tf_core/cfa_tcam_mgr.c
++++ b/bnxt_en-1.10.2-227.0.130.0/tf_core/cfa_tcam_mgr.c
+@@ -979,7 +979,7 @@ int cfa_tcam_mgr_init(struct tf *tfp, enum cfa_tcam_mgr_device_type type,
+ 				netdev_dbg(tfp->bp->dev,
+ 					   "%s: %s End row is OOR(%d >= %d)\n",
+ 					   tf_dir_2_str(dir),
+-					   cfa_tcam_mgr_tbl_2_str(type),
++					   cfa_tcam_mgr_tbl_2_str((enum cfa_tcam_mgr_tbl_type)type),
+ 					   table_data->end_row,
+ 					   table_data->num_rows);
+ 				return -EFAULT;
+-- 
+2.43.0
+

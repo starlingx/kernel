@@ -1,5 +1,10 @@
 0001-bnxt_re-Makefile-Adapt-to-mlnx-ofa_kernel-for-Starli.patch
-0002-bnxt_en-bnxt_compat.h-Fix-up-a-build-failure.patch
-0003-bnxt_en-bnxt_re-Use-irq_update_affinity_hint.patch
-0004-bnxt_en-Makefile-Allow-parallelized-build.patch
-0005-bnxt_re-Fix-the-version-compatibility-issue.patch
+0002-bnxt_en-Rename-page_pool.h-to-page_pool-helpers.h.patch
+0003-bnxt_en-fix-the-build-errors.patch
+0004-bnxt_en-skb_frag_fill_page_desc-replace-of-__skb_fra.patch
+0005-bnxt_en-Drop-redundant-pci_enable_pcie_error_reporti.patch
+0006-bnxt_en-Use-64bits-for-used_keys.patch
+0007-bnxt_en-remove-module-from-class_create.patch
+0008-bnxt_en-correct-the-path-for-auxiliary_bus.h.patch
+0009-bnxt_en-bnxt_re-Use-irq_update_affinity_hint.patch
+0010-bnxt_en-Makefile-Allow-parallelized-build.patch
