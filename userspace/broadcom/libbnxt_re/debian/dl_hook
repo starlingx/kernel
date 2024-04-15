@@ -24,8 +24,8 @@
 # building.
 # Tools needed: mkdir, rm, tar
 
-DL_TARBALL=bcm_220.0.83.0.tar.gz
-SRC_TARBALL=Linux/Linux_RoCE/RoCE_Lib/libbnxt_re-220.0.5.0.tar.gz
+DL_TARBALL=bcm_227.1.111.0b.tar.gz
+SRC_TARBALL=Linux/Linux_RoCE/RoCE_Lib/libbnxt_re-227.0.130.0.tar.gz
 TMPDIR="bcm_tmp"
 
 DESTDIR="${1}"

@@ -1,7 +1,7 @@
-From c7555e5087afb22752631dd19b357d9e25cd6760 Mon Sep 17 00:00:00 2001
+From ff80107e1cca82430eceb5719bbb186e4d9ac480 Mon Sep 17 00:00:00 2001
 From: "M. Vefa Bicakci" <vefa.bicakci@windriver.com>
 Date: Fri, 15 Apr 2022 04:29:31 +0000
-Subject: [PATCH] bnxt_en/Makefile: Allow parallelized build
+Subject: [PATCH 10/10] bnxt_en/Makefile: Allow parallelized build
 
 This commit allows bnxt_en's build to be parallelized via the use of
 "$(MAKE)" instead of "make". Without this change, make for bnxt_en
@@ -13,14 +13,14 @@ manner:
 
 Signed-off-by: M. Vefa Bicakci <vefa.bicakci@windriver.com>
 ---
- bnxt_en-1.10.2-220.0.13.0/Makefile | 4 ++--
+ bnxt_en-1.10.2-227.0.130.0/Makefile | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/bnxt_en-1.10.2-220.0.13.0/Makefile b/bnxt_en-1.10.2-220.0.13.0/Makefile
-index fe2c229d17b5..52a25eb11277 100644
---- a/bnxt_en-1.10.2-220.0.13.0/Makefile
-+++ b/bnxt_en-1.10.2-220.0.13.0/Makefile
-@@ -1083,9 +1083,9 @@ endef
+diff --git a/bnxt_en-1.10.2-227.0.130.0/Makefile b/bnxt_en-1.10.2-227.0.130.0/Makefile
+index e229cc9..84c16d2 100644
+--- a/bnxt_en-1.10.2-227.0.130.0/Makefile
++++ b/bnxt_en-1.10.2-227.0.130.0/Makefile
+@@ -1364,9 +1364,9 @@ endef
  
  default:
  ifeq ($(CROSS_COMPILE),)
@@ -33,5 +33,5 @@ index fe2c229d17b5..52a25eb11277 100644
  
  yocto_all:
 -- 
-2.25.1
+2.43.0
 

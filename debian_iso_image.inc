@@ -1,8 +1,8 @@
 # List of packages to be included/installed in ISO
 
 # bnxt_en - Broadcom kernel modules
-#bnxt-en
-#bnxt-en-rt
+bnxt-en
+bnxt-en-rt
 
 #intel-i40e
 i40e
@@ -54,7 +54,7 @@ linux-perf
 #mlnx-ofa_kernel
 mlnx-ofed-kernel-modules
 mlnx-ofed-kernel-modules-rt
-#mlnx-ofed-kernel-utils
+mlnx-ofed-kernel-utils
 
 #qat20
 qat2.0.l

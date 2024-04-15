@@ -1,3 +1,11 @@
+bnxt-en (1.10.2.227.0.130.0-1) unstable; urgency=medium
+
+  * Upgrade the release of the out-of-tree bnxt_en driver to 1.10.2-227.0.130.0
+    for StarlingX. This driver corresponds to "netxtreme-bnxt_en-1.10.2-227.0.130.0.tar.gz" in
+    Broadcom's "bcm_227.1.111.0" release.
+
+ -- Jiping Ma  <jiping.ma2@windriver.com>  Mon, 08 Apr 2024 15:46:23 +0800
+
 bnxt-en (1.10.2.220.0.13.0-1) unstable; urgency=medium
 
   * Initial release of the out-of-tree bnxt_en driver for StarlingX. This

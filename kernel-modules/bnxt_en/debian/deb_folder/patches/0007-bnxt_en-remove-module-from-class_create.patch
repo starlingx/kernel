@@ -1,0 +1,49 @@
+From a3309f86fe1c3f7829b1f9673e6278f76a6e754c Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Tue, 9 Apr 2024 08:05:40 +0000
+Subject: [PATCH 07/10] bnxt_en: remove module * from class_create()
+
+This commit accommodates commit dcfbb67e48a2 ("driver core: class:
+use lock_class_key already present in struct subsys_private"),
+which removes the module pointer. This commit was merged in the
+v6.4 development cycle and causes compilation failures with the
+v6.6 kernel, which are listed below.
+
+References:
+* https://git.yoctoproject.org/linux-yocto/commit/?h=1aaba11da9aa
+* https://git.yoctoproject.org/linux-yocto/commit/?h=dcfbb67e48a2
+
+Resolved compilation errors:
+
+/usr/src/linux-headers-6.6.0-1-common/include/linux/export.h:29:22: \
+ error: passing argument 1 of class_create from incompatible pointer\
+ type [-Werror=incompatible-pointer-types]
+   29 | #define THIS_MODULE (&__this_module)
+      |                     ~^~~~~~~~~~~~~~~
+      |                      |
+      |                      struct module *
+bnxt_en-1.10.2-227.0.130.0/bnxt_lfc.c:1180:41: note: in expansion of\
+ macro THIS_MODULE
+ 1180 |  blfc_global_dev.d_class = class_create(THIS_MODULE, BNXT_LFC_DEV_NAME);
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ bnxt_en-1.10.2-227.0.130.0/bnxt_lfc.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/bnxt_en-1.10.2-227.0.130.0/bnxt_lfc.c b/bnxt_en-1.10.2-227.0.130.0/bnxt_lfc.c
+index 16fd078..09729ae 100644
+--- a/bnxt_en-1.10.2-227.0.130.0/bnxt_lfc.c
++++ b/bnxt_en-1.10.2-227.0.130.0/bnxt_lfc.c
+@@ -1177,7 +1177,7 @@ int32_t __init bnxt_lfc_init(void)
+ 		return rc;
+ 	}
+ 
+-	blfc_global_dev.d_class = class_create(THIS_MODULE, BNXT_LFC_DEV_NAME);
++	blfc_global_dev.d_class = class_create(BNXT_LFC_DEV_NAME);
+ 	if (IS_ERR(blfc_global_dev.d_class)) {
+ 		BNXT_LFC_ERR(NULL, "Class creation is failed\n");
+ 		unregister_chrdev_region(blfc_global_dev.d_dev, 1);
+-- 
+2.43.0
+
