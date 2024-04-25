@@ -52,8 +52,8 @@ linux-libc-dev
 linux-perf
 
 #mlnx-ofa_kernel
-#mlnx-ofed-kernel-modules
-#mlnx-ofed-kernel-modules-rt
+mlnx-ofed-kernel-modules
+mlnx-ofed-kernel-modules-rt
 #mlnx-ofed-kernel-utils
 
 #qat20
