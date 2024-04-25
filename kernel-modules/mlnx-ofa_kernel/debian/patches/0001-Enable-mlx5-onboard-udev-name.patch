@@ -1,4 +1,4 @@
-From 74ecb6be9dd81ff6a3c28d2d8f9e557cb76009c3 Mon Sep 17 00:00:00 2001
+From c6a43833d3b9bf97049e373d20a6eb7daff91c36 Mon Sep 17 00:00:00 2001
 From: Steven Webster <steven.webster@windriver.com>
 Date: Thu, 11 Aug 2022 12:32:48 -0400
 Subject: [PATCH] Enable mlx5 onboard udev name
@@ -18,16 +18,18 @@ slot/path name, and then being overridden by the Mellanox specific
 82-net-setup-link.rules.
 
 Signed-off-by: Steven Webster <steven.webster@windriver.com>
+[jm: Adapted the patch for context change]
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
 ---
- source/ofed_scripts/vf-net-link-name.sh | 11 ++++++++---
- 1 file changed, 8 insertions(+), 3 deletions(-)
+ ofed_scripts/vf-net-link-name.sh | 13 +++++++++----
+ 1 file changed, 9 insertions(+), 4 deletions(-)
 
 diff --git a/ofed_scripts/vf-net-link-name.sh b/ofed_scripts/vf-net-link-name.sh
-index 65d8a7b..3bf87cc 100755
+index e22ae76..1134629 100755
 --- a/ofed_scripts/vf-net-link-name.sh
 +++ b/ofed_scripts/vf-net-link-name.sh
-@@ -68,7 +68,9 @@ if [ "$ID_NET_DRIVER" == "mlx5e_rep" ]; then
- fi
+@@ -93,7 +93,9 @@ function test_if_pf() {
+ }
  
  if [ "$skip" == "0" ]; then
 -	if [ -n "$ID_NET_NAME_SLOT" ]; then
@@ -37,7 +39,7 @@ index 65d8a7b..3bf87cc 100755
  	    NAME="${ID_NET_NAME_SLOT%%np[[:digit:]]}"
  	elif [ -n "$ID_NET_NAME_PATH" ]; then
  	    NAME="${ID_NET_NAME_PATH%%np[[:digit:]]}"
-@@ -176,9 +178,12 @@ for cnt in {1..2}; do
+@@ -226,11 +228,14 @@ for cnt in {1..2}; do
              continue
          fi
  
@@ -46,12 +48,15 @@ index 65d8a7b..3bf87cc 100755
          if [ -z "$parent_path" ]; then
 -            parent_path=`get_pci_name $pci ID_NET_NAME_PATH`
 +            parent_path=`get_pci_name $pci ID_NET_NAME_SLOT`
-+            if [ -z "$parent_path" ]; then
+             if [ -z "$parent_path" ]; then
+-                continue
 +                parent_path=`get_pci_name $pci ID_NET_NAME_PATH`
-+            fi
++                if [ -z "$parent_path" ]; then
++                    continue
++		fi
+             fi
          fi
          echo "NAME=${parent_path}_$PORT"
-         exit
 -- 
-2.29.2
+2.43.0
 
