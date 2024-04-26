@@ -1,5 +1,0 @@
-COPY_LIST=" \
-  $PKG_BASE/centos/patches/* \
-  "
-
-TIS_PATCH_VER=PKG_GITREVCOUNT
