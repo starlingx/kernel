@@ -13,3 +13,4 @@
 0013-Revert-sched-idle-Move-quiet_vmstate-into-the-NOHZ-c.patch
 0014-Port-negative-dentries-limit-feature-from-3.10.patch
 0015-Add-the-pci-reboot-quirk-in-DMI-table-for-Dell-Power.patch
+0016-Add-driver-versions-for-ice-i40e-and-iavf.patch
