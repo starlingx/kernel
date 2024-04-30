@@ -1,0 +1,276 @@
+From a3db39d04808391204a836dcadcc0997c33a5556 Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Sun, 31 Mar 2024 20:13:57 -0700
+Subject: [PATCH] Add driver versions for ice, i40e and iavf
+
+As we need driver version to track driver information, add
+the necessary driver version for the Intel drivers.
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ Makefile                                       |  8 +++++++-
+ drivers/net/ethernet/intel/i40e/i40e.h         |  1 +
+ drivers/net/ethernet/intel/i40e/i40e_ethtool.c |  2 ++
+ drivers/net/ethernet/intel/i40e/i40e_main.c    | 16 ++++++++++------
+ drivers/net/ethernet/intel/iavf/iavf.h         |  1 +
+ drivers/net/ethernet/intel/iavf/iavf_ethtool.c |  1 +
+ drivers/net/ethernet/intel/iavf/iavf_main.c    |  7 ++++++-
+ drivers/net/ethernet/intel/ice/ice.h           |  1 +
+ drivers/net/ethernet/intel/ice/ice_ethtool.c   |  1 +
+ drivers/net/ethernet/intel/ice/ice_main.c      | 15 +++++++++------
+ 10 files changed, 39 insertions(+), 14 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index 504ee46be7a3..d895e81b31e5 100644
+--- a/Makefile
++++ b/Makefile
+@@ -3,6 +3,9 @@ VERSION = 6
+ PATCHLEVEL = 6
+ SUBLEVEL = 7
+ EXTRAVERSION =
++ICE_STX = "-stx.0"
++I40E_STX = "-stx.0"
++IAVF_STX = "-stx.0"
+ NAME = Hurr durr I'ma ninja sloth
+ 
+ # *DOCUMENTATION*
+@@ -1249,7 +1252,10 @@ define filechk_version.h
+ 	((c) > 255 ? 255 : (c)))';                                       \
+ 	echo \#define LINUX_VERSION_MAJOR $(VERSION);                    \
+ 	echo \#define LINUX_VERSION_PATCHLEVEL $(PATCHLEVEL);            \
+-	echo \#define LINUX_VERSION_SUBLEVEL $(SUBLEVEL)
++	echo \#define LINUX_VERSION_SUBLEVEL $(SUBLEVEL);                \
++	echo \#define LINUX_ICE_DRIVER_VERSION \"$(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(ICE_STX)\"; \
++	echo \#define LINUX_I40E_DRIVER_VERSION \"$(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(I40E_STX)\"; \
++	echo \#define LINUX_IAVF_DRIVER_VERSION \"$(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(IAVF_STX)\"
+ endef
+ 
+ ifneq ($(DISTRIBUTION_OFFICIAL_BUILD),)
+diff --git a/drivers/net/ethernet/intel/i40e/i40e.h b/drivers/net/ethernet/intel/i40e/i40e.h
+index 55bb0b5310d5..3cb6c5c2f96b 100644
+--- a/drivers/net/ethernet/intel/i40e/i40e.h
++++ b/drivers/net/ethernet/intel/i40e/i40e.h
+@@ -1128,6 +1128,7 @@ static inline u32 i40e_get_pf_count(struct i40e_hw *hw)
+ int i40e_up(struct i40e_vsi *vsi);
+ void i40e_down(struct i40e_vsi *vsi);
+ extern const char i40e_driver_name[];
++extern const char i40e_driver_version_str[];
+ void i40e_do_reset_safe(struct i40e_pf *pf, u32 reset_flags);
+ void i40e_do_reset(struct i40e_pf *pf, u32 reset_flags, bool lock_acquired);
+ int i40e_config_rss(struct i40e_vsi *vsi, u8 *seed, u8 *lut, u16 lut_size);
+diff --git a/drivers/net/ethernet/intel/i40e/i40e_ethtool.c b/drivers/net/ethernet/intel/i40e/i40e_ethtool.c
+index bd1321bf7e26..3f672eeb23a6 100644
+--- a/drivers/net/ethernet/intel/i40e/i40e_ethtool.c
++++ b/drivers/net/ethernet/intel/i40e/i40e_ethtool.c
+@@ -2004,6 +2004,8 @@ static void i40e_get_drvinfo(struct net_device *netdev,
+ 	struct i40e_pf *pf = vsi->back;
+ 
+ 	strscpy(drvinfo->driver, i40e_driver_name, sizeof(drvinfo->driver));
++	strlcpy(drvinfo->version, i40e_driver_version_str,
++		sizeof(drvinfo->version));
+ 	strscpy(drvinfo->fw_version, i40e_nvm_version_str(&pf->hw),
+ 		sizeof(drvinfo->fw_version));
+ 	strscpy(drvinfo->bus_info, pci_name(pf->pdev),
+diff --git a/drivers/net/ethernet/intel/i40e/i40e_main.c b/drivers/net/ethernet/intel/i40e/i40e_main.c
+index a9f5a8a7d3f0..e35eb15896f2 100644
+--- a/drivers/net/ethernet/intel/i40e/i40e_main.c
++++ b/drivers/net/ethernet/intel/i40e/i40e_main.c
+@@ -5,8 +5,8 @@
+ #include <linux/of_net.h>
+ #include <linux/pci.h>
+ #include <linux/bpf.h>
+-#include <generated/utsrelease.h>
+ #include <linux/crash_dump.h>
++#include <linux/version.h>
+ 
+ /* Local includes */
+ #include "i40e.h"
+@@ -25,6 +25,8 @@ const char i40e_driver_name[] = "i40e";
+ static const char i40e_driver_string[] =
+ 			"Intel(R) Ethernet Connection XL710 Network Driver";
+ 
++#define DRV_VERSION    LINUX_I40E_DRIVER_VERSION
++const char i40e_driver_version_str[] = DRV_VERSION;
+ static const char i40e_copyright[] = "Copyright (c) 2013 - 2019 Intel Corporation.";
+ 
+ /* a bit of forward declarations */
+@@ -98,6 +100,7 @@ MODULE_PARM_DESC(debug, "Debug level (0=none,...,16=all), Debug mask (0x8XXXXXXX
+ MODULE_AUTHOR("Intel Corporation, <e1000-devel@lists.sourceforge.net>");
+ MODULE_DESCRIPTION("Intel(R) Ethernet Connection XL710 Network Driver");
+ MODULE_LICENSE("GPL v2");
++MODULE_VERSION(DRV_VERSION);
+ 
+ static struct workqueue_struct *i40e_wq;
+ 
+@@ -10739,11 +10742,11 @@ static void i40e_send_version(struct i40e_pf *pf)
+ {
+ 	struct i40e_driver_version dv;
+ 
+-	dv.major_version = 0xff;
+-	dv.minor_version = 0xff;
+-	dv.build_version = 0xff;
++	dv.major_version = LINUX_VERSION_MAJOR;
++	dv.minor_version = LINUX_VERSION_PATCHLEVEL;
++	dv.build_version = LINUX_VERSION_SUBLEVEL;
+ 	dv.subbuild_version = 0;
+-	strscpy(dv.driver_string, UTS_RELEASE, sizeof(dv.driver_string));
++	strscpy(dv.driver_string, DRV_VERSION, sizeof(dv.driver_string));
+ 	i40e_aq_send_driver_version(&pf->hw, &dv, NULL);
+ }
+ 
+@@ -16722,7 +16725,8 @@ static int __init i40e_init_module(void)
+ {
+ 	int err;
+ 
+-	pr_info("%s: %s\n", i40e_driver_name, i40e_driver_string);
++	pr_info("%s: %s - version %s\n", i40e_driver_name,
++		i40e_driver_string, i40e_driver_version_str);
+ 	pr_info("%s: %s\n", i40e_driver_name, i40e_copyright);
+ 
+ 	/* There is no need to throttle the number of active tasks because
+diff --git a/drivers/net/ethernet/intel/iavf/iavf.h b/drivers/net/ethernet/intel/iavf/iavf.h
+index d8d7b62ceb24..9ee55faaeb65 100644
+--- a/drivers/net/ethernet/intel/iavf/iavf.h
++++ b/drivers/net/ethernet/intel/iavf/iavf.h
+@@ -467,6 +467,7 @@ struct iavf_device {
+ 
+ /* needed by iavf_ethtool.c */
+ extern char iavf_driver_name[];
++extern const char iavf_driver_version[];
+ 
+ static inline const char *iavf_state_str(enum iavf_state_t state)
+ {
+diff --git a/drivers/net/ethernet/intel/iavf/iavf_ethtool.c b/drivers/net/ethernet/intel/iavf/iavf_ethtool.c
+index 1b412754aa42..ac5c5c20e24d 100644
+--- a/drivers/net/ethernet/intel/iavf/iavf_ethtool.c
++++ b/drivers/net/ethernet/intel/iavf/iavf_ethtool.c
+@@ -585,6 +585,7 @@ static void iavf_get_drvinfo(struct net_device *netdev,
+ 	struct iavf_adapter *adapter = netdev_priv(netdev);
+ 
+ 	strscpy(drvinfo->driver, iavf_driver_name, 32);
++	strlcpy(drvinfo->version, iavf_driver_version, 32);
+ 	strscpy(drvinfo->fw_version, "N/A", 4);
+ 	strscpy(drvinfo->bus_info, pci_name(adapter->pdev), 32);
+ 	drvinfo->n_priv_flags = IAVF_PRIV_FLAGS_STR_LEN;
+diff --git a/drivers/net/ethernet/intel/iavf/iavf_main.c b/drivers/net/ethernet/intel/iavf/iavf_main.c
+index 68783a7b7096..1823a62e277b 100644
+--- a/drivers/net/ethernet/intel/iavf/iavf_main.c
++++ b/drivers/net/ethernet/intel/iavf/iavf_main.c
+@@ -1,6 +1,7 @@
+ // SPDX-License-Identifier: GPL-2.0
+ /* Copyright(c) 2013 - 2018 Intel Corporation. */
+ 
++#include <linux/version.h>
+ #include "iavf.h"
+ #include "iavf_prototype.h"
+ #include "iavf_client.h"
+@@ -21,6 +22,8 @@ char iavf_driver_name[] = "iavf";
+ static const char iavf_driver_string[] =
+ 	"Intel(R) Ethernet Adaptive Virtual Function Network Driver";
+ 
++#define DRV_VERSION	LINUX_IAVF_DRIVER_VERSION
++const char iavf_driver_version[] = DRV_VERSION;
+ static const char iavf_copyright[] =
+ 	"Copyright (c) 2013 - 2018 Intel Corporation.";
+ 
+@@ -47,6 +50,7 @@ MODULE_ALIAS("i40evf");
+ MODULE_AUTHOR("Intel Corporation, <linux.nics@intel.com>");
+ MODULE_DESCRIPTION("Intel(R) Ethernet Adaptive Virtual Function Network Driver");
+ MODULE_LICENSE("GPL v2");
++MODULE_VERSION(DRV_VERSION);
+ 
+ static const struct net_device_ops iavf_netdev_ops;
+ 
+@@ -5239,7 +5243,8 @@ static struct pci_driver iavf_driver = {
+  **/
+ static int __init iavf_init_module(void)
+ {
+-	pr_info("iavf: %s\n", iavf_driver_string);
++	pr_info("iavf: %s - version %s\n", iavf_driver_string,
++		iavf_driver_version);
+ 
+ 	pr_info("%s\n", iavf_copyright);
+ 
+diff --git a/drivers/net/ethernet/intel/ice/ice.h b/drivers/net/ethernet/intel/ice/ice.h
+index 5022b036ca4f..e0123dbd3dbc 100644
+--- a/drivers/net/ethernet/intel/ice/ice.h
++++ b/drivers/net/ethernet/intel/ice/ice.h
+@@ -77,6 +77,7 @@
+ #include "ice_gnss.h"
+ #include "ice_irq.h"
+ 
++extern const char ice_drv_ver[];
+ #define ICE_BAR0		0
+ #define ICE_REQ_DESC_MULTIPLE	32
+ #define ICE_MIN_NUM_DESC	64
+diff --git a/drivers/net/ethernet/intel/ice/ice_ethtool.c b/drivers/net/ethernet/intel/ice/ice_ethtool.c
+index ad4d4702129f..c31cd3a1610e 100644
+--- a/drivers/net/ethernet/intel/ice/ice_ethtool.c
++++ b/drivers/net/ethernet/intel/ice/ice_ethtool.c
+@@ -358,6 +358,7 @@ __ice_get_drvinfo(struct net_device *netdev, struct ethtool_drvinfo *drvinfo,
+ 	orom = &hw->flash.orom;
+ 
+ 	strscpy(drvinfo->driver, KBUILD_MODNAME, sizeof(drvinfo->driver));
++	strscpy(drvinfo->version, ice_drv_ver, sizeof(drvinfo->version));
+ 
+ 	/* Display NVM version (from which the firmware version can be
+ 	 * determined) which contains more pertinent information.
+diff --git a/drivers/net/ethernet/intel/ice/ice_main.c b/drivers/net/ethernet/intel/ice/ice_main.c
+index 7784135160fd..945a2d0333bf 100644
+--- a/drivers/net/ethernet/intel/ice/ice_main.c
++++ b/drivers/net/ethernet/intel/ice/ice_main.c
+@@ -5,7 +5,7 @@
+ 
+ #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
+ 
+-#include <generated/utsrelease.h>
++#include <linux/version.h>
+ #include <linux/crash_dump.h>
+ #include "ice.h"
+ #include "ice_base.h"
+@@ -25,7 +25,9 @@
+ #include "ice_vsi_vlan_ops.h"
+ #include <net/xdp_sock_drv.h>
+ 
++#define DRV_VERSION    LINUX_ICE_DRIVER_VERSION
+ #define DRV_SUMMARY	"Intel(R) Ethernet Connection E800 Series Linux Driver"
++const char ice_drv_ver[] = DRV_VERSION;
+ static const char ice_driver_string[] = DRV_SUMMARY;
+ static const char ice_copyright[] = "Copyright (c) 2018, Intel Corporation.";
+ 
+@@ -36,6 +38,7 @@ static const char ice_copyright[] = "Copyright (c) 2018, Intel Corporation.";
+ MODULE_AUTHOR("Intel Corporation, <linux.nics@intel.com>");
+ MODULE_DESCRIPTION(DRV_SUMMARY);
+ MODULE_LICENSE("GPL v2");
++MODULE_VERSION(DRV_VERSION);
+ MODULE_FIRMWARE(ICE_DDP_PKG_FILE);
+ 
+ static int debug = -1;
+@@ -4188,11 +4191,11 @@ static int ice_send_version(struct ice_pf *pf)
+ {
+ 	struct ice_driver_ver dv;
+ 
+-	dv.major_ver = 0xff;
+-	dv.minor_ver = 0xff;
+-	dv.build_ver = 0xff;
++	dv.major_ver = LINUX_VERSION_MAJOR;
++	dv.minor_ver = LINUX_VERSION_PATCHLEVEL;
++	dv.build_ver = LINUX_VERSION_SUBLEVEL;
+ 	dv.subbuild_ver = 0;
+-	strscpy((char *)dv.driver_string, UTS_RELEASE,
++	strscpy((char *)dv.driver_string, DRV_VERSION,
+ 		sizeof(dv.driver_string));
+ 	return ice_aq_send_driver_ver(&pf->hw, &dv, NULL);
+ }
+@@ -5642,7 +5645,7 @@ static int __init ice_module_init(void)
+ {
+ 	int status = -ENOMEM;
+ 
+-	pr_info("%s\n", ice_driver_string);
++	pr_info("%s - version %s\n", ice_driver_string, ice_drv_ver);
+ 	pr_info("%s\n", ice_copyright);
+ 
+ 	ice_wq = alloc_workqueue("%s", 0, 0, KBUILD_MODNAME);
+-- 
+2.42.0
+
