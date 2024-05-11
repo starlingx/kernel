@@ -1,0 +1,82 @@
+From 41770f71d22c46f30887d286512d2ab352c09e07 Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Fri, 10 May 2024 20:24:31 -0700
+Subject: [PATCH] ice: Use irq_update_affinity_hint
+
+This commit makes the ice device driver use the irq_update_affinity_hint
+function instead of the irq_set_affinity_hint function. This is done
+because the latter function sets the IRQ CPU affinities, whereas the
+former does not, and this allows the use of the default IRQ affinity CPU
+mask provided via the irqaffinity= kernel command line option.
+
+Please note that this patch was not cherry-picked from an upstream
+commit. The changes have been inspired by the i40e and iavf device
+driver patches in the following patch series:
+  https://lore.kernel.org/netdev/20210903152430.244937-1-nitesh@redhat.com/t/#u
+
+The aforementioned patches have been mainlined as of this writing with
+the following merge commit by Linus Torvalds:
+  https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=147cc5838c0f5c76e908b816e924ca378e0d4735
+
+And the i40e and iavf patches are accessible at:
+  https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=d34c54d1739c2cdf2e4437b74e6da269147f4987
+  https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=0f9744f4ed539f2e847d7ed41993b243e3ba5cff
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ Makefile                                  | 2 +-
+ drivers/net/ethernet/intel/ice/ice_lib.c  | 2 +-
+ drivers/net/ethernet/intel/ice/ice_main.c | 4 ++--
+ 3 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index d895e81b31e5..ceadc649baf2 100644
+--- a/Makefile
++++ b/Makefile
+@@ -3,7 +3,7 @@ VERSION = 6
+ PATCHLEVEL = 6
+ SUBLEVEL = 7
+ EXTRAVERSION =
+-ICE_STX = "-stx.0"
++ICE_STX = "-stx.1"
+ I40E_STX = "-stx.0"
+ IAVF_STX = "-stx.0"
+ NAME = Hurr durr I'ma ninja sloth
+diff --git a/drivers/net/ethernet/intel/ice/ice_lib.c b/drivers/net/ethernet/intel/ice/ice_lib.c
+index 73bbf06a76db..7d1346ffae8f 100644
+--- a/drivers/net/ethernet/intel/ice/ice_lib.c
++++ b/drivers/net/ethernet/intel/ice/ice_lib.c
+@@ -2771,7 +2771,7 @@ void ice_vsi_free_irq(struct ice_vsi *vsi)
+ 			irq_set_affinity_notifier(irq_num, NULL);
+ 
+ 		/* clear the affinity_mask in the IRQ descriptor */
+-		irq_set_affinity_hint(irq_num, NULL);
++		irq_update_affinity_hint(irq_num, NULL);
+ 		synchronize_irq(irq_num);
+ 		devm_free_irq(ice_pf_to_dev(pf), irq_num, vsi->q_vectors[i]);
+ 	}
+diff --git a/drivers/net/ethernet/intel/ice/ice_main.c b/drivers/net/ethernet/intel/ice/ice_main.c
+index 945a2d0333bf..de5032383c5c 100644
+--- a/drivers/net/ethernet/intel/ice/ice_main.c
++++ b/drivers/net/ethernet/intel/ice/ice_main.c
+@@ -2556,7 +2556,7 @@ static int ice_vsi_req_irq_msix(struct ice_vsi *vsi, char *basename)
+ 		}
+ 
+ 		/* assign the mask for this irq */
+-		irq_set_affinity_hint(irq_num, &q_vector->affinity_mask);
++		irq_update_affinity_hint(irq_num, &q_vector->affinity_mask);
+ 	}
+ 
+ 	err = ice_set_cpu_rx_rmap(vsi);
+@@ -2574,7 +2574,7 @@ static int ice_vsi_req_irq_msix(struct ice_vsi *vsi, char *basename)
+ 		irq_num = vsi->q_vectors[vector]->irq.virq;
+ 		if (!IS_ENABLED(CONFIG_RFS_ACCEL))
+ 			irq_set_affinity_notifier(irq_num, NULL);
+-		irq_set_affinity_hint(irq_num, NULL);
++		irq_update_affinity_hint(irq_num, NULL);
+ 		devm_free_irq(dev, irq_num, &vsi->q_vectors[vector]);
+ 	}
+ 	return err;
+-- 
+2.42.0
+

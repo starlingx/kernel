@@ -14,3 +14,4 @@
 0014-Port-negative-dentries-limit-feature-from-3.10.patch
 0015-Add-the-pci-reboot-quirk-in-DMI-table-for-Dell-Power.patch
 0016-Add-driver-versions-for-ice-i40e-and-iavf.patch
+0017-ice-Use-irq_update_affinity_hint.patch
