@@ -1,3 +1,9 @@
+iqvlinux (1.2.0.21-1) unstable; urgency=medium
+
+  * Upgrade the version to 1.2.0.21 from 1.2.0.19.
+
+ --  Jiping Ma <jiping.ma2@windriver.com>  Mon, 11 Jun 2024 10:09:39 +0800
+
 iqvlinux (1.2.0.19-1) unstable; urgency=medium
 
   * Initial release
