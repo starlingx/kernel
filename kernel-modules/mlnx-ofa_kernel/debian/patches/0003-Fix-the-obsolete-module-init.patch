@@ -1,0 +1,44 @@
+From 04b9a5dd72f61d9664882b61c8864dd5faa8415b Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Tue, 25 Jun 2024 02:58:29 +0000
+Subject: [PATCH] Fix the obsolete module init
+
+Update module init call to use kernel provided macros, such
+that they gain correct IBT attributes.
+
+We encouter the following error during load the module mlx_compat.
+"Missing ENDBR: __init_backport+0x0/0xff0 [mlx_compat]"
+
+Reported-by: Guilherme Batista Leite <guilhermebatista.leite@windriver.com>
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ include/linux/compat-2.6.h | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/include/linux/compat-2.6.h b/include/linux/compat-2.6.h
+index 5446d9a..8df7ce9 100644
+--- a/include/linux/compat-2.6.h
++++ b/include/linux/compat-2.6.h
+@@ -49,14 +49,15 @@ void mlx_backport_dependency_symbol(void);
+ #endif
+ 
+ #undef module_init
+-#define module_init(initfn)                                             \
++#define module_init(initfn)                                     	\
+ 	static int __init __init_backport(void)                         \
+ 	{                                                               \
+-		mlx_backport_dependency_symbol();                           \
++		mlx_backport_dependency_symbol();                       \
+ 		return initfn();                                        \
+ 	}                                                               \
+-	int init_module(void)  __copy(initfn)  __attribute__((alias("__init_backport")));
+-
++	int init_module(void)  __copy(initfn) 				\
++		__attribute__((alias("__init_backport"))); 		\
++        ___ADDRESSABLE(init_module, __initdata);
+ 
+ /*
+  * Each compat file represents compatibility code for new kernel
+-- 
+2.43.0
+
