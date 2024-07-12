@@ -15,4 +15,3 @@
 0015-Add-the-pci-reboot-quirk-in-DMI-table-for-Dell-Power.patch
 0016-Add-driver-versions-for-ice-i40e-and-iavf.patch
 0017-ice-Use-irq_update_affinity_hint.patch
-0018-SUNRPC-use-request-size-to-initialize-bio_vec-in-svc.patch

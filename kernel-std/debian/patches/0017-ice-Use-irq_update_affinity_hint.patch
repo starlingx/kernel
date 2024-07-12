@@ -1,4 +1,4 @@
-From 41770f71d22c46f30887d286512d2ab352c09e07 Mon Sep 17 00:00:00 2001
+From 6cdb8d6b6ca8d1cdc7e7f6dbc2469fb81fc4062e Mon Sep 17 00:00:00 2001
 From: Jiping Ma <jiping.ma2@windriver.com>
 Date: Fri, 10 May 2024 20:24:31 -0700
 Subject: [PATCH] ice: Use irq_update_affinity_hint
@@ -25,49 +25,26 @@ And the i40e and iavf patches are accessible at:
 Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
 ---
  Makefile                                  | 2 +-
- drivers/net/ethernet/intel/ice/ice_lib.c  | 2 +-
- drivers/net/ethernet/intel/ice/ice_main.c | 4 ++--
- 3 files changed, 4 insertions(+), 4 deletions(-)
+ drivers/net/ethernet/intel/ice/ice_main.c | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/Makefile b/Makefile
-index d895e81b31e5..ceadc649baf2 100644
+index 2235636756b9..b545b2a4e667 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -3,7 +3,7 @@ VERSION = 6
- PATCHLEVEL = 6
- SUBLEVEL = 7
- EXTRAVERSION =
+@@ -1227,7 +1227,7 @@ uapi-asm-generic:
+ 
+ # KERNELRELEASE can change from a few different places, meaning version.h
+ # needs to be updated, so this check is forced on all builds
 -ICE_STX = "-stx.0"
 +ICE_STX = "-stx.1"
  I40E_STX = "-stx.0"
  IAVF_STX = "-stx.0"
- NAME = Hurr durr I'ma ninja sloth
-diff --git a/drivers/net/ethernet/intel/ice/ice_lib.c b/drivers/net/ethernet/intel/ice/ice_lib.c
-index 73bbf06a76db..7d1346ffae8f 100644
---- a/drivers/net/ethernet/intel/ice/ice_lib.c
-+++ b/drivers/net/ethernet/intel/ice/ice_lib.c
-@@ -2771,7 +2771,7 @@ void ice_vsi_free_irq(struct ice_vsi *vsi)
- 			irq_set_affinity_notifier(irq_num, NULL);
  
- 		/* clear the affinity_mask in the IRQ descriptor */
--		irq_set_affinity_hint(irq_num, NULL);
-+		irq_update_affinity_hint(irq_num, NULL);
- 		synchronize_irq(irq_num);
- 		devm_free_irq(ice_pf_to_dev(pf), irq_num, vsi->q_vectors[i]);
- 	}
 diff --git a/drivers/net/ethernet/intel/ice/ice_main.c b/drivers/net/ethernet/intel/ice/ice_main.c
-index 945a2d0333bf..de5032383c5c 100644
+index 149984fb8ab0..c5ef2f422c34 100644
 --- a/drivers/net/ethernet/intel/ice/ice_main.c
 +++ b/drivers/net/ethernet/intel/ice/ice_main.c
-@@ -2556,7 +2556,7 @@ static int ice_vsi_req_irq_msix(struct ice_vsi *vsi, char *basename)
- 		}
- 
- 		/* assign the mask for this irq */
--		irq_set_affinity_hint(irq_num, &q_vector->affinity_mask);
-+		irq_update_affinity_hint(irq_num, &q_vector->affinity_mask);
- 	}
- 
- 	err = ice_set_cpu_rx_rmap(vsi);
 @@ -2574,7 +2574,7 @@ static int ice_vsi_req_irq_msix(struct ice_vsi *vsi, char *basename)
  		irq_num = vsi->q_vectors[vector]->irq.virq;
  		if (!IS_ENABLED(CONFIG_RFS_ACCEL))
@@ -78,5 +55,5 @@ index 945a2d0333bf..de5032383c5c 100644
  	}
  	return err;
 -- 
-2.42.0
+2.43.0
 

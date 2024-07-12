@@ -1,4 +1,4 @@
-From a3db39d04808391204a836dcadcc0997c33a5556 Mon Sep 17 00:00:00 2001
+From b866d25ee24d62641b9e16a509d08ed4a4e0e1c7 Mon Sep 17 00:00:00 2001
 From: Jiping Ma <jiping.ma2@windriver.com>
 Date: Sun, 31 Mar 2024 20:13:57 -0700
 Subject: [PATCH] Add driver versions for ice, i40e and iavf
@@ -14,43 +14,43 @@ Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
  drivers/net/ethernet/intel/i40e/i40e_main.c    | 16 ++++++++++------
  drivers/net/ethernet/intel/iavf/iavf.h         |  1 +
  drivers/net/ethernet/intel/iavf/iavf_ethtool.c |  1 +
- drivers/net/ethernet/intel/iavf/iavf_main.c    |  7 ++++++-
+ drivers/net/ethernet/intel/iavf/iavf_main.c    |  8 ++++++--
  drivers/net/ethernet/intel/ice/ice.h           |  1 +
  drivers/net/ethernet/intel/ice/ice_ethtool.c   |  1 +
  drivers/net/ethernet/intel/ice/ice_main.c      | 15 +++++++++------
- 10 files changed, 39 insertions(+), 14 deletions(-)
+ 10 files changed, 39 insertions(+), 15 deletions(-)
 
 diff --git a/Makefile b/Makefile
-index 504ee46be7a3..d895e81b31e5 100644
+index 8ed7620308d1..2235636756b9 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -3,6 +3,9 @@ VERSION = 6
- PATCHLEVEL = 6
- SUBLEVEL = 7
- EXTRAVERSION =
+@@ -1227,6 +1227,9 @@ uapi-asm-generic:
+ 
+ # KERNELRELEASE can change from a few different places, meaning version.h
+ # needs to be updated, so this check is forced on all builds
 +ICE_STX = "-stx.0"
 +I40E_STX = "-stx.0"
 +IAVF_STX = "-stx.0"
- NAME = Hurr durr I'ma ninja sloth
  
- # *DOCUMENTATION*
+ uts_len := 64
+ define filechk_utsrelease.h
 @@ -1249,7 +1252,10 @@ define filechk_version.h
  	((c) > 255 ? 255 : (c)))';                                       \
  	echo \#define LINUX_VERSION_MAJOR $(VERSION);                    \
  	echo \#define LINUX_VERSION_PATCHLEVEL $(PATCHLEVEL);            \
 -	echo \#define LINUX_VERSION_SUBLEVEL $(SUBLEVEL)
 +	echo \#define LINUX_VERSION_SUBLEVEL $(SUBLEVEL);                \
-+	echo \#define LINUX_ICE_DRIVER_VERSION \"$(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(ICE_STX)\"; \
++	echo \#define LINUX_ICE_DRIVER_VERSION \"$(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(ICE_STX)\";   \
 +	echo \#define LINUX_I40E_DRIVER_VERSION \"$(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(I40E_STX)\"; \
 +	echo \#define LINUX_IAVF_DRIVER_VERSION \"$(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(IAVF_STX)\"
  endef
  
  ifneq ($(DISTRIBUTION_OFFICIAL_BUILD),)
 diff --git a/drivers/net/ethernet/intel/i40e/i40e.h b/drivers/net/ethernet/intel/i40e/i40e.h
-index 55bb0b5310d5..3cb6c5c2f96b 100644
+index 3e6839ac1f0f..a72be4e1b318 100644
 --- a/drivers/net/ethernet/intel/i40e/i40e.h
 +++ b/drivers/net/ethernet/intel/i40e/i40e.h
-@@ -1128,6 +1128,7 @@ static inline u32 i40e_get_pf_count(struct i40e_hw *hw)
+@@ -1102,6 +1102,7 @@ static inline u32 i40e_get_pf_count(struct i40e_hw *hw)
  int i40e_up(struct i40e_vsi *vsi);
  void i40e_down(struct i40e_vsi *vsi);
  extern const char i40e_driver_name[];
@@ -59,33 +59,38 @@ index 55bb0b5310d5..3cb6c5c2f96b 100644
  void i40e_do_reset(struct i40e_pf *pf, u32 reset_flags, bool lock_acquired);
  int i40e_config_rss(struct i40e_vsi *vsi, u8 *seed, u8 *lut, u16 lut_size);
 diff --git a/drivers/net/ethernet/intel/i40e/i40e_ethtool.c b/drivers/net/ethernet/intel/i40e/i40e_ethtool.c
-index bd1321bf7e26..3f672eeb23a6 100644
+index 4e90570ba780..d6a019b27add 100644
 --- a/drivers/net/ethernet/intel/i40e/i40e_ethtool.c
 +++ b/drivers/net/ethernet/intel/i40e/i40e_ethtool.c
-@@ -2004,6 +2004,8 @@ static void i40e_get_drvinfo(struct net_device *netdev,
+@@ -2005,6 +2005,8 @@ static void i40e_get_drvinfo(struct net_device *netdev,
  	struct i40e_pf *pf = vsi->back;
  
  	strscpy(drvinfo->driver, i40e_driver_name, sizeof(drvinfo->driver));
 +	strlcpy(drvinfo->version, i40e_driver_version_str,
-+		sizeof(drvinfo->version));
++			sizeof(drvinfo->version));
  	strscpy(drvinfo->fw_version, i40e_nvm_version_str(&pf->hw),
  		sizeof(drvinfo->fw_version));
  	strscpy(drvinfo->bus_info, pci_name(pf->pdev),
 diff --git a/drivers/net/ethernet/intel/i40e/i40e_main.c b/drivers/net/ethernet/intel/i40e/i40e_main.c
-index a9f5a8a7d3f0..e35eb15896f2 100644
+index f8d1a994c2f6..b8043e8cb9e2 100644
 --- a/drivers/net/ethernet/intel/i40e/i40e_main.c
 +++ b/drivers/net/ethernet/intel/i40e/i40e_main.c
-@@ -5,8 +5,8 @@
- #include <linux/of_net.h>
- #include <linux/pci.h>
- #include <linux/bpf.h>
+@@ -1,13 +1,13 @@
+ // SPDX-License-Identifier: GPL-2.0
+ /* Copyright(c) 2013 - 2021 Intel Corporation. */
+ 
 -#include <generated/utsrelease.h>
  #include <linux/crash_dump.h>
+ #include <linux/if_bridge.h>
+ #include <linux/if_macvlan.h>
+ #include <linux/module.h>
+ #include <net/pkt_cls.h>
+ #include <net/xdp_sock_drv.h>
 +#include <linux/version.h>
  
  /* Local includes */
  #include "i40e.h"
-@@ -25,6 +25,8 @@ const char i40e_driver_name[] = "i40e";
+@@ -28,6 +28,8 @@ const char i40e_driver_name[] = "i40e";
  static const char i40e_driver_string[] =
  			"Intel(R) Ethernet Connection XL710 Network Driver";
  
@@ -94,7 +99,7 @@ index a9f5a8a7d3f0..e35eb15896f2 100644
  static const char i40e_copyright[] = "Copyright (c) 2013 - 2019 Intel Corporation.";
  
  /* a bit of forward declarations */
-@@ -98,6 +100,7 @@ MODULE_PARM_DESC(debug, "Debug level (0=none,...,16=all), Debug mask (0x8XXXXXXX
+@@ -101,6 +103,7 @@ MODULE_PARM_DESC(debug, "Debug level (0=none,...,16=all), Debug mask (0x8XXXXXXX
  MODULE_AUTHOR("Intel Corporation, <e1000-devel@lists.sourceforge.net>");
  MODULE_DESCRIPTION("Intel(R) Ethernet Connection XL710 Network Driver");
  MODULE_LICENSE("GPL v2");
@@ -102,7 +107,7 @@ index a9f5a8a7d3f0..e35eb15896f2 100644
  
  static struct workqueue_struct *i40e_wq;
  
-@@ -10739,11 +10742,11 @@ static void i40e_send_version(struct i40e_pf *pf)
+@@ -10783,11 +10786,11 @@ static void i40e_send_version(struct i40e_pf *pf)
  {
  	struct i40e_driver_version dv;
  
@@ -118,7 +123,7 @@ index a9f5a8a7d3f0..e35eb15896f2 100644
  	i40e_aq_send_driver_version(&pf->hw, &dv, NULL);
  }
  
-@@ -16722,7 +16725,8 @@ static int __init i40e_init_module(void)
+@@ -16768,7 +16771,8 @@ static int __init i40e_init_module(void)
  {
  	int err;
  
@@ -129,10 +134,10 @@ index a9f5a8a7d3f0..e35eb15896f2 100644
  
  	/* There is no need to throttle the number of active tasks because
 diff --git a/drivers/net/ethernet/intel/iavf/iavf.h b/drivers/net/ethernet/intel/iavf/iavf.h
-index d8d7b62ceb24..9ee55faaeb65 100644
+index 431d9d62c8c6..fec2e5bb77df 100644
 --- a/drivers/net/ethernet/intel/iavf/iavf.h
 +++ b/drivers/net/ethernet/intel/iavf/iavf.h
-@@ -467,6 +467,7 @@ struct iavf_device {
+@@ -468,6 +468,7 @@ struct iavf_device {
  
  /* needed by iavf_ethtool.c */
  extern char iavf_driver_name[];
@@ -141,10 +146,10 @@ index d8d7b62ceb24..9ee55faaeb65 100644
  static inline const char *iavf_state_str(enum iavf_state_t state)
  {
 diff --git a/drivers/net/ethernet/intel/iavf/iavf_ethtool.c b/drivers/net/ethernet/intel/iavf/iavf_ethtool.c
-index 1b412754aa42..ac5c5c20e24d 100644
+index 1ac97bd606e3..204f8305f728 100644
 --- a/drivers/net/ethernet/intel/iavf/iavf_ethtool.c
 +++ b/drivers/net/ethernet/intel/iavf/iavf_ethtool.c
-@@ -585,6 +585,7 @@ static void iavf_get_drvinfo(struct net_device *netdev,
+@@ -586,6 +586,7 @@ static void iavf_get_drvinfo(struct net_device *netdev,
  	struct iavf_adapter *adapter = netdev_priv(netdev);
  
  	strscpy(drvinfo->driver, iavf_driver_name, 32);
@@ -153,7 +158,7 @@ index 1b412754aa42..ac5c5c20e24d 100644
  	strscpy(drvinfo->bus_info, pci_name(adapter->pdev), 32);
  	drvinfo->n_priv_flags = IAVF_PRIV_FLAGS_STR_LEN;
 diff --git a/drivers/net/ethernet/intel/iavf/iavf_main.c b/drivers/net/ethernet/intel/iavf/iavf_main.c
-index 68783a7b7096..1823a62e277b 100644
+index ce0b91999526..10a96793c123 100644
 --- a/drivers/net/ethernet/intel/iavf/iavf_main.c
 +++ b/drivers/net/ethernet/intel/iavf/iavf_main.c
 @@ -1,6 +1,7 @@
@@ -168,7 +173,7 @@ index 68783a7b7096..1823a62e277b 100644
  static const char iavf_driver_string[] =
  	"Intel(R) Ethernet Adaptive Virtual Function Network Driver";
  
-+#define DRV_VERSION	LINUX_IAVF_DRIVER_VERSION
++#define DRV_VERSION    LINUX_IAVF_DRIVER_VERSION
 +const char iavf_driver_version[] = DRV_VERSION;
  static const char iavf_copyright[] =
  	"Copyright (c) 2013 - 2018 Intel Corporation.";
@@ -181,18 +186,19 @@ index 68783a7b7096..1823a62e277b 100644
  
  static const struct net_device_ops iavf_netdev_ops;
  
-@@ -5239,7 +5243,8 @@ static struct pci_driver iavf_driver = {
+@@ -5326,8 +5330,8 @@ static struct pci_driver iavf_driver = {
   **/
  static int __init iavf_init_module(void)
  {
 -	pr_info("iavf: %s\n", iavf_driver_string);
+-
 +	pr_info("iavf: %s - version %s\n", iavf_driver_string,
-+		iavf_driver_version);
- 
++			iavf_driver_version);
  	pr_info("%s\n", iavf_copyright);
  
+ 	return pci_register_driver(&iavf_driver);
 diff --git a/drivers/net/ethernet/intel/ice/ice.h b/drivers/net/ethernet/intel/ice/ice.h
-index 5022b036ca4f..e0123dbd3dbc 100644
+index c7962f322db2..2695794a5df7 100644
 --- a/drivers/net/ethernet/intel/ice/ice.h
 +++ b/drivers/net/ethernet/intel/ice/ice.h
 @@ -77,6 +77,7 @@
@@ -204,7 +210,7 @@ index 5022b036ca4f..e0123dbd3dbc 100644
  #define ICE_REQ_DESC_MULTIPLE	32
  #define ICE_MIN_NUM_DESC	64
 diff --git a/drivers/net/ethernet/intel/ice/ice_ethtool.c b/drivers/net/ethernet/intel/ice/ice_ethtool.c
-index ad4d4702129f..c31cd3a1610e 100644
+index 39b5f24be7e4..456cf4785c74 100644
 --- a/drivers/net/ethernet/intel/ice/ice_ethtool.c
 +++ b/drivers/net/ethernet/intel/ice/ice_ethtool.c
 @@ -358,6 +358,7 @@ __ice_get_drvinfo(struct net_device *netdev, struct ethtool_drvinfo *drvinfo,
@@ -216,7 +222,7 @@ index ad4d4702129f..c31cd3a1610e 100644
  	/* Display NVM version (from which the firmware version can be
  	 * determined) which contains more pertinent information.
 diff --git a/drivers/net/ethernet/intel/ice/ice_main.c b/drivers/net/ethernet/intel/ice/ice_main.c
-index 7784135160fd..945a2d0333bf 100644
+index 600a2f537087..149984fb8ab0 100644
 --- a/drivers/net/ethernet/intel/ice/ice_main.c
 +++ b/drivers/net/ethernet/intel/ice/ice_main.c
 @@ -5,7 +5,7 @@
@@ -246,7 +252,7 @@ index 7784135160fd..945a2d0333bf 100644
  MODULE_FIRMWARE(ICE_DDP_PKG_FILE);
  
  static int debug = -1;
-@@ -4188,11 +4191,11 @@ static int ice_send_version(struct ice_pf *pf)
+@@ -4198,11 +4201,11 @@ static int ice_send_version(struct ice_pf *pf)
  {
  	struct ice_driver_ver dv;
  
@@ -262,7 +268,7 @@ index 7784135160fd..945a2d0333bf 100644
  		sizeof(dv.driver_string));
  	return ice_aq_send_driver_ver(&pf->hw, &dv, NULL);
  }
-@@ -5642,7 +5645,7 @@ static int __init ice_module_init(void)
+@@ -5657,7 +5660,7 @@ static int __init ice_module_init(void)
  {
  	int status = -ENOMEM;
  
@@ -272,5 +278,5 @@ index 7784135160fd..945a2d0333bf 100644
  
  	ice_wq = alloc_workqueue("%s", 0, 0, KBUILD_MODNAME);
 -- 
-2.42.0
+2.43.0
 

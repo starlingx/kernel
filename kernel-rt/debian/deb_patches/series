@@ -8,3 +8,5 @@
 0008-linux-kbuild-Stop-building-bin2c-in-6.3.patch
 0009-linux-perf-Update-build-rules-and-dependencies-for-c.patch
 0010-rtla-fix-error-for-undefined-reference.patch
+0011-Update-the-patch-for-kernel-6.6.40.patch
+0012-mod-fix-the-undefined-errors.patch
