@@ -1,0 +1,31 @@
+From 08d5dda0bdd0582db906670d6960d2438ddf234a Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Wed, 7 Aug 2024 07:59:00 +0000
+Subject: [PATCH] ice: modify the ice driver min version to "stx.2"
+
+Change the ice driver min version to stx.2 because we back ported
+some dpll related commits from kernel-6.7, kernel-6.8 and kernel-6.9.
+
+The ice driver version should be ice-6.6.40-stx.2.
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Makefile b/Makefile
+index e87916981b5d..6fb76ccb9dd3 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1227,7 +1227,7 @@ uapi-asm-generic:
+ 
+ # KERNELRELEASE can change from a few different places, meaning version.h
+ # needs to be updated, so this check is forced on all builds
+-ICE_STX = "-stx.1"
++ICE_STX = "-stx.2"
+ I40E_STX = "-stx.0"
+ IAVF_STX = "-stx.0"
+ 
+-- 
+2.43.0
+

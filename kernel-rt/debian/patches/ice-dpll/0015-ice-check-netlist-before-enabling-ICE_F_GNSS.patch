@@ -1,0 +1,97 @@
+From 24aee90e5bf889b197efdd2b0bdb3676d68c7ded Mon Sep 17 00:00:00 2001
+From: Jacob Keller <jacob.e.keller@intel.com>
+Date: Wed, 16 Aug 2023 17:00:58 -0700
+Subject: [PATCH 15/46] ice: check netlist before enabling ICE_F_GNSS
+
+Similar to the change made for ICE_F_SMA_CTRL, check the netlist before
+enabling support for ICE_F_GNSS. This ensures that the driver only enables
+the GNSS feature on devices which actually have the feature enabled in the
+firmware device configuration.
+
+Signed-off-by: Jacob Keller <jacob.e.keller@intel.com>
+Tested-by: Sunitha Mekala <sunithax.d.mekala@intel.com> (A Contingent worker at Intel)
+Signed-off-by: Tony Nguyen <anthony.l.nguyen@intel.com>
+(cherry picked from commit 89776a6a702e9b7bf9ae1691621f9699b2c18cc1)
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ drivers/net/ethernet/intel/ice/ice_adminq_cmd.h |  2 ++
+ drivers/net/ethernet/intel/ice/ice_common.c     | 15 +++++++++++++++
+ drivers/net/ethernet/intel/ice/ice_common.h     |  1 +
+ drivers/net/ethernet/intel/ice/ice_gnss.c       |  3 +++
+ 4 files changed, 21 insertions(+)
+
+diff --git a/drivers/net/ethernet/intel/ice/ice_adminq_cmd.h b/drivers/net/ethernet/intel/ice/ice_adminq_cmd.h
+index aa532bfa1957..353ac55bdb9d 100644
+--- a/drivers/net/ethernet/intel/ice/ice_adminq_cmd.h
++++ b/drivers/net/ethernet/intel/ice/ice_adminq_cmd.h
+@@ -1394,6 +1394,7 @@ struct ice_aqc_link_topo_params {
+ #define ICE_AQC_LINK_TOPO_NODE_TYPE_ID_EEPROM	8
+ #define ICE_AQC_LINK_TOPO_NODE_TYPE_CLK_CTRL	9
+ #define ICE_AQC_LINK_TOPO_NODE_TYPE_CLK_MUX	10
++#define ICE_AQC_LINK_TOPO_NODE_TYPE_GPS		11
+ #define ICE_AQC_LINK_TOPO_NODE_CTX_S		4
+ #define ICE_AQC_LINK_TOPO_NODE_CTX_M		\
+ 				(0xF << ICE_AQC_LINK_TOPO_NODE_CTX_S)
+@@ -1436,6 +1437,7 @@ struct ice_aqc_get_link_topo {
+ #define ICE_AQC_GET_LINK_TOPO_NODE_NR_E822_PHY		0x30
+ #define ICE_AQC_GET_LINK_TOPO_NODE_NR_C827		0x31
+ #define ICE_AQC_GET_LINK_TOPO_NODE_NR_GEN_CLK_MUX	0x47
++#define ICE_AQC_GET_LINK_TOPO_NODE_NR_GEN_GPS		0x48
+ 	u8 rsvd[9];
+ };
+ 
+diff --git a/drivers/net/ethernet/intel/ice/ice_common.c b/drivers/net/ethernet/intel/ice/ice_common.c
+index 089558b3b1ae..8f31ae449948 100644
+--- a/drivers/net/ethernet/intel/ice/ice_common.c
++++ b/drivers/net/ethernet/intel/ice/ice_common.c
+@@ -2764,6 +2764,21 @@ bool ice_is_pf_c827(struct ice_hw *hw)
+ 	return false;
+ }
+ 
++/**
++ * ice_is_gps_in_netlist
++ * @hw: pointer to the hw struct
++ *
++ * Check if the GPS generic device is present in the netlist
++ */
++bool ice_is_gps_in_netlist(struct ice_hw *hw)
++{
++	if (ice_find_netlist_node(hw, ICE_AQC_LINK_TOPO_NODE_TYPE_GPS,
++				  ICE_AQC_GET_LINK_TOPO_NODE_NR_GEN_GPS, NULL))
++		return false;
++
++	return true;
++}
++
+ /**
+  * ice_aq_list_caps - query function/device capabilities
+  * @hw: pointer to the HW struct
+diff --git a/drivers/net/ethernet/intel/ice/ice_common.h b/drivers/net/ethernet/intel/ice/ice_common.h
+index 74e44b450de4..47a75651ca38 100644
+--- a/drivers/net/ethernet/intel/ice/ice_common.h
++++ b/drivers/net/ethernet/intel/ice/ice_common.h
+@@ -93,6 +93,7 @@ ice_aq_get_phy_caps(struct ice_port_info *pi, bool qual_mods, u8 report_mode,
+ 		    struct ice_aqc_get_phy_caps_data *caps,
+ 		    struct ice_sq_cd *cd);
+ bool ice_is_pf_c827(struct ice_hw *hw);
++bool ice_is_gps_in_netlist(struct ice_hw *hw);
+ int
+ ice_find_netlist_node(struct ice_hw *hw, u8 node_type_ctx, u8 node_part_number,
+ 		      u16 *node_handle);
+diff --git a/drivers/net/ethernet/intel/ice/ice_gnss.c b/drivers/net/ethernet/intel/ice/ice_gnss.c
+index 75c9de675f20..c8ea1af51ad3 100644
+--- a/drivers/net/ethernet/intel/ice/ice_gnss.c
++++ b/drivers/net/ethernet/intel/ice/ice_gnss.c
+@@ -389,6 +389,9 @@ bool ice_gnss_is_gps_present(struct ice_hw *hw)
+ 	if (!hw->func_caps.ts_func_info.src_tmr_owned)
+ 		return false;
+ 
++	if (!ice_is_gps_in_netlist(hw))
++		return false;
++
+ #if IS_ENABLED(CONFIG_PTP_1588_CLOCK)
+ 	if (ice_is_e810t(hw)) {
+ 		int err;
+-- 
+2.43.0
+

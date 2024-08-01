@@ -1,0 +1,54 @@
+From a04c89a000d99aef7d7e9ba9180cd70789250dee Mon Sep 17 00:00:00 2001
+From: Jacob Keller <jacob.e.keller@intel.com>
+Date: Wed, 16 Aug 2023 17:00:54 -0700
+Subject: [PATCH 14/46] ice: remove ICE_F_PTP_EXTTS feature flag
+
+The ICE_F_PTP_EXTTS feature flag is ostensibly intended to support checking
+whether the device supports external timestamp pins. It is only checked in
+E810-specific code flows, and is enabled for all E810-based devices. E822
+and E823 flows unconditionally enable external timestamp support.
+
+This makes the feature flag meaningless, as it is always enabled. Just
+unconditionally enable support for external timestamp pins and remove this
+unnecessary flag.
+
+Signed-off-by: Jacob Keller <jacob.e.keller@intel.com>
+Tested-by: Sunitha Mekala <sunithax.d.mekala@intel.com> (A Contingent worker at Intel)
+Signed-off-by: Tony Nguyen <anthony.l.nguyen@intel.com>
+(cherry picked from commit 12a5a28b565bfb5abab7ab17fe3c6a3c02a2affe)
+[jma: Adjust the code for context changes, because https://git.yoctoproject.org/
+ linux-yocto/commit/?h=v6.6.40&id=0d1b22367ec2 already included the part
+ of code.]
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ drivers/net/ethernet/intel/ice/ice.h     | 1 -
+ drivers/net/ethernet/intel/ice/ice_lib.c | 1 -
+ 2 files changed, 2 deletions(-)
+
+diff --git a/drivers/net/ethernet/intel/ice/ice.h b/drivers/net/ethernet/intel/ice/ice.h
+index 537d5939c28e..b9cd0113b859 100644
+--- a/drivers/net/ethernet/intel/ice/ice.h
++++ b/drivers/net/ethernet/intel/ice/ice.h
+@@ -199,7 +199,6 @@ extern const char ice_drv_ver[];
+ 
+ enum ice_feature {
+ 	ICE_F_DSCP,
+-	ICE_F_PTP_EXTTS,
+ 	ICE_F_PHY_RCLK,
+ 	ICE_F_SMA_CTRL,
+ 	ICE_F_CGU,
+diff --git a/drivers/net/ethernet/intel/ice/ice_lib.c b/drivers/net/ethernet/intel/ice/ice_lib.c
+index 2847fc17d224..f7a0dd570b34 100644
+--- a/drivers/net/ethernet/intel/ice/ice_lib.c
++++ b/drivers/net/ethernet/intel/ice/ice_lib.c
+@@ -4007,7 +4007,6 @@ void ice_init_feature_support(struct ice_pf *pf)
+ 	case ICE_DEV_ID_E810_XXV_QSFP:
+ 	case ICE_DEV_ID_E810_XXV_SFP:
+ 		ice_set_feature_support(pf, ICE_F_DSCP);
+-		ice_set_feature_support(pf, ICE_F_PTP_EXTTS);
+ 		if (ice_is_phy_rclk_present(&pf->hw))
+ 			ice_set_feature_support(pf, ICE_F_PHY_RCLK);
+ 		/* If we don't own the timer - don't enable other caps */
+-- 
+2.43.0
+
