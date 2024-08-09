@@ -1,0 +1,30 @@
+From d7641a342e22d9992ec56242e9e34106923964dc Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Tue, 11 Jun 2024 06:49:13 +0000
+Subject: [PATCH] i40e: pass linux common header
+
+For debian, there are two header pkgs, e.g. linux-headers-6.6.0-1-amd64
+and linux-headers-6.6.0-1-common. So pass linux-headers-6.6.0-1-common
+to meet the requirement.
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ src/common.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/common.mk b/src/common.mk
+index 52cee1a..8c1f2ad 100644
+--- a/src/common.mk
++++ b/src/common.mk
+@@ -344,7 +344,7 @@ minimum_kver_check = $(eval $(call _minimum_kver_check,${1},${2},${3}))
+ # generated also via $(shell) call, which makes error handling ugly
+ $(if $(shell \
+     $(if $(findstring 1,${V}),,QUIET_COMPAT=1) \
+-    KSRC=${KSRC} OUT=${src}/kcompat_generated_defs.h CONFFILE=${CONFIG_FILE} \
++    KSRC=${KSRC_COMMON} OUT=${src}/kcompat_generated_defs.h CONFFILE=${CONFIG_FILE} \
+     bash ${src}/kcompat-generator.sh && echo ok), , $(error kcompat-generator.sh failed))
+ 
+ KCOMPAT_DEFINITIONS := $(shell ${CC} ${EXTRA_CFLAGS} -E -dM \
+-- 
+2.43.0
+

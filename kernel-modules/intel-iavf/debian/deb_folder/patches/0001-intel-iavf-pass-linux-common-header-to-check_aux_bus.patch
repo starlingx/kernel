@@ -1,7 +1,7 @@
-From 5b4ad9d0df45bb9704b12927c793a65ccc7a42fa Mon Sep 17 00:00:00 2001
+From 62066d848460a02b1d718d8030dbf71a81fd9549 Mon Sep 17 00:00:00 2001
 From: Li Zhou <li.zhou@windriver.com>
 Date: Thu, 7 Apr 2022 11:42:47 +0800
-Subject: [PATCH 2/8] intel-iavf: pass linux common header to check_aux_bus
+Subject: [PATCH] intel-iavf: pass linux common header to check_aux_bus
 
 For debian, there are two header pkgs, e.g. linux-headers-5.10.0-6-amd64
 and linux-headers-5.10.0-6-common. linux-headers-5.10.0-6-amd64 is
@@ -13,15 +13,26 @@ debian rules.
 Signed-off-by: Li Zhou <li.zhou@windriver.com>
 [jpm: Refresh patch for iavf v4.5.3)]
 Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+[jpm: Refresh patch for iavf v4.11.1)]
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
 ---
- src/common.mk | 7 ++++++-
- 1 file changed, 6 insertions(+), 1 deletion(-)
+ src/common.mk | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
 
 diff --git a/src/common.mk b/src/common.mk
-index 0b2ad05..a0b65d6 100644
+index 2035be3..2a0f4bf 100644
 --- a/src/common.mk
 +++ b/src/common.mk
-@@ -410,9 +410,14 @@ export INSTALL_MOD_DIR ?= updates/drivers/net/ethernet/intel/${DRIVER}
+@@ -320,7 +320,7 @@ minimum_kver_check = $(eval $(call _minimum_kver_check,${1},${2},${3}))
+ # call script that populates defines automatically
+ $(if $(shell \
+     $(if $(findstring 1,${V}),,QUIET_COMPAT=1) \
+-    KSRC=${KSRC} OUT=${src}/kcompat_generated_defs.h CONFFILE=${CONFIG_FILE} \
++    KSRC=${KSRC_COMMON} OUT=${src}/kcompat_generated_defs.h CONFFILE=${CONFIG_FILE} \
+     bash ${src}/kcompat-generator.sh && echo ok), , $(error kcompat-generator.sh failed))
+ 
+ ################
+@@ -387,9 +387,14 @@ export INSTALL_MOD_DIR ?= updates/drivers/net/ethernet/intel/${DRIVER}
  # If the check_aux_bus script exists, then this driver depends on the
  # auxiliary module. Run the script to determine if we need to include
  # auxiliary files with this build.
@@ -38,5 +49,5 @@ index 0b2ad05..a0b65d6 100644
  
  # The out-of-tree auxiliary module we ship should be moved into this
 -- 
-2.42.0
+2.43.0
 
