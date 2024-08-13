@@ -62,3 +62,5 @@ ice-dpll/0044-ice-fix-pin-phase-adjust-updates-on-PF-reset.patch
 ice-dpll/0045-ice-fix-uninitialized-dplls-mutex-usage.patch
 ice-dpll/0046-dpll-fix-dpll_xa_ref_-_del-for-multiple-registration.patch
 ice-dpll/0047-ice-modify-the-ice-driver-min-version-to-stx.2.patch
+ice-mdd/0001-ice-Add-automatic-VF-reset-on-Tx-MDD-events.patch
+ice-mdd/0002-ice-modify-the-ice-driver-min-version-to-stx.3.patch
