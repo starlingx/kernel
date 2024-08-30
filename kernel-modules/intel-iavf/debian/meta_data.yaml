@@ -1,12 +1,11 @@
 ---
-debver: 4.5.3.4
+debver: 4.11.1
 debname: iavf
 dl_path:
-  name: iavf-4.5.3.4.tar.gz
-  url: "https://sourceforge.net/projects/e1000/files/\
-    unsupported/iavf%20unsupported/iavf-4.5.3.4.tar.gz/download"
-  md5sum: eca2a30b7f402d615beba9335c233052
-  sha256sum: e14996f097aa8e80333377b4bcf71e8da476ea4c238f39d5760789bc8c1f545b
+  name: iavf-4.11.1.tar.gz
+  url: "https://sourceforge.net/projects/e1000/files/iavf%20stable/\
+    4.11.1/iavf-4.11.1.tar.gz"
+  sha256sum: 925c7ca46e53b53c236a2ac8fff7cb84187e4ee5ffa78e66f71d9db8df49a76a
 revision:
   dist: $STX_DIST
   GITREVCOUNT:

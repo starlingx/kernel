@@ -1,10 +1,3 @@
 0001-i40e-Enable-getting-link-status-from-VF.patch
 0002-i40e-add-more-debug-info-for-VFs-still-in-reset.patch
-0003-i40e_main-Use-irq_update_affinity_hint.patch
-0004-I40E-Add-the-condition-of-undef-NEED_ETH_HW_ADDR_SET.patch
-0005-i40e-Accommodate-removal-of-u64_stats_fetch_-_irq.patch
-0006-i40e-drop-the-weight-argument-from-netif_napi_add.patch
-0007-i40e-Remove-use-of-pci_enable_pcie_error_reporting.patch
-0008-i40e-Include-xdp.h-where-required.patch
-0009-i40e-use-mul_u64_u64_div_u64-for-PTP-frequency-calcu.patch
-0010-i40e-convert-.adjfreq-to-.adjfine.patch
+0003-i40e-pass-linux-common-header.patch
