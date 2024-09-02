@@ -1,0 +1,89 @@
+From 6502dd63a7bd436c72d2ee8b328985b93fa7e2a5 Mon Sep 17 00:00:00 2001
+From: Jacob Keller <jacob.e.keller@intel.com>
+Date: Mon, 26 Feb 2024 16:14:56 -0800
+Subject: [PATCH 32/36] ice: cleanup line splitting for context set functions
+
+The indentation for ice_set_ctx and ice_write_rxq_ctx breaks the function
+name after the return type. This style of breaking is used a lot throughout
+the ice driver, even in cases where its not actually helpful for
+readability. We no longer prefer this style of line splitting in the
+driver, and new code is avoiding it.
+
+Normally, I would leave this alone unless the actual function contents or
+description needed updating. However, a future change is going to add
+inverse functions for converting packed context to unpacked context
+structures. To keep this code uniform with the existing set functions, fix
+up the style to the modern format of keeping the type on the same line.
+
+Signed-off-by: Jacob Keller <jacob.e.keller@intel.com>
+Reviewed-by: Przemek Kitszel <przemyslaw.kitszel@intel.com>
+Signed-off-by: Tony Nguyen <anthony.l.nguyen@intel.com>
+(cherry picked from commit 979c2c049fbea107ce9f8d31f3ba9dba83ddb0a2)
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ drivers/net/ethernet/intel/ice/ice_common.c | 12 +++++-------
+ drivers/net/ethernet/intel/ice/ice_common.h | 10 ++++------
+ 2 files changed, 9 insertions(+), 13 deletions(-)
+
+diff --git a/drivers/net/ethernet/intel/ice/ice_common.c b/drivers/net/ethernet/intel/ice/ice_common.c
+index 55a2e264dd69..59ede77a1473 100644
+--- a/drivers/net/ethernet/intel/ice/ice_common.c
++++ b/drivers/net/ethernet/intel/ice/ice_common.c
+@@ -1329,9 +1329,8 @@ static const struct ice_ctx_ele ice_rlan_ctx_info[] = {
+  * it to HW register space and enables the hardware to prefetch descriptors
+  * instead of only fetching them on demand
+  */
+-int
+-ice_write_rxq_ctx(struct ice_hw *hw, struct ice_rlan_ctx *rlan_ctx,
+-		  u32 rxq_index)
++int ice_write_rxq_ctx(struct ice_hw *hw, struct ice_rlan_ctx *rlan_ctx,
++		      u32 rxq_index)
+ {
+ 	u8 ctx_buf[ICE_RXQ_CTX_SZ] = { 0 };
+ 
+@@ -4427,11 +4426,10 @@ static void ice_pack_ctx_qword(u8 *src_ctx, u8 *dest_ctx,
+  * @hw: pointer to the hardware structure
+  * @src_ctx:  pointer to a generic non-packed context structure
+  * @dest_ctx: pointer to memory for the packed structure
+- * @ce_info:  a description of the structure to be transformed
++ * @ce_info: List of Rx context elements
+  */
+-int
+-ice_set_ctx(struct ice_hw *hw, u8 *src_ctx, u8 *dest_ctx,
+-	    const struct ice_ctx_ele *ce_info)
++int ice_set_ctx(struct ice_hw *hw, u8 *src_ctx, u8 *dest_ctx,
++		const struct ice_ctx_ele *ce_info)
+ {
+ 	int f;
+ 
+diff --git a/drivers/net/ethernet/intel/ice/ice_common.h b/drivers/net/ethernet/intel/ice/ice_common.h
+index d47e5400351f..1c3c29d30815 100644
+--- a/drivers/net/ethernet/intel/ice/ice_common.h
++++ b/drivers/net/ethernet/intel/ice/ice_common.h
+@@ -52,9 +52,8 @@ int ice_get_caps(struct ice_hw *hw);
+ 
+ void ice_set_safe_mode_caps(struct ice_hw *hw);
+ 
+-int
+-ice_write_rxq_ctx(struct ice_hw *hw, struct ice_rlan_ctx *rlan_ctx,
+-		  u32 rxq_index);
++int ice_write_rxq_ctx(struct ice_hw *hw, struct ice_rlan_ctx *rlan_ctx,
++		      u32 rxq_index);
+ 
+ int
+ ice_aq_get_rss_lut(struct ice_hw *hw, struct ice_aq_get_set_rss_lut_params *get_params);
+@@ -71,9 +70,8 @@ bool ice_check_sq_alive(struct ice_hw *hw, struct ice_ctl_q_info *cq);
+ int ice_aq_q_shutdown(struct ice_hw *hw, bool unloading);
+ void ice_fill_dflt_direct_cmd_desc(struct ice_aq_desc *desc, u16 opcode);
+ extern const struct ice_ctx_ele ice_tlan_ctx_info[];
+-int
+-ice_set_ctx(struct ice_hw *hw, u8 *src_ctx, u8 *dest_ctx,
+-	    const struct ice_ctx_ele *ce_info);
++int ice_set_ctx(struct ice_hw *hw, u8 *src_ctx, u8 *dest_ctx,
++		const struct ice_ctx_ele *ce_info);
+ 
+ extern struct mutex ice_global_cfg_lock_sw;
+ 
+-- 
+2.43.0
+

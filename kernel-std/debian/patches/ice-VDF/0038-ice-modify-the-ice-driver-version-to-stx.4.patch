@@ -1,0 +1,32 @@
+From 437206483113743a4ef40c2f7e14f09705049672 Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Mon, 2 Sep 2024 03:18:08 +0000
+Subject: [PATCH] ice:modify the ice driver version to stx.4
+
+Change the ice driver min version to stx.4 because we back ported
+the upstream 36 commits to our code base to support the customer's
+requirement.
+
+The ice driver version should be ice-6.6.40-stx.4.
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Makefile b/Makefile
+index 5807b310bdca..7163d25405f8 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1227,7 +1227,7 @@ uapi-asm-generic:
+ 
+ # KERNELRELEASE can change from a few different places, meaning version.h
+ # needs to be updated, so this check is forced on all builds
+-ICE_STX = "-stx.3"
++ICE_STX = "-stx.4"
+ I40E_STX = "-stx.0"
+ IAVF_STX = "-stx.0"
+ 
+-- 
+2.43.0
+
