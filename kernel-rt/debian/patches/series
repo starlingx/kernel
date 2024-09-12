@@ -102,3 +102,8 @@ ice-VDF/0035-ice-Don-t-process-extts-if-PTP-is-disabled.patch
 ice-VDF/0036-ice-Introduce-ice_ptp_hw-struct.patch
 ice-VDF/0037-ice-Introduce-ice_get_base_incval-helper.patch
 ice-VDF/0038-ice-modify-the-ice-driver-version-to-stx.4.patch
+ice-ptp-vsi/0001-ice-fix-VSI-lists-confusion-when-adding-VLANs.patch
+ice-ptp-vsi/0002-ice-modify-the-ice-driver-version-to-stx.5.patch
+ice-ptp-vsi/0003-ice-add-ice_adapter-for-shared-data-across-PFs-on-th.patch
+ice-ptp-vsi/0004-ice-avoid-the-PTP-hardware-semaphore-in-gettimex64-p.patch
+ice-ptp-vsi/0005-refcount-Split-out-refcount_types.h.patch

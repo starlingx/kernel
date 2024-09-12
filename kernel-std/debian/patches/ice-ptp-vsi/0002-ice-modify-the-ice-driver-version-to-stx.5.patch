@@ -1,0 +1,33 @@
+From 2df80b59509ec642cc2e075a6bb3dbb6d4a1fdde Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Thu, 12 Sep 2024 00:30:57 +0000
+Subject: [PATCH] ice:modify the ice driver version to stx.5
+
+Change the ice driver min version to stx.5 because we back ported
+the upstream commit https://git.kernel.org/pub/scm/linux/kernel/git
+/netdev/net.git/commit/?id=d2940002b0aa to fix "subcloud crashes
+with sriov_config.sh".
+
+The ice driver version should be ice-6.6.40-stx.5.
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Makefile b/Makefile
+index 7163d25405f8..6da58d35c2c0 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1227,7 +1227,7 @@ uapi-asm-generic:
+ 
+ # KERNELRELEASE can change from a few different places, meaning version.h
+ # needs to be updated, so this check is forced on all builds
+-ICE_STX = "-stx.4"
++ICE_STX = "-stx.5"
+ I40E_STX = "-stx.0"
+ IAVF_STX = "-stx.0"
+ 
+-- 
+2.43.0
+

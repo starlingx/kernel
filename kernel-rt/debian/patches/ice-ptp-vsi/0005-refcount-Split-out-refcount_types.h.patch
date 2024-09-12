@@ -1,0 +1,113 @@
+From 3229486de73d93dde2a355e73c31d815ab8a7576 Mon Sep 17 00:00:00 2001
+From: Kent Overstreet <kent.overstreet@linux.dev>
+Date: Mon, 11 Dec 2023 15:15:38 -0500
+Subject: [PATCH] refcount: Split out refcount_types.h
+
+More trimming of sched.h dependencies.
+
+Signed-off-by: Kent Overstreet <kent.overstreet@linux.dev>
+(cherry picked from commit f9d6966b7f4182f612208f9dad9e2cfaaf667ba3)
+[Added "ice.h" in ice_comm.h to fix the ice_pf not defined issue.]
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ drivers/net/ethernet/intel/ice/ice_common.h |  1 +
+ include/linux/refcount.h                    | 13 +------------
+ include/linux/refcount_types.h              | 19 +++++++++++++++++++
+ include/linux/sched.h                       |  2 +-
+ include/linux/sched/task.h                  |  1 +
+ 5 files changed, 23 insertions(+), 13 deletions(-)
+ create mode 100644 include/linux/refcount_types.h
+
+diff --git a/drivers/net/ethernet/intel/ice/ice_common.h b/drivers/net/ethernet/intel/ice/ice_common.h
+index 9d38777310e5..1cc4be304d9c 100644
+--- a/drivers/net/ethernet/intel/ice/ice_common.h
++++ b/drivers/net/ethernet/intel/ice/ice_common.h
+@@ -6,6 +6,7 @@
+ 
+ #include <linux/bitfield.h>
+ 
++#include "ice.h"
+ #include "ice_type.h"
+ #include "ice_nvm.h"
+ #include "ice_flex_pipe.h"
+diff --git a/include/linux/refcount.h b/include/linux/refcount.h
+index a62fcca97486..85c6df0d1bef 100644
+--- a/include/linux/refcount.h
++++ b/include/linux/refcount.h
+@@ -96,22 +96,11 @@
+ #include <linux/bug.h>
+ #include <linux/compiler.h>
+ #include <linux/limits.h>
++#include <linux/refcount_types.h>
+ #include <linux/spinlock_types.h>
+ 
+ struct mutex;
+ 
+-/**
+- * typedef refcount_t - variant of atomic_t specialized for reference counts
+- * @refs: atomic_t counter field
+- *
+- * The counter saturates at REFCOUNT_SATURATED and will not move once
+- * there. This avoids wrapping the counter and causing 'spurious'
+- * use-after-free bugs.
+- */
+-typedef struct refcount_struct {
+-	atomic_t refs;
+-} refcount_t;
+-
+ #define REFCOUNT_INIT(n)	{ .refs = ATOMIC_INIT(n), }
+ #define REFCOUNT_MAX		INT_MAX
+ #define REFCOUNT_SATURATED	(INT_MIN / 2)
+diff --git a/include/linux/refcount_types.h b/include/linux/refcount_types.h
+new file mode 100644
+index 000000000000..162004f06edf
+--- /dev/null
++++ b/include/linux/refcount_types.h
+@@ -0,0 +1,19 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++#ifndef _LINUX_REFCOUNT_TYPES_H
++#define _LINUX_REFCOUNT_TYPES_H
++
++#include <linux/types.h>
++
++/**
++ * typedef refcount_t - variant of atomic_t specialized for reference counts
++ * @refs: atomic_t counter field
++ *
++ * The counter saturates at REFCOUNT_SATURATED and will not move once
++ * there. This avoids wrapping the counter and causing 'spurious'
++ * use-after-free bugs.
++ */
++typedef struct refcount_struct {
++	atomic_t refs;
++} refcount_t;
++
++#endif /* _LINUX_REFCOUNT_TYPES_H */
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index 7b92c4d35ddd..3f85c80c5d44 100644
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -22,7 +22,7 @@
+ #include <linux/seccomp.h>
+ #include <linux/nodemask.h>
+ #include <linux/rcupdate.h>
+-#include <linux/refcount.h>
++#include <linux/refcount_types.h>
+ #include <linux/resource.h>
+ #include <linux/latencytop.h>
+ #include <linux/sched/prio.h>
+diff --git a/include/linux/sched/task.h b/include/linux/sched/task.h
+index a23af225c898..1880ae21a9cb 100644
+--- a/include/linux/sched/task.h
++++ b/include/linux/sched/task.h
+@@ -7,6 +7,7 @@
+  * functionality:
+  */
+ 
++#include <linux/refcount.h>
+ #include <linux/sched.h>
+ #include <linux/uaccess.h>
+ 
+-- 
+2.43.0
+
