@@ -4,18 +4,6 @@
 bnxt-en
 bnxt-en-rt
 
-#intel-i40e
-i40e
-i40e-rt
-
-#intel-iavf
-iavf
-iavf-rt
-
-#intel-ice
-ice
-ice-rt
-
 # Marvell kernel modules
 octeon-ep
 octeon-ep-rt
