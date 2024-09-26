@@ -10,3 +10,4 @@
 0010-rtla-fix-error-for-undefined-reference.patch
 0011-Update-the-patch-for-kernel-6.6.40.patch
 0012-mod-fix-the-undefined-errors.patch
+0013-build-size.patch
