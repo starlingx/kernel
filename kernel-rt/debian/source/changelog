@@ -1,3 +1,9 @@
+linux-rt (6.6.52-1) unstable; urgency=medium
+
+  * New upstream update:
+    https://git.yoctoproject.org/linux-yocto/log/?h=v6.6%2Fstandard%2Fpreempt-rt%2Fbase&qt=range&q=a2252fce7715d414dc5877902ff4fe07630aa92c
+ -- Peng Zhang <Peng.Zhang2@windriver.com>  Thu, 17 Oct 2024 22:44:35 +0800
+
 linux-rt (6.6.40-1) unstable; urgency=medium
 
   * New upstream update:
