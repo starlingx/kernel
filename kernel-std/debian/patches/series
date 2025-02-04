@@ -15,3 +15,6 @@
 0015-Add-the-pci-reboot-quirk-in-DMI-table-for-Dell-Power.patch
 0016-tools-Fix-the-build-errors.patch
 0017-net-export-the-symbol-for-netdev_rx_queue_restart.patch
+0018-cpufreq-intel_pstate-Update-Balance-performance-EPP-.patch
+0019-intel_idle-add-Granite-Rapids-Xeon-D-support.patch
+0020-tools-power-turbostat-Add-initial-support-for-Granit.patch
