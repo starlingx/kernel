@@ -1,3 +1,9 @@
+linux (6.6.71-1) unstable; urgency=medium
+
+  * New upstream update:
+    https://git.yoctoproject.org/linux-yocto/log/?h=v6.6%2Fstandard%2Fbase&qt=range&q=b51e4ee5e3c342d2035ff50e24e438810bb51b02
+ -- Peng Zhang <Peng.Zhang2@windriver.com>  Thu, 16 Jan 2025 09:15:32 +0800
+
 linux (6.6.63-1) unstable; urgency=medium
 
   * New upstream update:
