@@ -1,7 +1,7 @@
-From 130eb445c6abc1dec0cb9d24b2b7e4cba13f7037 Mon Sep 17 00:00:00 2001
+From b40833737594a50e69a505f0da82168c5d998ca6 Mon Sep 17 00:00:00 2001
 From: Chris Friesen <chris.friesen@windriver.com>
 Date: Thu, 12 May 2016 18:00:00 -0400
-Subject: [PATCH] Make kernel start eth devices at offset
+Subject: [PATCH 05/16] Make kernel start eth devices at offset
 
 In order to avoid naming collisions, we want to make the kernel
 start naming its "ethX" devices at eth1000 instead of eth0.  This
@@ -12,27 +12,29 @@ Signed-off-by: Zhang Zhiguo <zhangzhg@neusoft.com>
 Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
 [lz: Adapted the patch for context changes.]
 Signed-off-by: Li Zhou <li.zhou@windriver.com>
+[jm: Adapted the patch for context changes.]
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
 ---
  net/core/dev.c | 6 ++++++
  1 file changed, 6 insertions(+)
 
 diff --git a/net/core/dev.c b/net/core/dev.c
-index 9bf90b2a7..9526361a0 100644
+index c761f862bc5a..d91ad9228b19 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -1119,6 +1119,12 @@ static int __dev_alloc_name(struct net *net, const char *name, char *buf)
- 				__set_bit(i, inuse);
- 		}
- 
-+		/* STX extension, want kernel to start at eth1000 */
-+		if (strcmp(name, "eth%d") == 0) {
-+			for (i=0; i < 1000; i++)
-+				set_bit(i, inuse);
-+		}
-+
- 		i = find_first_zero_bit(inuse, max_netdevices);
- 		bitmap_free(inuse);
+@@ -1203,6 +1203,12 @@ static int __dev_alloc_name(struct net *net, const char *name, char *res)
+ 			__set_bit(i, inuse);
  	}
+ 
++	/* STX extension, want kernel to start at eth1000 */
++	if (strcmp(name, "eth%d") == 0) {
++		for (i=0; i < 1000; i++)
++			set_bit(i, inuse);
++	}
++
+ 	i = find_first_zero_bit(inuse, max_netdevices);
+ 	bitmap_free(inuse);
+ 	if (i == max_netdevices)
 -- 
-2.17.1
+2.47.1
 

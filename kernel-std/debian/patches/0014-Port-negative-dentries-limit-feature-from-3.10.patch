@@ -1,7 +1,7 @@
-From d3a94bc5b2139aeb6f6d1f05c2bd47a8f9ad2650 Mon Sep 17 00:00:00 2001
+From fc7e2942cbc9864da546678d65f201244b6685dc Mon Sep 17 00:00:00 2001
 From: Jim Somerville <jim.somerville@windriver.com>
 Date: Fri, 14 Apr 2023 15:29:22 -0400
-Subject: [PATCH] Port negative dentries limit feature from 3.10
+Subject: [PATCH 14/16] Port negative dentries limit feature from 3.10
 
 This ports the Redhat feature forward from the 3.10 kernel version.
 
@@ -34,12 +34,14 @@ Replace "&zero_ul" with "SYSCTL_LONG_ZERO" according to:
 https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/
 commit/?id=b1f2aff888af54a057c2c3c0d88a13ef5d37b52a.]
 Signed-off-by: Li Zhou <li.zhou@windriver.com>
+[jm: Adapted the patch for 6.12.x.]
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
 ---
  fs/dcache.c | 185 +++++++++++++++++++++++++++++++++++++++++++++++++++-
  1 file changed, 183 insertions(+), 2 deletions(-)
 
 diff --git a/fs/dcache.c b/fs/dcache.c
-index 576ad162c..0fff744af 100644
+index 3a01c42c6639..bef98597df07 100644
 --- a/fs/dcache.c
 +++ b/fs/dcache.c
 @@ -32,6 +32,7 @@
@@ -50,7 +52,7 @@ index 576ad162c..0fff744af 100644
  #include "internal.h"
  #include "mount.h"
  
-@@ -124,6 +125,65 @@ struct dentry_stat_t {
+@@ -132,6 +133,65 @@ struct dentry_stat_t {
  	long dummy;		/* Reserved for future use */
  };
  
@@ -80,7 +82,7 @@ index 576ad162c..0fff744af 100644
 +/*
 + * Sysctl proc handler for dcache_negativ3_dentry_limit_sysctl.
 + */
-+int proc_dcache_negative_dentry_limit(struct ctl_table *ctl, int write,
++static int proc_dcache_negative_dentry_limit(const struct ctl_table *ctl, int write,
 +				      void __user *buffer, size_t *lenp,
 +				      loff_t *ppos)
 +{
@@ -116,7 +118,7 @@ index 576ad162c..0fff744af 100644
  static DEFINE_PER_CPU(long, nr_dentry);
  static DEFINE_PER_CPU(long, nr_dentry_unused);
  static DEFINE_PER_CPU(long, nr_dentry_negative);
-@@ -191,6 +251,15 @@ static struct ctl_table fs_dcache_sysctls[] = {
+@@ -199,6 +259,15 @@ static struct ctl_table fs_dcache_sysctls[] = {
  		.mode		= 0444,
  		.proc_handler	= proc_nr_dentry,
  	},
@@ -129,10 +131,10 @@ index 576ad162c..0fff744af 100644
 +		.extra1		= SYSCTL_LONG_ZERO,
 +		.extra2		= SYSCTL_ONE_HUNDRED,
 +	},
- 	{ }
  };
  
-@@ -1202,8 +1271,9 @@ void shrink_dentry_list(struct list_head *list)
+ static int __init init_fs_dcache_sysctls(void)
+@@ -1088,8 +1157,9 @@ void shrink_dentry_list(struct list_head *list)
  	}
  }
  
@@ -144,7 +146,7 @@ index 576ad162c..0fff744af 100644
  {
  	struct list_head *freeable = arg;
  	struct dentry	*dentry = container_of(item, struct dentry, d_lru);
-@@ -1254,12 +1324,29 @@ static enum lru_status dentry_lru_isolate(struct list_head *item,
+@@ -1140,12 +1210,29 @@ static enum lru_status dentry_lru_isolate(struct list_head *item,
  		return LRU_ROTATE;
  	}
  
@@ -174,7 +176,7 @@ index 576ad162c..0fff744af 100644
  /**
   * prune_dcache_sb - shrink the dcache
   * @sb: superblock
-@@ -1283,6 +1370,20 @@ long prune_dcache_sb(struct super_block *sb, struct shrink_control *sc)
+@@ -1169,6 +1256,20 @@ long prune_dcache_sb(struct super_block *sb, struct shrink_control *sc)
  	return freed;
  }
  
@@ -195,7 +197,7 @@ index 576ad162c..0fff744af 100644
  static enum lru_status dentry_lru_isolate_shrink(struct list_head *item,
  		struct list_lru_one *lru, spinlock_t *lru_lock, void *arg)
  {
-@@ -1677,6 +1778,86 @@ static enum d_walk_ret umount_check(void *_data, struct dentry *dentry)
+@@ -1549,6 +1650,86 @@ static enum d_walk_ret umount_check(void *_data, struct dentry *dentry)
  	return D_WALK_CONTINUE;
  }
  
@@ -283,5 +285,5 @@ index 576ad162c..0fff744af 100644
  {
  	shrink_dcache_parent(dentry);
 -- 
-2.17.1
+2.47.1
 

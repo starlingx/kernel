@@ -1,7 +1,7 @@
-From c335a673dea2fd4c0452d88975cc2045d0934d14 Mon Sep 17 00:00:00 2001
+From b51ab594903af7cc209b4d8ca905db403a99772c Mon Sep 17 00:00:00 2001
 From: "M. Vefa Bicakci" <vefa.bicakci@windriver.com>
 Date: Thu, 9 Sep 2021 04:56:46 -0400
-Subject: [PATCH] workqueue: Affine rescuer threads and unbound wqs
+Subject: [PATCH 10/16] workqueue: Affine rescuer threads and unbound wqs
 
 This commit ensures that workqueue rescuer threads are affined to the
 platform CPUs specified by the "kthread_cpus" kernel argument. Prior to
@@ -27,24 +27,29 @@ Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
 [lz: Adapted the patch for upgrading kernel from 5.10 to 6.6
 according to M. Vefa Bicakci's suggestion.]
 Signed-off-by: Li Zhou <li.zhou@windriver.com>
+[jm: Adapted the patch for upgrading kernel from 6.6 to 6.12.]
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
 ---
- kernel/workqueue.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ kernel/workqueue.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
 
 diff --git a/kernel/workqueue.c b/kernel/workqueue.c
-index e6a95bb74..a15ad43c8 100644
+index 3f0f7cf15ed2..d39a4db6bb65 100644
 --- a/kernel/workqueue.c
 +++ b/kernel/workqueue.c
-@@ -4659,7 +4659,7 @@ static int init_rescuer(struct workqueue_struct *wq)
+@@ -5559,10 +5559,7 @@ static int init_rescuer(struct workqueue_struct *wq)
  	}
  
  	wq->rescuer = rescuer;
--	kthread_bind_mask(rescuer->task, cpu_possible_mask);
+-	if (wq->flags & WQ_UNBOUND)
+-		kthread_bind_mask(rescuer->task, unbound_effective_cpumask(wq));
+-	else
+-		kthread_bind_mask(rescuer->task, cpu_possible_mask);
 +	kthread_bind_mask(rescuer->task, cpu_kthread_mask);
  	wake_up_process(rescuer->task);
  
  	return 0;
-@@ -6545,6 +6545,7 @@ void __init workqueue_init_early(void)
+@@ -7727,6 +7724,7 @@ void __init workqueue_init_early(void)
  	cpumask_copy(wq_unbound_cpumask, cpu_possible_mask);
  	restrict_unbound_cpumask("HK_TYPE_WQ", housekeeping_cpumask(HK_TYPE_WQ));
  	restrict_unbound_cpumask("HK_TYPE_DOMAIN", housekeeping_cpumask(HK_TYPE_DOMAIN));
@@ -53,5 +58,5 @@ index e6a95bb74..a15ad43c8 100644
  		restrict_unbound_cpumask("workqueue.unbound_cpus", &wq_cmdline_cpumask);
  
 -- 
-2.17.1
+2.47.1
 

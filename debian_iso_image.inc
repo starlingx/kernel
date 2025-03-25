@@ -28,14 +28,14 @@ libbnxt-re
 
 #kernel-std/kernel-rt
 linux-compiler-gcc-10-x86
-linux-headers-6.6.0-1-amd64
-linux-rt-headers-6.6.0-1-rt-amd64
-linux-headers-6.6.0-1-common
-linux-rt-headers-6.6.0-1-rt-common
-linux-image-6.6.0-1-amd64-unsigned
-linux-rt-image-6.6.0-1-rt-amd64-unsigned
-linux-kbuild-6.6
-linux-rt-kbuild-6.6
+linux-headers-6.12.0-1-amd64
+linux-rt-headers-6.12.0-1-rt-amd64
+linux-headers-6.12.0-1-common
+linux-rt-headers-6.12.0-1-rt-common
+linux-image-6.12.0-1-amd64-unsigned
+linux-rt-image-6.12.0-1-rt-amd64-unsigned
+linux-kbuild-6.12
+linux-rt-kbuild-6.12
 linux-libc-dev
 linux-perf
 

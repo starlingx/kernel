@@ -1,7 +1,7 @@
-From 004708f2e02a4ae97672d2c618effa7cdbbe38a6 Mon Sep 17 00:00:00 2001
+From 0213e30fa1f6d2a9015b4bf136d10f07a6b91d3b Mon Sep 17 00:00:00 2001
 From: Chris Friesen <chris.friesen@windriver.com>
 Date: Tue, 24 Nov 2015 16:27:28 -0500
-Subject: [PATCH] affine compute kernel threads
+Subject: [PATCH 03/16] affine compute kernel threads
 
 This is a kernel enhancement to configure the cpu affinity of kernel
 threads via kernel boot option kthread_cpus=<cpulist>. The compute
@@ -32,6 +32,8 @@ Signed-off-by: Vefa Bicakci <vefa.bicakci@windriver.com>
 Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
 [lz: Adapted the patch for upgrading kernel from 5.10 to 6.6]
 Signed-off-by: Li Zhou <li.zhou@windriver.com>
+[jm: Adapted the patch for upgrading kernel from 6.6 to 6.12]
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
 ---
  .../admin-guide/kernel-parameters.txt         | 10 ++++++++
  include/linux/cpumask.h                       |  3 +++
@@ -42,46 +44,47 @@ Signed-off-by: Li Zhou <li.zhou@windriver.com>
  6 files changed, 43 insertions(+), 2 deletions(-)
 
 diff --git a/Documentation/admin-guide/kernel-parameters.txt b/Documentation/admin-guide/kernel-parameters.txt
-index 59f7b400d..acc7025c1 100644
+index bf3aacb1ceb7..b6d995d47ea1 100644
 --- a/Documentation/admin-guide/kernel-parameters.txt
 +++ b/Documentation/admin-guide/kernel-parameters.txt
-@@ -2473,6 +2473,16 @@
+@@ -2637,6 +2637,16 @@
  			See also Documentation/trace/kprobetrace.rst "Kernel
  			Boot Parameter" section.
  
-+        kthread_cpus=   [KNL, SMP] Only run kernel threads on the specified
-+                        list of processors. The kernel will start threads
-+                        on the indicated processors only (unless there
-+                        are specific reasons to run a thread with
-+                        different affinities). This can be used to make
-+                        init start on certain processors and also to
-+                        control where kmod and other user space threads
-+                        are being spawned. Allows to keep kernel threads
-+                        away from certain cores unless absoluteluy necessary.
++	kthread_cpus=   [KNL, SMP] Only run kernel threads on the specified
++			list of processors. The kernel will start threads
++			on the indicated processors only (unless there
++			are specific reasons to run a thread with
++			different affinities). This can be used to make
++			init start on certain processors and also to
++			control where kmod and other user space threads
++			are being spawned. Allows to keep kernel threads
++			away from certain cores unless absoluteluy necessary.
 +
- 	kpti=		[ARM64] Control page table isolation of user
- 			and kernel address spaces.
+ 	kpti=		[ARM64,EARLY] Control page table isolation of
+ 			user and kernel address spaces.
  			Default: enabled on cores which need mitigation.
 diff --git a/include/linux/cpumask.h b/include/linux/cpumask.h
-index c2aa0aa26..2919c2aef 100644
+index 9278a50d514f..2b91ee73365b 100644
 --- a/include/linux/cpumask.h
 +++ b/include/linux/cpumask.h
-@@ -61,6 +61,7 @@ static inline void set_nr_cpu_ids(unsigned int nr)
-  *     cpu_present_mask - has bit 'cpu' set iff cpu is populated
+@@ -84,6 +84,7 @@ static __always_inline void set_nr_cpu_ids(unsigned int nr)
+  *     cpu_enabled_mask  - has bit 'cpu' set iff cpu can be brought online
   *     cpu_online_mask  - has bit 'cpu' set iff cpu available to scheduler
   *     cpu_active_mask  - has bit 'cpu' set iff cpu available to migration
 + *     cpu_kthread_mask - has bit 'cpu' set iff general kernel threads allowed
   *
   *  If !CONFIG_HOTPLUG_CPU, present == possible, and active == online.
   *
-@@ -93,11 +94,13 @@ extern struct cpumask __cpu_possible_mask;
- extern struct cpumask __cpu_online_mask;
+@@ -117,12 +118,14 @@ extern struct cpumask __cpu_online_mask;
+ extern struct cpumask __cpu_enabled_mask;
  extern struct cpumask __cpu_present_mask;
  extern struct cpumask __cpu_active_mask;
 +extern struct cpumask __cpu_kthread_mask;
  extern struct cpumask __cpu_dying_mask;
  #define cpu_possible_mask ((const struct cpumask *)&__cpu_possible_mask)
  #define cpu_online_mask   ((const struct cpumask *)&__cpu_online_mask)
+ #define cpu_enabled_mask   ((const struct cpumask *)&__cpu_enabled_mask)
  #define cpu_present_mask  ((const struct cpumask *)&__cpu_present_mask)
  #define cpu_active_mask   ((const struct cpumask *)&__cpu_active_mask)
 +#define cpu_kthread_mask  ((const struct cpumask *)&__cpu_kthread_mask)
@@ -89,10 +92,10 @@ index c2aa0aa26..2919c2aef 100644
  
  extern atomic_t __num_online_cpus;
 diff --git a/init/main.c b/init/main.c
-index bd4ce7345..c40b2c441 100644
+index a7aaae73743e..569c18d1622c 100644
 --- a/init/main.c
 +++ b/init/main.c
-@@ -1633,6 +1633,8 @@ static noinline void __init kernel_init_freeable(void)
+@@ -1593,6 +1593,8 @@ static noinline void __init kernel_init_freeable(void)
  
  	do_basic_setup();
  
@@ -102,10 +105,10 @@ index bd4ce7345..c40b2c441 100644
  
  	wait_for_initramfs();
 diff --git a/kernel/cpu.c b/kernel/cpu.c
-index 98a7a7b14..d051b4097 100644
+index 9ee6c9145b1d..7ab2274c0b8b 100644
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
-@@ -2651,6 +2651,29 @@ EXPORT_SYMBOL(__cpu_dying_mask);
+@@ -3121,6 +3121,29 @@ EXPORT_SYMBOL(__cpu_dying_mask);
  atomic_t __num_online_cpus __read_mostly;
  EXPORT_SYMBOL(__num_online_cpus);
  
@@ -136,10 +139,10 @@ index 98a7a7b14..d051b4097 100644
  {
  	cpumask_copy(&__cpu_present_mask, src);
 diff --git a/kernel/kthread.c b/kernel/kthread.c
-index f97fd01a2..2bd5d136e 100644
+index 9bb36897b6c6..77d2b3f577f4 100644
 --- a/kernel/kthread.c
 +++ b/kernel/kthread.c
-@@ -355,7 +355,7 @@ static int kthread(void *_create)
+@@ -368,7 +368,7 @@ static int kthread(void *_create)
  	 * back to default in case they have been changed.
  	 */
  	sched_setscheduler_nocheck(current, SCHED_NORMAL, &param);
@@ -148,7 +151,7 @@ index f97fd01a2..2bd5d136e 100644
  
  	/* OK, tell user we're spawned, wait for stop or wakeup */
  	__set_current_state(TASK_UNINTERRUPTIBLE);
-@@ -722,7 +722,7 @@ int kthreadd(void *unused)
+@@ -743,7 +743,7 @@ int kthreadd(void *unused)
  	/* Setup a clean context for our children to inherit. */
  	set_task_comm(tsk, "kthreadd");
  	ignore_signals(tsk);
@@ -158,10 +161,10 @@ index f97fd01a2..2bd5d136e 100644
  
  	current->flags |= PF_NOFREEZE;
 diff --git a/kernel/umh.c b/kernel/umh.c
-index fbf872c62..43e3f4567 100644
+index ff1f13a27d29..0dec76b539a7 100644
 --- a/kernel/umh.c
 +++ b/kernel/umh.c
-@@ -82,6 +82,9 @@ static int call_usermodehelper_exec_async(void *data)
+@@ -79,6 +79,9 @@ static int call_usermodehelper_exec_async(void *data)
  	 */
  	current->fs->umask = 0022;
  
@@ -172,5 +175,5 @@ index fbf872c62..43e3f4567 100644
  	 * Our parent (unbound workqueue) runs with elevated scheduling
  	 * priority. Avoid propagating that into the userspace child.
 -- 
-2.17.1
+2.47.1
 

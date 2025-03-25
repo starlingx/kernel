@@ -1,7 +1,8 @@
-From ed051d788e0f7d177bec80d7b594e7b889b975bd Mon Sep 17 00:00:00 2001
+From ac36a126f58faacde2237fc06dc38600f9d3789c Mon Sep 17 00:00:00 2001
 From: "M. Vefa Bicakci" <vefa.bicakci@windriver.com>
 Date: Wed, 4 Jan 2023 20:36:53 -0500
-Subject: [PATCH] Revert "sched/idle: Move quiet_vmstate() into the NOHZ code"
+Subject: [PATCH 13/16] Revert "sched/idle: Move quiet_vmstate() into the NOHZ
+ code"
 
 This reverts commit 62cb1188ed86a9cf082fd2f757d4dd9b54741f24.
 
@@ -78,16 +79,18 @@ Jim Somerville <jim.somerville@windriver.com> during the debugging and
 investigation of this issue.
 
 Signed-off-by: M. Vefa Bicakci <vefa.bicakci@windriver.com>
+[Adjust the patch to adapt to the kernel 6.12.x.]
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
 ---
  kernel/sched/idle.c      | 1 +
  kernel/time/tick-sched.c | 2 --
  2 files changed, 1 insertion(+), 2 deletions(-)
 
 diff --git a/kernel/sched/idle.c b/kernel/sched/idle.c
-index f26ab2675..9298330c5 100644
+index 53bb9193c537..e7c4d47f9537 100644
 --- a/kernel/sched/idle.c
 +++ b/kernel/sched/idle.c
-@@ -274,6 +274,7 @@ static void do_idle(void)
+@@ -268,6 +268,7 @@ static void do_idle(void)
  	 */
  
  	__current_set_polling();
@@ -96,10 +99,10 @@ index f26ab2675..9298330c5 100644
  
  	while (!need_resched()) {
 diff --git a/kernel/time/tick-sched.c b/kernel/time/tick-sched.c
-index 1ad89eec2..468e756f1 100644
+index e0c47259e91a..31bbff551ed9 100644
 --- a/kernel/time/tick-sched.c
 +++ b/kernel/time/tick-sched.c
-@@ -25,7 +25,6 @@
+@@ -26,7 +26,6 @@
  #include <linux/irq_work.h>
  #include <linux/posix-timers.h>
  #include <linux/context_tracking.h>
@@ -107,14 +110,14 @@ index 1ad89eec2..468e756f1 100644
  
  #include <asm/irq_regs.h>
  
-@@ -932,7 +931,6 @@ static void tick_nohz_stop_tick(struct tick_sched *ts, int cpu)
+@@ -1047,7 +1046,6 @@ static void tick_nohz_stop_tick(struct tick_sched *ts, int cpu)
  	 */
- 	if (!ts->tick_stopped) {
+ 	if (!tick_sched_flag_test(ts, TS_FLAG_STOPPED)) {
  		calc_load_nohz_start();
 -		quiet_vmstat();
  
  		ts->last_tick = hrtimer_get_expires(&ts->sched_timer);
- 		ts->tick_stopped = 1;
+ 		tick_sched_flag_set(ts, TS_FLAG_STOPPED);
 -- 
-2.17.1
+2.47.1
 
