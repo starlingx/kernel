@@ -1,0 +1,103 @@
+From 7ce209bb0e77f0694bc3be2ce5d71f47a18e8ba5 Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Thu, 20 Mar 2025 11:02:48 +0000
+Subject: [PATCH 06/10] devlink: extend devlink_param *set pointer
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This commit accommodates commit 5625ca5640ca("devlink: extend devlink_param
+*set pointer") which extend devlink_param *set pointer. This commit was 
+merged in the v6.12 development cycle and causes compilation failures with
+the v6.12 kernel, which are listed below.
+
+References:
+* https://git.yoctoproject.org/linux-yocto/commit/?h=5625ca5640ca
+
+Resolved compilation errors:
+
+src/ice_devlink.c:891:9: error: initialization of int (*)(struct devlink *, u32, \
+  struct devlink_param_gset_ctx *, struct netlink_ext_ack *) {aka int (*) \
+  (struct devlink *, unsigned int,  struct devlink_param_gset_ctx *, struct \ 
+  netlink_ext_ack *)} from incompatible pointer type int (*)(struct devlink *, \
+  u32,  struct devlink_param_gset_ctx *) {aka int (*)(struct devlink *, \
+  unsigned int,  struct devlink_param_gset_ctx *)} [-Werror=incompatible-pointer-types]
+  891 |         ice_devlink_minsrev_set,
+      |         ^~~~~~~~~~~~~~~~~~~~~~~
+/usr/src/linux-headers-6.12.0-1-common/include/net/devlink.h:599:9: note: in definition
+  of macro DEVLINK_PARAM_DRIVER
+  599 |  .set = _set,       \
+      |         ^~~~
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ src/ice_devlink.c | 18 ++++++++++++------
+ 1 file changed, 12 insertions(+), 6 deletions(-)
+
+diff --git a/src/ice_devlink.c b/src/ice_devlink.c
+index 623000e..958a6d9 100644
+--- a/src/ice_devlink.c
++++ b/src/ice_devlink.c
+@@ -502,7 +502,8 @@ ice_devlink_minsrev_get(struct devlink *devlink, u32 id, struct devlink_param_gs
+  * Returns: zero on success, or an error code on failure.
+  */
+ static int
+-ice_devlink_minsrev_set(struct devlink *devlink, u32 id, struct devlink_param_gset_ctx *ctx)
++ice_devlink_minsrev_set(struct devlink *devlink, u32 id, struct devlink_param_gset_ctx *ctx,
++			struct netlink_ext_ack *extack)
+ {
+ 	struct ice_pf *pf = devlink_priv(devlink);
+ 	struct device *dev = ice_pf_to_dev(pf);
+@@ -723,7 +724,8 @@ static int ice_devlink_txbalance_get(struct devlink *devlink, u32 id,
+  * Returns zero on success and negative value on failure.
+  */
+ static int ice_devlink_txbalance_set(struct devlink *devlink, u32 id,
+-				     struct devlink_param_gset_ctx *ctx)
++				     struct devlink_param_gset_ctx *ctx,
++				     struct netlink_ext_ack *extack)
+ {
+ 	struct ice_pf *pf = devlink_priv(devlink);
+ 	struct device *dev = ice_pf_to_dev(pf);
+@@ -838,7 +840,8 @@ static int ice_devlink_loopback_get(struct devlink *devlink, u32 id,
+  * Returns zero on success.
+  */
+ static int ice_devlink_loopback_set(struct devlink *devlink, u32 id,
+-				    struct devlink_param_gset_ctx *ctx)
++				    struct devlink_param_gset_ctx *ctx,
++				    struct netlink_ext_ack *extack)
+ {
+ 	int new_loopback_mode = ice_devlink_loopback_str_to_mode(ctx->val.vstr);
+ 	struct ice_pf *pf = devlink_priv(devlink);
+@@ -2957,7 +2960,8 @@ ice_devlink_tc_inline_fd_validate(struct devlink *devlink, u32 id,
+  */
+ static int
+ ice_devlink_tc_inline_fd_set(struct devlink *devlink, u32 id,
+-			     struct devlink_param_gset_ctx *ctx)
++			     struct devlink_param_gset_ctx *ctx,
++			     struct netlink_ext_ack *extack)
+ {
+ 	struct ice_pf *pf = devlink_priv(devlink);
+ 	struct ice_vsi *vsi = pf->vsi[0];
+@@ -3047,7 +3051,8 @@ ice_devlink_tc_qps_per_poller_validate(struct devlink *devlink, u32 id,
+  */
+ static int
+ ice_devlink_tc_qps_per_poller_set(struct devlink *devlink, u32 id,
+-				  struct devlink_param_gset_ctx *ctx)
++				  struct devlink_param_gset_ctx *ctx,
++				  struct netlink_ext_ack *extack)
+ {
+ 	struct ice_pf *pf = devlink_priv(devlink);
+ 	struct ice_vsi *ch_vsi;
+@@ -3135,7 +3140,8 @@ ice_devlink_tc_poller_timeout_validate(struct devlink *devlink, u32 id,
+  */
+ static int
+ ice_devlink_tc_poller_timeout_set(struct devlink *devlink, u32 id,
+-				  struct devlink_param_gset_ctx *ctx)
++				  struct devlink_param_gset_ctx *ctx,
++				  struct netlink_ext_ack *extack)
+ {
+ 	struct ice_pf *pf = devlink_priv(devlink);
+ 	struct ice_vsi *ch_vsi;
+-- 
+2.47.1
+

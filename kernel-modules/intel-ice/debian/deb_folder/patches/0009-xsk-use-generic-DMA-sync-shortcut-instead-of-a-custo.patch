@@ -1,0 +1,49 @@
+From f4189a7ae3624f7265755af18ab0b58d26adc696 Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Thu, 20 Mar 2025 11:38:22 +0000
+Subject: [PATCH 09/10] xsk: use generic DMA sync shortcut instead of a custom
+
+This commit accommodates commit 163943ac00cb("xsk: use generic DMA sync
+shortcut instead of a custom one") which remove the second argument.
+This commit was merged in the v6.12 development cycle and causes compilation
+failures with the v6.12 kernel, which are listed below.
+
+References:
+* https://git.yoctoproject.org/linux-yocto/commit/?h=163943ac00cb
+
+Resolved compilation errors:
+
+src/ice_xsk.c: In function ice_clean_rx_irq_zc:
+src/ice_xsk.c:1194:3: error: too many arguments to function xsk_buff_dma_sync_for_cpu
+ 1194 |   xsk_buff_dma_sync_for_cpu(xdp, rx_ring->xsk_pool);
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ src/ice_xsk.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/ice_xsk.c b/src/ice_xsk.c
+index 54a2472..f917d7c 100644
+--- a/src/ice_xsk.c
++++ b/src/ice_xsk.c
+@@ -1183,7 +1183,7 @@ int ice_clean_rx_irq_zc(struct ice_rx_ring *rx_ring, int budget)
+ 		if (!rx_buf->xdp)
+ 			break;
+ 		rx_buf->xdp->data_end = (u8 *)rx_buf->xdp->data + size;
+-		xsk_buff_dma_sync_for_cpu(rx_buf->xdp, rx_ring->xsk_pool);
++		xsk_buff_dma_sync_for_cpu(rx_buf->xdp);
+ 
+ 		xdp_res = ice_run_xdp_zc(rx_ring, rx_buf->xdp);
+ #else
+@@ -1191,7 +1191,7 @@ int ice_clean_rx_irq_zc(struct ice_rx_ring *rx_ring, int budget)
+ 		if (!xdp)
+ 			break;
+ 		xsk_buff_set_size(xdp, size);
+-		xsk_buff_dma_sync_for_cpu(xdp, rx_ring->xsk_pool);
++		xsk_buff_dma_sync_for_cpu(xdp);
+ 
+ 		xdp_res = ice_run_xdp_zc(rx_ring, xdp);
+ #endif /* HAVE_XSK_BATCHED_RX_ALLOC */
+-- 
+2.47.1
+

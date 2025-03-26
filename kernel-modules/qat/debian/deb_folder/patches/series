@@ -1,3 +1,4 @@
 0001-Add-placeholder-version-to-shared-library-soname.patch
 0002-Remove-redundant-pci_enable_pcie_error_reporting.patch
 0003-qat-rename-invalidate_range-notifier.patch
+0004-qat-Adapt-qat-drivers-with-linux-6.12.x.patch

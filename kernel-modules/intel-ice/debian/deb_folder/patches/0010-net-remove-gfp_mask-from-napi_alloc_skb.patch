@@ -1,0 +1,45 @@
+From 1b829c0c36437fc65df90bdcc8741565735e15df Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Thu, 20 Mar 2025 11:50:10 +0000
+Subject: [PATCH 10/10] net: remove gfp_mask from napi_alloc_skb()
+
+This commit accommodates commit 6e9b01909a81("net: remove gfp_mask from 
+napi_alloc_skb()") which remove gfp_mask and change to napi_alloc_skb()
+from __napi_alloc_skb.. This commit was merged in the v6.10 development
+cycle and causes compilation failures with the v6.12 kernel, which are
+listed below.
+
+References:
+* https://git.yoctoproject.org/linux-yocto/commit/?h=6e9b01909a81
+
+Resolved compilation errors:
+
+src/ice_xsk.c: In function ice_construct_skb_zc:
+src/ice_xsk.c:1029:8: error: implicit declaration of function __napi_alloc_skb; 
+ did you mean napi_alloc_skb? [-Werror=implicit-function-declaration]
+ 1029 |  skb = __napi_alloc_skb(&rx_ring->q_vector->napi, datasize_hard,
+      |        ^~~~~~~~~~~~~~~~
+      |        napi_alloc_skb
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ src/ice_xsk.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/src/ice_xsk.c b/src/ice_xsk.c
+index f917d7c..40244e7 100644
+--- a/src/ice_xsk.c
++++ b/src/ice_xsk.c
+@@ -1026,8 +1026,7 @@ ice_construct_skb_zc(struct ice_rx_ring *rx_ring, struct ice_rx_buf *rx_buf,
+ 				     xdp->data_hard_start;
+ 	struct sk_buff *skb;
+ 
+-	skb = __napi_alloc_skb(&rx_ring->q_vector->napi, datasize_hard,
+-			       GFP_ATOMIC | __GFP_NOWARN);
++	skb = napi_alloc_skb(&rx_ring->q_vector->napi, datasize_hard);
+ 	if (unlikely(!skb))
+ 		return NULL;
+ 
+-- 
+2.47.1
+
