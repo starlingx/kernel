@@ -7542,3 +7542,7 @@ CONFIG_ARCH_USE_MEMTEST=y
 #
 # end of Rust hacking
 # end of Kernel hacking
+
+# Enable DPLL3073 chip using I2c
+CONFIG_ZL3073X=m
+CONFIG_ZL3073X_I2C=m
