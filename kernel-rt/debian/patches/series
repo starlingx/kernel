@@ -15,6 +15,7 @@
 0015-Add-the-pci-reboot-quirk-in-DMI-table-for-Dell-Power.patch
 0016-Add-driver-versions-for-ice-i40e-and-iavf.patch
 0017-ice-Use-irq_update_affinity_hint.patch
+0018-sched-debug-Fix-the-runnable-tasks-output.patch
 ice-dpll/0001-dpll-documentation-on-DPLL-subsystem-interface.patch
 ice-dpll/0002-dpll-spec-Add-Netlink-spec-in-YAML.patch
 ice-dpll/0003-dpll-core-Add-DPLL-framework-base-functions.patch
