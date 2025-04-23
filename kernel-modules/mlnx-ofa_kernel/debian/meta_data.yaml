@@ -1,11 +1,11 @@
 ---
-debver: 23.10@
+debver: 24.10@
 debname: mlnx-ofed-kernel
 dl_path:
-  name: mlnx-ofa-kernel-23.10.tgz
+  name: mlnx-ofa-kernel-24.10.tgz
   url: "https://linux.mellanox.com/public/repo/mlnx_ofed/\
-    23.10-2.1.3.1/SRPMS/mlnx-ofa_kernel-23.10.tgz"
-  sha256sum: 9d0082bd7379098f750d0127c623ed0a29629bb149944f213d43429eea7d9519
+    24.10-1.1.4.0/SRPMS/mlnx-ofa_kernel-24.10.tgz"
+  sha256sum: 4dc6801af6a8d2237b4215927d373f717bc30875b0f7e0be9e055f44f6cb59d4
 revision:
   dist: $STX_DIST
   GITREVCOUNT:
