@@ -1,2 +1,10 @@
 0001-intel-ice-pass-linux-common-header-to-check_aux_bus.patch
 0002-rename-the-ddp-file-to-avoid-conflict.patch
+0003-Remove-second-parameter-of-__assign_str.patch
+0004-remove-gfp_mask-from-napi_alloc_skb.patch
+0005-net-Add-struct-kernel_ethtool_ts_info.patch
+0006-devlink-extend-devlink_param-set-pointer.patch
+0007-move-asm-unaligned.h-to-linux-unaligned.h.patch
+0008-ice-ptp-Remove-convert_art_to_tsc.patch
+0009-xsk-use-generic-DMA-sync-shortcut-instead-of-a-custo.patch
+0010-net-remove-gfp_mask-from-napi_alloc_skb.patch

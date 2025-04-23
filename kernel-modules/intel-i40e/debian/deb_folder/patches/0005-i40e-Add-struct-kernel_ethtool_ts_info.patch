@@ -1,0 +1,35 @@
+From 33b9d935f44b59e8dd5902cd14eb2541730a6315 Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Fri, 21 Mar 2025 10:57:53 +0000
+Subject: [PATCH 5/7] i40e: Add struct kernel_ethtool_ts_info
+
+This commit accommodates commit 2111375b85ad("net: Add struct
+kernel_ethtool_ts_info") which renames ethtool_ts_info to
+kernel_ethtool_ts_info. This commit was merged in the v6.12 development
+cycle and causes compilation failures with the v6.12 kernel, which are
+listed below.
+
+References:
+* https://git.yoctoproject.org/linux-yocto/commit/?h=2111375b85ad
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ src/i40e_ethtool.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/i40e_ethtool.c b/src/i40e_ethtool.c
+index a76c639..881faac 100644
+--- a/src/i40e_ethtool.c
++++ b/src/i40e_ethtool.c
+@@ -3080,7 +3080,7 @@ static void i40e_get_strings(struct net_device *netdev, u32 stringset,
+ 
+ #ifdef HAVE_ETHTOOL_GET_TS_INFO
+ static int i40e_get_ts_info(struct net_device *dev,
+-			    struct ethtool_ts_info *info)
++			    struct kernel_ethtool_ts_info *info)
+ {
+ #ifdef HAVE_PTP_1588_CLOCK
+ 	struct i40e_pf *pf = i40e_netdev_to_pf(dev);
+-- 
+2.47.1
+

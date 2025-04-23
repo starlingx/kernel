@@ -1,0 +1,517 @@
+From 8ec6905130974a6effa38857a9e6a8efb905130a Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Wed, 9 Apr 2025 06:07:31 +0000
+Subject: [PATCH] intel-fpga: Adapt the fpga driver with Linux-6.12.x
+
+1. Change "master" to "controller" for spi_bitbang data structure.
+   Reference the commit 2259233110d9 ("spi: bitbang: Follow renaming
+   of SPI "master" to "controller"").
+2. Change spi->chip_select to spi_get_chipselect(spi, 0) since the
+   commit 4d8ff6b0991d ("spi: Add multi-cs memories support in SPI
+   core")
+3. Change strlcpy to strscpy reference the commit ea1558ce149d
+   ("i2c: move drivers from strlcpy to strscpy")
+4. Change eventfd_signal(eventfd, 1) to eventfd_signal(eventfd)
+   reference the commit 3652117f8548 ("eventfd: simplify eventfd_signal()").
+5. Add head file #include <linux/platform_device.h> to fix platform_device
+   undifined issue.
+6. Change the remove function of the platform driver from int * to
+   void *.
+
+References:
+* https://git.yoctoproject.org/linux-yocto/commit/?h=3652117f8548
+* https://git.yoctoproject.org/linux-yocto/commit/?h=ea1558ce149d
+* https://git.yoctoproject.org/linux-yocto/commit/?h=2259233110d9
+* https://git.yoctoproject.org/linux-yocto/commit/?h=4d8ff6b0991d
+
+Resolved compilation errors:
+
+drivers/fpga/intel/feature-dev.c:264:2: error: too many arguments to function \
+ 'eventfd_signal'
+264 | eventfd_signal(trigger, 1);
+
+drivers/i2c/busses/i2c-altera.c:618:2: error: implicit declaration of function \
+'strlcpy'; did you mean 'strncpy'? [-Werror=implicit-function-declaration]
+  618 |  strlcpy(idev->adapter.name, pdev->name, sizeof(idev->adapter.name));
+      |  ^~~~~~~
+      |  strncpy
+
+drivers/net/ethernet/c827_retimer.c:101:12: error: initialization of \
+ 'void (*)(struct platform_device *)' from incompatible pointer type \
+ 'int (*)(struct platform_device *)' [-Werror=incompatible-pointer-types]
+  101 |  .remove = c827_retimer_remove,
+      |            ^~~~~~~~~~~~~~~~~~~
+
+drivers/fpga/intel/fme-dperf.c:260:6: error: implicit declaration of \
+ function 'strtobool'; did you mean 'kstrtobool'? [-Werror=implicit-function-declaration]
+  260 |  if (strtobool(buf, &state))
+      |      ^~~~~~~~~
+      |      kstrtobool
+
+drivers/spi/spi-altera-4-12.c:86:13: error: invalid operands to \
+ binary << (have 'int' and 'u8 *' {aka 'unsigned char *'})
+   86 |          (1 << spi->chip_select));
+      |             ^~
+      |             |
+      |             u8 * {aka unsigned char *}
+
+drivers/spi/spi-altera-4-12.c:386:21: error: passing argument 1 \
+ of 'spi_controller_put' from incompatible pointer type [-Werror=incompatible-pointer-types]
+  386 |  spi_controller_put(master);
+      |                     ^~~~~~
+      |                     |
+      |                     struct spi_master *
+
+drivers/spi/spi-altera-4-12.c:383:41: error: 'struct spi_bitbang' \
+ has no member named 'master'
+  383 |  struct spi_master *master = hw->bitbang.master;
+      |                                         ^
+
+drivers/spi/spi-altera-4-12.c:377:2: error: implicit declaration of \
+ function 'spi_master_put'; did you mean 'spi_dev_put'? [-Werror=implicit-function-declaration]
+  377 |  spi_master_put(master);
+      |  ^~~~~~~~~~~~~~
+      |  spi_dev_put
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ drivers/fpga/intel/afu.c                  |  3 +--
+ drivers/fpga/intel/feature-dev.c          |  2 +-
+ drivers/fpga/intel/fme-dperf.c            |  4 ++--
+ drivers/fpga/intel/fme-iperf.c            |  8 ++++----
+ drivers/fpga/intel/fme-main.c             |  3 +--
+ drivers/fpga/intel/intel-fpga-pac-iopll.c |  3 +--
+ drivers/fpga/intel/pac-hssi.c             |  3 +--
+ drivers/i2c/busses/i2c-altera.c           |  6 ++----
+ drivers/misc/avmmi-bmc.c                  |  4 +---
+ drivers/mtd/devices/intel-on-chip-flash.c |  5 ++---
+ drivers/mtd/spi-nor/altera-asmip2.c       |  5 +++--
+ drivers/mtd/spi-nor/intel-generic-qspi.c  |  5 ++---
+ drivers/net/ethernet/c827_retimer.c       |  4 +---
+ drivers/net/ethernet/pac_n3000_net.c      |  3 +--
+ drivers/spi/spi-altera-4-12.c             | 25 +++++++++++------------
+ 15 files changed, 35 insertions(+), 48 deletions(-)
+
+diff --git a/drivers/fpga/intel/afu.c b/drivers/fpga/intel/afu.c
+index 2cfc275..23e4cf2 100644
+--- a/drivers/fpga/intel/afu.c
++++ b/drivers/fpga/intel/afu.c
+@@ -1243,14 +1243,13 @@ exit:
+ 	return ret;
+ }
+ 
+-static int afu_remove(struct platform_device *pdev)
++static void afu_remove(struct platform_device *pdev)
+ {
+ 	dev_dbg(&pdev->dev, "%s\n", __func__);
+ 
+ 	fpga_dev_feature_uinit(pdev);
+ 	fpga_unregister_dev_ops(pdev);
+ 	afu_dev_destroy(pdev);
+-	return 0;
+ }
+ 
+ static struct platform_driver afu_driver = {
+diff --git a/drivers/fpga/intel/feature-dev.c b/drivers/fpga/intel/feature-dev.c
+index d067569..6ececba 100644
+--- a/drivers/fpga/intel/feature-dev.c
++++ b/drivers/fpga/intel/feature-dev.c
+@@ -261,7 +261,7 @@ static irqreturn_t fpga_msix_handler(int irq, void *arg)
+ {
+ 	struct eventfd_ctx *trigger = arg;
+ 
+-	eventfd_signal(trigger, 1);
++	eventfd_signal(trigger);
+ 	return IRQ_HANDLED;
+ }
+ 
+diff --git a/drivers/fpga/intel/fme-dperf.c b/drivers/fpga/intel/fme-dperf.c
+index 9463514..df5ee58 100644
+--- a/drivers/fpga/intel/fme-dperf.c
++++ b/drivers/fpga/intel/fme-dperf.c
+@@ -189,7 +189,7 @@ static ssize_t fab_enable_store(struct perf_object *pobj,
+ 	struct feature_fme_dperf *dperf;
+ 	bool state;
+ 
+-	if (strtobool(buf, &state))
++	if (kstrtobool(buf, &state))
+ 		return -EINVAL;
+ 
+ 	if (!state)
+@@ -257,7 +257,7 @@ static ssize_t fab_freeze_store(struct perf_object *pobj,
+ 	struct feature_fme_dfpmon_fab_ctl ctl;
+ 	bool state;
+ 
+-	if (strtobool(buf, &state))
++	if (kstrtobool(buf, &state))
+ 		return -EINVAL;
+ 
+ 	mutex_lock(&pdata->lock);
+diff --git a/drivers/fpga/intel/fme-iperf.c b/drivers/fpga/intel/fme-iperf.c
+index d12363e..d47ffb8 100644
+--- a/drivers/fpga/intel/fme-iperf.c
++++ b/drivers/fpga/intel/fme-iperf.c
+@@ -114,7 +114,7 @@ static ssize_t freeze_store(struct perf_object *pobj, const char *buf, size_t n)
+ 	struct feature_fme_ifpmon_ch_ctl ctl;
+ 	bool state;
+ 
+-	if (strtobool(buf, &state))
++	if (kstrtobool(buf, &state))
+ 		return -EINVAL;
+ 
+ 	mutex_lock(&pdata->lock);
+@@ -233,7 +233,7 @@ ssize_t vtd_freeze_store(struct perf_object *pobj, const char *buf, size_t n)
+ 	struct feature_fme_iperf *iperf;
+ 	bool state;
+ 
+-	if (strtobool(buf, &state))
++	if (kstrtobool(buf, &state))
+ 		return -EINVAL;
+ 
+ 	pdata = dev_get_platdata(pobj->fme_dev);
+@@ -498,7 +498,7 @@ static ssize_t fab_enable_store(struct perf_object *pobj,
+ 	struct feature_fme_iperf *iperf;
+ 	bool state;
+ 
+-	if (strtobool(buf, &state))
++	if (kstrtobool(buf, &state))
+ 		return -EINVAL;
+ 
+ 	if (!state)
+@@ -570,7 +570,7 @@ static ssize_t fab_freeze_store(struct perf_object *pobj,
+ 	struct feature_fme_ifpmon_fab_ctl ctl;
+ 	bool state;
+ 
+-	if (strtobool(buf, &state))
++	if (kstrtobool(buf, &state))
+ 		return -EINVAL;
+ 
+ 	mutex_lock(&pdata->lock);
+diff --git a/drivers/fpga/intel/fme-main.c b/drivers/fpga/intel/fme-main.c
+index 0b68232..6cb1532 100644
+--- a/drivers/fpga/intel/fme-main.c
++++ b/drivers/fpga/intel/fme-main.c
+@@ -1913,12 +1913,11 @@ exit:
+ 	return ret;
+ }
+ 
+-static int fme_remove(struct platform_device *pdev)
++static void fme_remove(struct platform_device *pdev)
+ {
+ 	fpga_dev_feature_uinit(pdev);
+ 	fpga_unregister_dev_ops(pdev);
+ 	fme_dev_destroy(pdev);
+-	return 0;
+ }
+ 
+ static struct platform_driver fme_driver = {
+diff --git a/drivers/fpga/intel/intel-fpga-pac-iopll.c b/drivers/fpga/intel/intel-fpga-pac-iopll.c
+index 95f5c7a..464e063 100644
+--- a/drivers/fpga/intel/intel-fpga-pac-iopll.c
++++ b/drivers/fpga/intel/intel-fpga-pac-iopll.c
+@@ -627,13 +627,12 @@ static int intel_pac_iopll_probe(struct platform_device *pdev)
+ 	return sysfs_create_group(&pdev->dev.kobj, &iopll_attr_group);
+ }
+ 
+-static int intel_pac_iopll_remove(struct platform_device *pdev)
++static void intel_pac_iopll_remove(struct platform_device *pdev)
+ {
+ 	struct pac_iopll *iopll = dev_get_drvdata(&pdev->dev);
+ 
+ 	sysfs_remove_group(&pdev->dev.kobj, &iopll_attr_group);
+ 	mutex_destroy(&iopll->iopll_mutex);
+-	return 0;
+ }
+ 
+ static struct platform_driver intel_pac_iopll_driver = {
+diff --git a/drivers/fpga/intel/pac-hssi.c b/drivers/fpga/intel/pac-hssi.c
+index bb03813..afe8b90 100644
+--- a/drivers/fpga/intel/pac-hssi.c
++++ b/drivers/fpga/intel/pac-hssi.c
+@@ -1217,7 +1217,7 @@ static int intel_pac_hssi_probe(struct platform_device *pdev)
+ 	return err;
+ }
+ 
+-static int intel_pac_hssi_remove(struct platform_device *pdev)
++static void intel_pac_hssi_remove(struct platform_device *pdev)
+ {
+ 	struct pac_hssi *hssi = dev_get_drvdata(&pdev->dev);
+ 
+@@ -1227,7 +1227,6 @@ static int intel_pac_hssi_remove(struct platform_device *pdev)
+ 		hssi2_remove_sysfs(&pdev->dev);
+ 
+ 	mutex_destroy(&hssi->bus_mutex);
+-	return 0;
+ }
+ 
+ static struct platform_driver intel_pac_hssi_driver = {
+diff --git a/drivers/i2c/busses/i2c-altera.c b/drivers/i2c/busses/i2c-altera.c
+index 381c562..0f61770 100644
+--- a/drivers/i2c/busses/i2c-altera.c
++++ b/drivers/i2c/busses/i2c-altera.c
+@@ -616,7 +616,7 @@ static int altr_i2c_probe(struct platform_device *pdev)
+ 	altr_i2c_init(idev);
+ 
+ 	i2c_set_adapdata(&idev->adapter, idev);
+-	strlcpy(idev->adapter.name, pdev->name, sizeof(idev->adapter.name));
++	strscpy(idev->adapter.name, pdev->name, sizeof(idev->adapter.name));
+ 	idev->adapter.owner = THIS_MODULE;
+ 	idev->adapter.algo = &altr_i2c_algo;
+ 	idev->adapter.dev.parent = &pdev->dev;
+@@ -641,14 +641,12 @@ static int altr_i2c_probe(struct platform_device *pdev)
+ 	return 0;
+ }
+ 
+-static int altr_i2c_remove(struct platform_device *pdev)
++static void altr_i2c_remove(struct platform_device *pdev)
+ {
+ 	struct altr_i2c_dev *idev = platform_get_drvdata(pdev);
+ 
+ 	clk_disable_unprepare(idev->i2c_clk);
+ 	i2c_del_adapter(&idev->adapter);
+-
+-	return 0;
+ }
+ 
+ /* Match table for of_platform binding */
+diff --git a/drivers/misc/avmmi-bmc.c b/drivers/misc/avmmi-bmc.c
+index 00c1267..8391f10 100644
+--- a/drivers/misc/avmmi-bmc.c
++++ b/drivers/misc/avmmi-bmc.c
+@@ -936,7 +936,7 @@ error:
+ 	return ret;
+ }
+ 
+-static int avmmi_remove(struct platform_device *pdev)
++static void avmmi_remove(struct platform_device *pdev)
+ {
+ 	struct avmmi_priv *priv = dev_get_drvdata(&pdev->dev);
+ 
+@@ -944,8 +944,6 @@ static int avmmi_remove(struct platform_device *pdev)
+ 	mutex_destroy(&priv->bus_mutex);
+ 	mutex_destroy(&priv->sensor_mutex);
+ 	sysfs_remove_group(&pdev->dev.kobj, &avmmi_attr_group);
+-
+-	return 0;
+ }
+ 
+ static struct platform_driver avmmi_driver = {
+diff --git a/drivers/mtd/devices/intel-on-chip-flash.c b/drivers/mtd/devices/intel-on-chip-flash.c
+index 259801d..204a55b 100644
+--- a/drivers/mtd/devices/intel-on-chip-flash.c
++++ b/drivers/mtd/devices/intel-on-chip-flash.c
+@@ -17,6 +17,7 @@
+ #include <linux/mtd/intel-on-chip-flash.h>
+ #include <linux/of_device.h>
+ #include <linux/version.h>
++#include <linux/platform_device.h>
+ 
+ #define IOCF_VAL_SIZE			4
+ #define IOCF_REG_SIZE			4
+@@ -413,7 +414,7 @@ static int iocf_probe(struct platform_device *pdev)
+ 	return ret;
+ }
+ 
+-static int iocf_remove(struct platform_device *pdev)
++static void iocf_remove(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
+ 	struct iocf_ctrl *ctrl;
+@@ -428,8 +429,6 @@ static int iocf_remove(struct platform_device *pdev)
+ 	if (ret)
+ 		dev_err(dev, "%s mtd_device_unregister failed %d\n",
+ 			__func__, ret);
+-
+-	return ret;
+ }
+ 
+ static struct platform_driver iocf_driver = {
+diff --git a/drivers/mtd/spi-nor/altera-asmip2.c b/drivers/mtd/spi-nor/altera-asmip2.c
+index c9c19d0..28e9a34 100644
+--- a/drivers/mtd/spi-nor/altera-asmip2.c
++++ b/drivers/mtd/spi-nor/altera-asmip2.c
+@@ -20,6 +20,7 @@
+ #include <linux/mtd/mtd.h>
+ #include <linux/mtd/spi-nor-4-12.h>
+ #include <linux/of_device.h>
++#include <linux/platform_device.h>
+ 
+ #define QSPI_ACTION_REG			0
+ #define QSPI_ACTION_RST			BIT(0)
+@@ -421,13 +422,13 @@ error:
+ 	return -EIO;
+ }
+ 
+-static int altera_asmip2_remove(struct platform_device *pdev)
++static void altera_asmip2_remove(struct platform_device *pdev)
+ {
+ 	struct altera_asmip2 *q = dev_get_drvdata(&pdev->dev);
+ 
+ 	mutex_destroy(&q->bus_mutex);
+ 
+-	return altera_asmip2_remove_banks(&pdev->dev);
++	altera_asmip2_remove_banks(&pdev->dev);
+ }
+ 
+ static const struct of_device_id altera_asmip2_id_table[] = {
+diff --git a/drivers/mtd/spi-nor/intel-generic-qspi.c b/drivers/mtd/spi-nor/intel-generic-qspi.c
+index 4183125..b90c084 100644
+--- a/drivers/mtd/spi-nor/intel-generic-qspi.c
++++ b/drivers/mtd/spi-nor/intel-generic-qspi.c
+@@ -16,6 +16,7 @@
+ #include <linux/mtd/mtd.h>
+ #include <linux/mtd/spi-nor-4-12.h>
+ #include <linux/of_device.h>
++#include <linux/platform_device.h>
+ 
+ #define IGSF_MAX_FLASH			3
+ #define IGSF_VAL_SIZE			4
+@@ -569,7 +570,7 @@ static int igsf_probe(struct platform_device *pdev)
+ 	return ret;
+ }
+ 
+-static int igsf_remove(struct platform_device *pdev)
++static void igsf_remove(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
+ 	struct igsf_flash *flash;
+@@ -588,8 +589,6 @@ static int igsf_remove(struct platform_device *pdev)
+ 			__func__, ret);
+ 
+ 	mutex_destroy(&ctrl->bus_mutex);
+-
+-	return ret;
+ }
+ 
+ static struct platform_driver igsf_driver = {
+diff --git a/drivers/net/ethernet/c827_retimer.c b/drivers/net/ethernet/c827_retimer.c
+index befef7f..d6b4817 100644
+--- a/drivers/net/ethernet/c827_retimer.c
++++ b/drivers/net/ethernet/c827_retimer.c
+@@ -80,7 +80,7 @@ unregister_pvdev_exit:
+ 	return ret;
+ }
+ 
+-static int c827_retimer_remove(struct platform_device *pdev)
++static void c827_retimer_remove(struct platform_device *pdev)
+ {
+ 	struct c827_retimer *retimer = dev_get_drvdata(&pdev->dev);
+ 	unsigned int i;
+@@ -89,8 +89,6 @@ static int c827_retimer_remove(struct platform_device *pdev)
+ 
+ 	for (i = 0; i < MAX_LINK; i++)
+ 		unregister_pkvl_dev(&retimer->pvdev[i]);
+-
+-	return 0;
+ }
+ 
+ static struct platform_driver c827_retimer_driver = {
+diff --git a/drivers/net/ethernet/pac_n3000_net.c b/drivers/net/ethernet/pac_n3000_net.c
+index dacd958..c1866e0 100644
+--- a/drivers/net/ethernet/pac_n3000_net.c
++++ b/drivers/net/ethernet/pac_n3000_net.c
+@@ -1587,7 +1587,7 @@ uinit_exit:
+ 	return ret;
+ }
+ 
+-static int pac_n3000_net_remove(struct platform_device *pdev)
++static void pac_n3000_net_remove(struct platform_device *pdev)
+ {
+ 	struct eth_group *egroup = dev_get_drvdata(&pdev->dev);
+ 
+@@ -1598,7 +1598,6 @@ static int pac_n3000_net_remove(struct platform_device *pdev)
+ 	misc_deregister(&egroup->miscdev);
+ 	eth_group_hw_uinit(egroup);
+ 	eth_group_uinit(egroup);
+-	return 0;
+ }
+ 
+ static struct platform_driver pac_n3000_net_driver = {
+diff --git a/drivers/spi/spi-altera-4-12.c b/drivers/spi/spi-altera-4-12.c
+index 9cc2f27..5884783 100644
+--- a/drivers/spi/spi-altera-4-12.c
++++ b/drivers/spi/spi-altera-4-12.c
+@@ -72,7 +72,7 @@ static const struct regmap_config spi_altera_config = {
+ 
+ static inline struct altera_spi *altera_spi_to_hw(struct spi_device *sdev)
+ {
+-	return spi_master_get_devdata(sdev->master);
++	return spi_controller_get_devdata(sdev->controller);
+ }
+ 
+ static void altera_spi_chipsel(struct spi_device *spi, int value)
+@@ -83,7 +83,7 @@ static void altera_spi_chipsel(struct spi_device *spi, int value)
+ 		switch (value) {
+ 		case BITBANG_CS_INACTIVE:
+ 			regmap_write(hw->regmap, ALTERA_SPI_SLAVE_SEL,
+-				     (1 << spi->chip_select));
++				     (1 << spi_get_chipselect(spi, 0)));
+ 			hw->imr |= ALTERA_SPI_CONTROL_SSO_MSK;
+ 			regmap_write(hw->regmap, ALTERA_SPI_CONTROL, hw->imr);
+ 			break;
+@@ -103,7 +103,7 @@ static void altera_spi_chipsel(struct spi_device *spi, int value)
+ 
+ 		case BITBANG_CS_ACTIVE:
+ 			regmap_write(hw->regmap, ALTERA_SPI_SLAVE_SEL,
+-				     1 << spi->chip_select);
++				     1 << spi_get_chipselect(spi, 0));
+ 			hw->imr |= ALTERA_SPI_CONTROL_SSO_MSK;
+ 			regmap_write(hw->regmap, ALTERA_SPI_CONTROL, hw->imr);
+ 			break;
+@@ -274,7 +274,7 @@ static irqreturn_t altera_spi_irq(int irq, void *dev)
+ static int altera_spi_probe(struct platform_device *pdev)
+ {
+ 	struct altera_spi_platform_data *pdata = dev_get_platdata(&pdev->dev);
+-	struct spi_master *master;
++	struct spi_controller *master;
+ 	struct altera_spi *hw;
+ 	struct resource *res;
+ 	void __iomem *base;
+@@ -300,17 +300,17 @@ static int altera_spi_probe(struct platform_device *pdev)
+ 	}
+ 	master->dev.of_node = pdev->dev.of_node;
+ 
+-	hw = spi_master_get_devdata(master);
++	hw = spi_controller_get_devdata(master);
+ 	platform_set_drvdata(pdev, hw);
+ 
+ 	/* setup the state for the bitbang driver */
+-	hw->bitbang.master = spi_master_get(master);
+-	if (!hw->bitbang.master)
++	hw->bitbang.ctlr = spi_controller_get(master);
++	if (!hw->bitbang.ctlr)
+ 		return err;
+ 	hw->bitbang.setup_transfer = altera_spi_setupxfer;
+ 	hw->bitbang.chipselect = altera_spi_chipsel;
+ 	hw->bitbang.txrx_bufs = altera_spi_txrx;
+-	hw->bitbang.master->setup = altera_spi_setup;
++	hw->bitbang.ctlr->setup = altera_spi_setup;
+ 	hw->dev = &pdev->dev;
+ 
+ 	if (pdata && pdata->regmap_ctx) {
+@@ -374,18 +374,17 @@ static int altera_spi_probe(struct platform_device *pdev)
+ 
+ 	return 0;
+ exit:
+-	spi_master_put(master);
++	spi_controller_put(master);
+ 	return err;
+ }
+ 
+-static int altera_spi_remove(struct platform_device *dev)
++static void altera_spi_remove(struct platform_device *dev)
+ {
+ 	struct altera_spi *hw = platform_get_drvdata(dev);
+-	struct spi_master *master = hw->bitbang.master;
++	struct spi_controller *master = hw->bitbang.ctlr;
+ 
+ 	spi_bitbang_stop(&hw->bitbang);
+-	spi_master_put(master);
+-	return 0;
++	spi_controller_put(master);
+ }
+ 
+ #ifdef CONFIG_OF
+-- 
+2.47.1
+

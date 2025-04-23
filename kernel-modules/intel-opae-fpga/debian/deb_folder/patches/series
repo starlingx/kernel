@@ -3,3 +3,4 @@
 0003-remove-module-from-class_create.patch
 0004-Remove-redundant-pci_enable_pcie_error_reporting.patch
 0005-make-remove-callback-a-void-function.patch
+0006-intel-fpga-Adapt-the-fpga-driver-with-Linux-6.12.x.patch

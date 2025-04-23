@@ -1,0 +1,44 @@
+From debd962cf6fe393530a1b7282dc80bc5c275611f Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Thu, 20 Mar 2025 11:21:22 +0000
+Subject: [PATCH 08/10] ice/ptp: Remove convert_art_to_tsc()
+
+This commit accommodates commit d4bea547ebb5("ice/ptp: Remove 
+convert_art_to_tsc()") which do not use an architecture specific
+function any more. This commit was merged in the v6.12 development
+cycle and causes compilation failures with the v6.12 kernel, which are
+listed below.
+
+References:
+* https://git.yoctoproject.org/linux-yocto/commit/?h=d4bea547ebb5
+
+Resolved compilation errors:
+
+src/ice_ptp.c: In function ice_ptp_get_syncdevicetime:
+src/ice_ptp.c:4472:14: error: implicit declaration of function 
+ convert_art_ns_to_tsc [-Werror=implicit-function-declaration]
+ 4472 |    *system = convert_art_ns_to_tsc(hh_ts);
+      |              ^~~~~~~~~~~~~~~~~~~~~
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ src/ice_ptp.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/src/ice_ptp.c b/src/ice_ptp.c
+index d23c8d1..f98770f 100644
+--- a/src/ice_ptp.c
++++ b/src/ice_ptp.c
+@@ -4469,7 +4469,8 @@ ice_ptp_get_syncdevicetime(ktime_t *device,
+ 			hh_ts_lo = rd32(hw, GLHH_ART_TIME_L);
+ 			hh_ts_hi = rd32(hw, GLHH_ART_TIME_H);
+ 			hh_ts = ((u64)hh_ts_hi << 32) | hh_ts_lo;
+-			*system = convert_art_ns_to_tsc(hh_ts);
++			system->cycles = hh_ts;
++			system->cs_id = CSID_X86_ART;
+ 			/* Read Device source clock time */
+ 			hh_ts_lo = rd32(hw, GLTSYN_HHTIME_L(tmr_idx));
+ 			hh_ts_hi = rd32(hw, GLTSYN_HHTIME_H(tmr_idx));
+-- 
+2.47.1
+

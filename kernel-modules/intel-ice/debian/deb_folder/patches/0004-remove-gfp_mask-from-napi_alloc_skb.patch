@@ -1,0 +1,49 @@
+From 36d8597c7e30602ce35b4e03c7c632be2d820eed Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Thu, 20 Mar 2025 10:15:06 +0000
+Subject: [PATCH 04/10] remove gfp_mask from napi_alloc_skb()
+
+This commit accommodates commit 6e9b01909a81("net: remove gfp_mask from
+napi_alloc_skb()") which removes gfp_mask and change to napi_alloc_skb()
+from __napi_alloc_skb(). This commit was merged in the v6.10 development
+cycle and causes compilation failures with the v6.12 kernel, which are 
+listed below.
+
+References:
+* https://git.yoctoproject.org/linux-yocto/commit/?h=6e9b01909a81
+
+Resolved compilation errors:
+
+src/ice_txrx.c: In function ice_construct_skb:
+src/ice_txrx.c:1331:8: error: implicit declaration of function __napi_alloc_skb;
+ did you mean napi_alloc_skb? [-Werror=implicit-function-declaration]
+ 1331 |  skb = __napi_alloc_skb(&rx_ring->q_vector->napi, ICE_RX_HDR_SIZE,
+      |        ^~~~~~~~~~~~~~~~
+      |        napi_alloc_skb
+src/ice_txrx.c:1331:6: warning: assignment to struct sk_buff from int makes 
+ pointer from integer without a cast [-Wint-conversion]
+ 1331 |  skb = __napi_alloc_skb(&rx_ring->q_vector->napi, ICE_RX_HDR_SIZE,
+      |      ^
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ src/ice_txrx.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/src/ice_txrx.c b/src/ice_txrx.c
+index 5fb23d2..190a321 100644
+--- a/src/ice_txrx.c
++++ b/src/ice_txrx.c
+@@ -1328,8 +1328,7 @@ ice_construct_skb(struct ice_rx_ring *rx_ring, struct ice_rx_buf *rx_buf,
+ 	net_prefetch(xdp->data);
+ 
+ 	/* allocate a skb to store the frags */
+-	skb = __napi_alloc_skb(&rx_ring->q_vector->napi, ICE_RX_HDR_SIZE,
+-			       GFP_ATOMIC | __GFP_NOWARN);
++	skb = napi_alloc_skb(&rx_ring->q_vector->napi, ICE_RX_HDR_SIZE);
+ 	if (unlikely(!skb))
+ 		return NULL;
+ 
+-- 
+2.47.1
+
