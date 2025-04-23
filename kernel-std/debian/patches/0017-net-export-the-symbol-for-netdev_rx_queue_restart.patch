@@ -1,0 +1,25 @@
+From 0206ad9bb6baaa594e326d0e5544346767896e9b Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Fri, 28 Mar 2025 10:07:30 +0000
+Subject: [PATCH] net:export the symbol for netdev_rx_queue_restart
+
+export the symbol of netdev_rx_queue_restart that will be used by
+the driver of bnxt_en.
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ net/core/netdev_rx_queue.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/net/core/netdev_rx_queue.c b/net/core/netdev_rx_queue.c
+index e217a5838c87..33185dba9290 100644
+--- a/net/core/netdev_rx_queue.c
++++ b/net/core/netdev_rx_queue.c
+@@ -79,3 +79,4 @@ int netdev_rx_queue_restart(struct net_device *dev, unsigned int rxq_idx)
+ 
+ 	return err;
+ }
++EXPORT_SYMBOL(netdev_rx_queue_restart);
+-- 
+2.47.1
+
