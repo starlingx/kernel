@@ -1,7 +1,7 @@
-From 4642b81ace18e84ce74a4389f8ef0b771431f3f5 Mon Sep 17 00:00:00 2001
+From 0745b2833fe90aa6d90baa6758b6dffb42a00577 Mon Sep 17 00:00:00 2001
 From: Chris Friesen <chris.friesen@windriver.com>
 Date: Thu, 17 Jun 2021 07:44:04 +0000
-Subject: [PATCH 01/16] Notification of death of arbitrary processes
+Subject: [PATCH 01/14] Notification of death of arbitrary processes
 
 Note: this commit was copied from Titanium Cloud Rel2
 
@@ -68,7 +68,7 @@ index bccb3f1f6262..88275e28ccad 100644
  
  #ifndef CONFIG_VIRT_CPU_ACCOUNTING_NATIVE
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 8982820dae21..a94c5f5e5c20 100644
+index c547dedac7b1..7edd22c1e426 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -1313,6 +1313,12 @@ struct task_struct {
@@ -548,5 +548,5 @@ index 4da31f28fda8..ad4f05c66e9f 100644
  		error = prctl_set_mm(arg2, arg3, arg4, arg5);
  		break;
 -- 
-2.47.1
+2.49.0
 
