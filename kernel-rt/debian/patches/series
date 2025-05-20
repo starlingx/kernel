@@ -18,3 +18,4 @@
 0018-cpufreq-intel_pstate-Update-Balance-performance-EPP-.patch
 0019-intel_idle-add-Granite-Rapids-Xeon-D-support.patch
 0020-tools-power-turbostat-Add-initial-support-for-Granit.patch
+0021-sched-fair-Make-the-BW-replenish-timer-expire-in-har.patch
