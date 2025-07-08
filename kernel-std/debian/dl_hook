@@ -5,7 +5,7 @@
 # be put at the same path where this script is located.
 # Tools needed: tar
 
-KERNEL_HEAD_COMMIT=f724ffca3fef3541b4be9f30f0a3261674c60e13
+KERNEL_HEAD_COMMIT=5fb23ddafcdc46eaf87f7e4f50e416ac9114cbf7
 DEBIAN_FILE=linux_6.1.27-1~bpo11%2B1.debian.tar.xz
 
 tar xvf linux-yocto-${KERNEL_HEAD_COMMIT}.tar.gz
