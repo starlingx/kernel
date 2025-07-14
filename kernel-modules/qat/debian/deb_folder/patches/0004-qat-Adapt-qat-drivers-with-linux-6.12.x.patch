@@ -1,0 +1,564 @@
+From 781efe58bdf0057915bfd73357bbc255dbb08fcf Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Wed, 16 Apr 2025 06:23:10 +0000
+Subject: [PATCH 4/4] qat:Adapt qat drivers with linux-6.12.x
+
+Change strlcpy to strscpy reference the commit ea1558ce149d
+   ("i2c: move drivers from strlcpy to strscpy")
+Change c->phys_proc_id to c->topo.pkg_id reference the commit
+02fb601d27a7 ("x86/cpu: Move phys_proc_id into topology info")
+
+References:
+* https://git.yoctoproject.org/linux-yocto/commit/?h=ea1558ce149d
+* https://git.yoctoproject.org/linux-yocto/commit/?h=02fb601d27a7
+
+Resolved compilation errors:
+
+quickassist/qat/drivers/crypto/qat/qat_common/adf_cfg.c:271:2: error:
+ implicit declaration of function strlcpy; did you mean strncpy? \
+ [-Werror=implicit-function-declaration]
+  271 |  strlcpy(key_val->key, key, sizeof(key_val->key));
+      |  ^~~~~~~
+
+quickassist/qat/drivers/crypto/qat/qat_common/adf_ctl_drv.c:551:8: \
+ error: struct cpuinfo_x86 has no member named phys_proc_id
+  551 |   if (c->phys_proc_id == 0) {
+      |        ^~
+......
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ .../drivers/crypto/qat/qat_4xxx/adf_4xxx_pm.c |  2 +-
+ .../drivers/crypto/qat/qat_common/adf_adi.c   |  2 +-
+ .../drivers/crypto/qat/qat_common/adf_cfg.c   | 12 ++---
+ .../crypto/qat/qat_common/adf_cfg_bundle.c    |  2 +-
+ .../crypto/qat/qat_common/adf_cfg_device.c    | 24 ++++-----
+ .../crypto/qat/qat_common/adf_cfg_section.c   | 50 +++++++++----------
+ .../crypto/qat/qat_common/adf_ctl_drv.c       |  6 +--
+ .../crypto/qat/qat_common/adf_fw_counters.c   |  4 +-
+ .../qat/qat_common/adf_transport_debug.c      |  2 +-
+ .../drivers/crypto/qat/qat_common/adf_vdcm.h  |  2 +-
+ .../crypto/qat/qat_common/qat_crypto.c        |  2 +-
+ .../linux/kernel_space/qae_mem_drv.c          |  6 ++-
+ .../linux/kernel_space/qae_mem_drv_utils.c    |  6 ---
+ 13 files changed, 59 insertions(+), 61 deletions(-)
+
+diff --git a/quickassist/qat/drivers/crypto/qat/qat_4xxx/adf_4xxx_pm.c b/quickassist/qat/drivers/crypto/qat/qat_4xxx/adf_4xxx_pm.c
+index f95c5a1..c9beee5 100644
+--- a/quickassist/qat/drivers/crypto/qat/qat_4xxx/adf_4xxx_pm.c
++++ b/quickassist/qat/drivers/crypto/qat/qat_4xxx/adf_4xxx_pm.c
+@@ -18,7 +18,7 @@ static int get_cfg_pm_setting(struct adf_accel_dev *accel_dev, int *val_ptr,
+ 	char key[ADF_CFG_MAX_KEY_LEN_IN_BYTES];
+ 	char val[ADF_CFG_MAX_VAL_LEN_IN_BYTES];
+ 
+-	strlcpy(key, key_str, sizeof(key));
++	strscpy(key, key_str, sizeof(key));
+ 	if (!adf_cfg_get_param_value(accel_dev, ADF_GENERAL_SEC, key, val))
+ 		if (kstrtoint(val, 0, val_ptr))
+ 			return -EFAULT;
+diff --git a/quickassist/qat/drivers/crypto/qat/qat_common/adf_adi.c b/quickassist/qat/drivers/crypto/qat/qat_common/adf_adi.c
+index 9947962..0736661 100644
+--- a/quickassist/qat/drivers/crypto/qat/qat_common/adf_adi.c
++++ b/quickassist/qat/drivers/crypto/qat/qat_common/adf_adi.c
+@@ -142,7 +142,7 @@ int adf_init_adis(struct adf_accel_dev *accel_dev)
+ 	if (!accel_dev->cfg)
+ 		return 0;
+ 
+-	strlcpy(key, ADF_NUM_ADI, ADF_CFG_MAX_VAL_LEN_IN_BYTES);
++	strscpy(key, ADF_NUM_ADI, ADF_CFG_MAX_VAL_LEN_IN_BYTES);
+ 	if (adf_cfg_get_param_value(accel_dev, ADF_SIOV_SEC, key, val) ||
+ 	    kstrtouint(val, 0, &adi_num) || 0 >= adi_num)
+ 		return 0;
+diff --git a/quickassist/qat/drivers/crypto/qat/qat_common/adf_cfg.c b/quickassist/qat/drivers/crypto/qat/qat_common/adf_cfg.c
+index ed35dcd..f4c1085 100644
+--- a/quickassist/qat/drivers/crypto/qat/qat_common/adf_cfg.c
++++ b/quickassist/qat/drivers/crypto/qat/qat_common/adf_cfg.c
+@@ -268,13 +268,13 @@ int adf_cfg_add_key_value_param(struct adf_accel_dev *accel_dev,
+ 		return -ENOMEM;
+ 
+ 	INIT_LIST_HEAD(&key_val->list);
+-	strlcpy(key_val->key, key, sizeof(key_val->key));
++	strscpy(key_val->key, key, sizeof(key_val->key));
+ 
+ 	if (type == ADF_DEC) {
+ 		snprintf(key_val->val, ADF_CFG_MAX_VAL_LEN_IN_BYTES,
+ 			 "%ld", (*((long *)val)));
+ 	} else if (type == ADF_STR) {
+-		strlcpy(key_val->val, (char *)val, sizeof(key_val->val));
++		strscpy(key_val->val, (char *)val, sizeof(key_val->val));
+ 	} else if (type == ADF_HEX) {
+ 		snprintf(key_val->val, ADF_CFG_MAX_VAL_LEN_IN_BYTES,
+ 			 "0x%lx", (unsigned long)val);
+@@ -322,7 +322,7 @@ int adf_cfg_save_section(struct adf_accel_dev *accel_dev,
+ 		return -EFAULT;
+ 	}
+ 
+-	strlcpy(section->name, name, sizeof(section->name));
++	strscpy(section->name, name, sizeof(section->name));
+ 	INIT_LIST_HEAD(&section->param_head);
+ 
+ 	/* now we save all the parameters */
+@@ -454,7 +454,7 @@ int adf_cfg_section_add(struct adf_accel_dev *accel_dev, const char *name)
+ 	if (!sec)
+ 		return -ENOMEM;
+ 
+-	strlcpy(sec->name, name, sizeof(sec->name));
++	strscpy(sec->name, name, sizeof(sec->name));
+ 	INIT_LIST_HEAD(&sec->param_head);
+ 	down_write(&cfg->lock);
+ 	list_add_tail(&sec->list, &cfg->sec_list);
+@@ -505,8 +505,8 @@ static int adf_cfg_restore_key_value_param(struct adf_accel_dev *accel_dev,
+ 
+ 	INIT_LIST_HEAD(&key_val->list);
+ 
+-	strlcpy(key_val->key, key, sizeof(key_val->key));
+-	strlcpy(key_val->val, val, sizeof(key_val->val));
++	strscpy(key_val->key, key, sizeof(key_val->key));
++	strscpy(key_val->val, val, sizeof(key_val->val));
+ 	key_val->type = type;
+ 	down_write(&cfg->lock);
+ 	adf_cfg_keyval_add(key_val, section);
+diff --git a/quickassist/qat/drivers/crypto/qat/qat_common/adf_cfg_bundle.c b/quickassist/qat/drivers/crypto/qat/qat_common/adf_cfg_bundle.c
+index c462e63..72c2947 100644
+--- a/quickassist/qat/drivers/crypto/qat/qat_common/adf_cfg_bundle.c
++++ b/quickassist/qat/drivers/crypto/qat/qat_common/adf_cfg_bundle.c
+@@ -97,7 +97,7 @@ int adf_cfg_get_ring_pairs_from_bundle(struct adf_cfg_bundle *bundle,
+ 		return -EFAULT;
+ 	}
+ 
+-	strlcpy(bundle->sections[bundle->section_index],
++	strscpy(bundle->sections[bundle->section_index],
+ 		process_name, ADF_CFG_MAX_STR_LEN);
+ 	bundle->section_index++;
+ 
+diff --git a/quickassist/qat/drivers/crypto/qat/qat_common/adf_cfg_device.c b/quickassist/qat/drivers/crypto/qat/qat_common/adf_cfg_device.c
+index 7856ae4..c4e849c 100644
+--- a/quickassist/qat/drivers/crypto/qat/qat_common/adf_cfg_device.c
++++ b/quickassist/qat/drivers/crypto/qat/qat_common/adf_cfg_device.c
+@@ -188,7 +188,7 @@ static int adf_cfg_get_user_section(struct adf_accel_dev *accel_dev,
+ 
+ 			dev_dbg(&GET_DEV(accel_dev),
+ 				"user section %s\n", section->name);
+-			strlcpy(user_sec,
++			strscpy(user_sec,
+ 				section->name,
+ 				ADF_CFG_MAX_SECTION_LEN_IN_BYTES);
+ 			user_sec_list[*user_sec_num] = user_sec;
+@@ -518,7 +518,7 @@ int adf_cfg_get_services_enabled(struct adf_accel_dev *accel_dev,
+ 	if (!val)
+ 		goto failed;
+ 
+-	strlcpy(key, ADF_SERVICES_ENABLED, ADF_CFG_MAX_VAL_LEN_IN_BYTES);
++	strscpy(key, ADF_SERVICES_ENABLED, ADF_CFG_MAX_VAL_LEN_IN_BYTES);
+ 	if (adf_cfg_get_param_value(accel_dev, ADF_GENERAL_SEC, key, val))
+ 		goto failed;
+ 
+@@ -542,7 +542,7 @@ int adf_cfg_get_services_enabled(struct adf_accel_dev *accel_dev,
+ 	}
+ 
+ 	ret = -EFAULT;
+-	strlcpy(key, ADF_SERVICES_ENABLED, ADF_CFG_MAX_VAL_LEN_IN_BYTES);
++	strscpy(key, ADF_SERVICES_ENABLED, ADF_CFG_MAX_VAL_LEN_IN_BYTES);
+ 	if (adf_cfg_get_param_value(accel_dev, ADF_GENERAL_SEC, key, val))
+ 		goto failed;
+ 
+@@ -640,7 +640,7 @@ int adf_cfg_get_num_of_inst(struct adf_accel_dev *accel_dev,
+ 		goto failed;
+ 
+ 	ret = -EFAULT;
+-	strlcpy(key, ADF_NUM_CY, ADF_CFG_MAX_VAL_LEN_IN_BYTES);
++	strscpy(key, ADF_NUM_CY, ADF_CFG_MAX_VAL_LEN_IN_BYTES);
+ 	if (adf_cfg_get_param_value(accel_dev, ADF_KERNEL_SEC, key, val))
+ 		goto failed;
+ 
+@@ -649,7 +649,7 @@ int adf_cfg_get_num_of_inst(struct adf_accel_dev *accel_dev,
+ 
+ 	(*num_cy_inst) += num_inst;
+ 
+-	strlcpy(key, ADF_NUM_DC, ADF_CFG_MAX_VAL_LEN_IN_BYTES);
++	strscpy(key, ADF_NUM_DC, ADF_CFG_MAX_VAL_LEN_IN_BYTES);
+ 	if (adf_cfg_get_param_value(accel_dev, ADF_KERNEL_SEC, key, val))
+ 		goto failed;
+ 
+@@ -662,14 +662,14 @@ int adf_cfg_get_num_of_inst(struct adf_accel_dev *accel_dev,
+ 		goto failed;
+ 
+ 	for (i = 0; i < user_sec_n; i++) {
+-		strlcpy(key, ADF_NUM_CY, ADF_CFG_MAX_VAL_LEN_IN_BYTES);
++		strscpy(key, ADF_NUM_CY, ADF_CFG_MAX_VAL_LEN_IN_BYTES);
+ 		if (adf_cfg_get_param_value(accel_dev, user_sec_l[i], key, val))
+ 			goto failed;
+ 
+ 		if (kstrtoul(val, 0, &num_inst))
+ 			goto failed;
+ 
+-		strlcpy(key, ADF_NUM_PROCESSES, ADF_CFG_MAX_VAL_LEN_IN_BYTES);
++		strscpy(key, ADF_NUM_PROCESSES, ADF_CFG_MAX_VAL_LEN_IN_BYTES);
+ 		if (adf_cfg_get_param_value(accel_dev, user_sec_l[i], key, val))
+ 			num_proc = 0;
+ 		else if (kstrtoul(val, 0, &num_proc))
+@@ -677,7 +677,7 @@ int adf_cfg_get_num_of_inst(struct adf_accel_dev *accel_dev,
+ 
+ 		(*num_cy_inst) += num_inst * num_proc;
+ 
+-		strlcpy(key, ADF_NUM_DC, ADF_CFG_MAX_VAL_LEN_IN_BYTES);
++		strscpy(key, ADF_NUM_DC, ADF_CFG_MAX_VAL_LEN_IN_BYTES);
+ 		if (adf_cfg_get_param_value(accel_dev, user_sec_l[i], key, val))
+ 			goto failed;
+ 
+@@ -714,7 +714,7 @@ adf_cfg_get_intr_inst_in_kernel_section(struct adf_accel_dev *accel_dev,
+ 	unsigned long num_inst = 0;
+ 	unsigned long polling_mode = 0;
+ 
+-	strlcpy(key, ADF_NUM_CY, ADF_CFG_MAX_VAL_LEN_IN_BYTES);
++	strscpy(key, ADF_NUM_CY, ADF_CFG_MAX_VAL_LEN_IN_BYTES);
+ 	if (adf_cfg_get_param_value(accel_dev, ADF_KERNEL_SEC, key, val))
+ 		goto failed;
+ 
+@@ -737,7 +737,7 @@ adf_cfg_get_intr_inst_in_kernel_section(struct adf_accel_dev *accel_dev,
+ 		}
+ 	}
+ 
+-	strlcpy(key, ADF_NUM_DC, ADF_CFG_MAX_VAL_LEN_IN_BYTES);
++	strscpy(key, ADF_NUM_DC, ADF_CFG_MAX_VAL_LEN_IN_BYTES);
+ 	if (adf_cfg_get_param_value(accel_dev, ADF_KERNEL_SEC, key, val))
+ 		goto failed;
+ 
+@@ -778,7 +778,7 @@ adf_cfg_get_intr_inst_in_user_sections(struct adf_accel_dev *accel_dev,
+ 	unsigned long polling_mode = 0;
+ 
+ 	for (j = 0; j < user_sec_num; j++) {
+-		strlcpy(key, ADF_NUM_CY, ADF_CFG_MAX_VAL_LEN_IN_BYTES);
++		strscpy(key, ADF_NUM_CY, ADF_CFG_MAX_VAL_LEN_IN_BYTES);
+ 		if (adf_cfg_get_param_value(accel_dev, user_sec_list[j],
+ 					    key, val))
+ 			goto failed;
+@@ -802,7 +802,7 @@ adf_cfg_get_intr_inst_in_user_sections(struct adf_accel_dev *accel_dev,
+ 			}
+ 		}
+ 
+-		strlcpy(key, ADF_NUM_DC, ADF_CFG_MAX_VAL_LEN_IN_BYTES);
++		strscpy(key, ADF_NUM_DC, ADF_CFG_MAX_VAL_LEN_IN_BYTES);
+ 		if (adf_cfg_get_param_value(accel_dev,
+ 					    user_sec_list[j], key, val))
+ 			goto failed;
+diff --git a/quickassist/qat/drivers/crypto/qat/qat_common/adf_cfg_section.c b/quickassist/qat/drivers/crypto/qat/qat_common/adf_cfg_section.c
+index 8ae44dd..f909b98 100644
+--- a/quickassist/qat/drivers/crypto/qat/qat_common/adf_cfg_section.c
++++ b/quickassist/qat/drivers/crypto/qat/qat_common/adf_cfg_section.c
+@@ -70,18 +70,18 @@ static int adf_cfg_set_core_number_for_instance(struct adf_accel_dev *accel_dev,
+ 	pos = strchr(core_val, ',');
+ 	while (pos) {
+ 		pos[0] = '\0';
+-		strlcpy(tokens[token_index++], core_val,
++		strscpy(tokens[token_index++], core_val,
+ 			ADF_CFG_MAX_TOKEN_LEN);
+ 		core_val = pos + 1;
+ 		pos = strchr(core_val, ',');
+ 		if (!pos)
+-			strlcpy(tokens[token_index++],
++			strscpy(tokens[token_index++],
+ 				core_val, ADF_CFG_MAX_VAL_LEN_IN_BYTES);
+ 	}
+ 
+ 	/* in case there is only N-M */
+ 	if (token_index == 0)
+-		strlcpy(tokens[token_index++], core_val,
++		strscpy(tokens[token_index++], core_val,
+ 			ADF_CFG_MAX_VAL_LEN_IN_BYTES);
+ 
+ 	/* parse the tokens such as N-M */
+@@ -204,7 +204,7 @@ static void adf_cfg_add_cy_inst_info(struct adf_accel_dev *accel_dev,
+ 	adf_cfg_add_key_value_param(accel_dev, derived_sec,
+ 				    key, (void *)&ring_number, ADF_DEC);
+ 
+-	strlcpy(key, ADF_CY_RING_ASYM_SIZE, ADF_CFG_MAX_KEY_LEN_IN_BYTES);
++	strscpy(key, ADF_CY_RING_ASYM_SIZE, ADF_CFG_MAX_KEY_LEN_IN_BYTES);
+ 	if (adf_cfg_set_value(accel_dev, ADF_GENERAL_SEC, key, &asym_req))
+ 		asym_req = ADF_CFG_DEF_CY_RING_ASYM_SIZE;
+ 
+@@ -213,7 +213,7 @@ static void adf_cfg_add_cy_inst_info(struct adf_accel_dev *accel_dev,
+ 	adf_cfg_add_key_value_param(accel_dev, derived_sec,
+ 				    key, (void *)&asym_req, ADF_DEC);
+ 
+-	strlcpy(key, ADF_CY_RING_SYM_SIZE, ADF_CFG_MAX_KEY_LEN_IN_BYTES);
++	strscpy(key, ADF_CY_RING_SYM_SIZE, ADF_CFG_MAX_KEY_LEN_IN_BYTES);
+ 	if (adf_cfg_set_value(accel_dev, ADF_GENERAL_SEC, key, &sym_req))
+ 		sym_req = ADF_CFG_DEF_CY_RING_SYM_SIZE;
+ 
+@@ -267,7 +267,7 @@ static void adf_cfg_add_dc_inst_info(struct adf_accel_dev *accel_dev,
+ 	adf_cfg_add_key_value_param(accel_dev, derived_sec,
+ 				    key, (void *)&ring_number, ADF_DEC);
+ 
+-	strlcpy(key, ADF_DC_RING_SIZE, ADF_CFG_MAX_KEY_LEN_IN_BYTES);
++	strscpy(key, ADF_DC_RING_SIZE, ADF_CFG_MAX_KEY_LEN_IN_BYTES);
+ 	if (adf_cfg_set_value(accel_dev, ADF_GENERAL_SEC, key, &dc_req))
+ 		dc_req = ADF_CFG_DEF_DC_RING_SIZE;
+ 
+@@ -328,7 +328,7 @@ static void adf_cfg_add_asym_inst_info(struct adf_accel_dev *accel_dev,
+ 	adf_cfg_add_key_value_param(accel_dev, derived_sec,
+ 				    key, (void *)&ring_number, ADF_DEC);
+ 
+-	strlcpy(key, ADF_CY_RING_ASYM_SIZE, ADF_CFG_MAX_KEY_LEN_IN_BYTES);
++	strscpy(key, ADF_CY_RING_ASYM_SIZE, ADF_CFG_MAX_KEY_LEN_IN_BYTES);
+ 	if (adf_cfg_set_value(accel_dev, ADF_GENERAL_SEC, key, &asym_req))
+ 		asym_req = ADF_CFG_DEF_CY_RING_ASYM_SIZE;
+ 
+@@ -387,7 +387,7 @@ static void adf_cfg_add_sym_inst_info(struct adf_accel_dev *accel_dev,
+ 	adf_cfg_add_key_value_param(accel_dev, derived_sec,
+ 				    key, (void *)&ring_number, ADF_DEC);
+ 
+-	strlcpy(key, ADF_CY_RING_SYM_SIZE, ADF_CFG_MAX_KEY_LEN_IN_BYTES);
++	strscpy(key, ADF_CY_RING_SYM_SIZE, ADF_CFG_MAX_KEY_LEN_IN_BYTES);
+ 	if (adf_cfg_set_value(accel_dev, ADF_GENERAL_SEC, key, &sym_req))
+ 		sym_req = ADF_CFG_DEF_CY_RING_SYM_SIZE;
+ 
+@@ -483,7 +483,7 @@ static int adf_cfg_create_rings_entries_for_cy_inst(
+ 
+ 	ret = -EFAULT;
+ 
+-	strlcpy(key, ADF_NUM_CY, ADF_CFG_MAX_KEY_LEN_IN_BYTES);
++	strscpy(key, ADF_NUM_CY, ADF_CFG_MAX_KEY_LEN_IN_BYTES);
+ 	if (adf_cfg_set_value(accel_dev, processed_sec, key, &num_inst))
+ 		goto failed;
+ 
+@@ -518,7 +518,7 @@ static int adf_cfg_create_rings_entries_for_cy_inst(
+ 					    val))
+ 			goto failed;
+ 
+-		strlcpy(crypto_inst->name, val, sizeof(crypto_inst->name));
++		strscpy(crypto_inst->name, val, sizeof(crypto_inst->name));
+ 
+ 		snprintf(key, ADF_CFG_MAX_KEY_LEN_IN_BYTES,
+ 			 ADF_CY_POLL_MODE_FORMAT, i);
+@@ -596,7 +596,7 @@ static int adf_cfg_create_rings_entries_for_dc_inst(
+ 		goto failed;
+ 
+ 	ret = -EFAULT;
+-	strlcpy(key, ADF_NUM_DC, ADF_CFG_MAX_KEY_LEN_IN_BYTES);
++	strscpy(key, ADF_NUM_DC, ADF_CFG_MAX_KEY_LEN_IN_BYTES);
+ 	if (adf_cfg_set_value(accel_dev, processed_sec, key, &num_inst))
+ 		goto failed;
+ 
+@@ -633,7 +633,7 @@ static int adf_cfg_create_rings_entries_for_dc_inst(
+ 					    val))
+ 			goto failed;
+ 
+-		strlcpy(dc_inst->name, val, sizeof(dc_inst->name));
++		strscpy(dc_inst->name, val, sizeof(dc_inst->name));
+ 
+ 		snprintf(key, ADF_CFG_MAX_KEY_LEN_IN_BYTES,
+ 			 ADF_DC_POLL_MODE_FORMAT, i);
+@@ -691,11 +691,11 @@ static int adf_cfg_process_user_section(struct adf_accel_dev *accel_dev,
+ 		goto failed;
+ 
+ 	ret = -EFAULT;
+-	strlcpy(key, ADF_NUM_PROCESSES, ADF_CFG_MAX_KEY_LEN_IN_BYTES);
++	strscpy(key, ADF_NUM_PROCESSES, ADF_CFG_MAX_KEY_LEN_IN_BYTES);
+ 	if (adf_cfg_set_value(accel_dev, sec_name, key, &num_processes))
+ 		num_processes = 0;
+ 
+-	strlcpy(key, ADF_LIMIT_DEV_ACCESS, ADF_CFG_MAX_KEY_LEN_IN_BYTES);
++	strscpy(key, ADF_LIMIT_DEV_ACCESS, ADF_CFG_MAX_KEY_LEN_IN_BYTES);
+ 	if (adf_cfg_set_value(accel_dev, sec_name, key, &limit_dev_acc))
+ 		limit_dev_acc = 0;
+ 
+@@ -818,21 +818,21 @@ static int adf_cfg_cleanup_general_section(struct adf_accel_dev *accel_dev,
+ 
+ 	ret = -EFAULT;
+ 	/* Remove sections that not needed after processing */
+-	strlcpy(key, ADF_CONFIG_VERSION, ADF_CFG_MAX_KEY_LEN_IN_BYTES);
++	strscpy(key, ADF_CONFIG_VERSION, ADF_CFG_MAX_KEY_LEN_IN_BYTES);
+ 	if (adf_cfg_remove_key_param(accel_dev, sec_name, key))
+ 		goto failed;
+ 
+-	strlcpy(key, ADF_CY ADF_RING_ASYM_SIZE,
++	strscpy(key, ADF_CY ADF_RING_ASYM_SIZE,
+ 		ADF_CFG_MAX_KEY_LEN_IN_BYTES);
+ 	if (adf_cfg_remove_key_param(accel_dev, sec_name, key))
+ 		goto failed;
+ 
+-	strlcpy(key, ADF_CY ADF_RING_SYM_SIZE,
++	strscpy(key, ADF_CY ADF_RING_SYM_SIZE,
+ 		ADF_CFG_MAX_KEY_LEN_IN_BYTES);
+ 	if (adf_cfg_remove_key_param(accel_dev, sec_name, key))
+ 		goto failed;
+ 
+-	strlcpy(key, ADF_DC ADF_RING_DC_SIZE,
++	strscpy(key, ADF_DC ADF_RING_DC_SIZE,
+ 		ADF_CFG_MAX_KEY_LEN_IN_BYTES);
+ 	if (adf_cfg_remove_key_param(accel_dev, sec_name, key))
+ 		goto failed;
+@@ -917,17 +917,17 @@ static inline int adf_cfg_reserve_for_adi(struct adf_accel_dev *accel_dev,
+ 	case SYM:
+ 		cfg_tx = instance->sym_tx;
+ 		cfg_rx = instance->sym_rx;
+-		strlcpy(val, "sym", ADF_CFG_MAX_VAL_LEN_IN_BYTES);
++		strscpy(val, "sym", ADF_CFG_MAX_VAL_LEN_IN_BYTES);
+ 		break;
+ 	case ASYM:
+ 		cfg_tx = instance->asym_tx;
+ 		cfg_rx = instance->asym_rx;
+-		strlcpy(val, "asym", ADF_CFG_MAX_VAL_LEN_IN_BYTES);
++		strscpy(val, "asym", ADF_CFG_MAX_VAL_LEN_IN_BYTES);
+ 		break;
+ 	case COMP:
+ 		cfg_tx = instance->dc_tx;
+ 		cfg_rx = instance->dc_rx;
+-		strlcpy(val, "dc", ADF_CFG_MAX_VAL_LEN_IN_BYTES);
++		strscpy(val, "dc", ADF_CFG_MAX_VAL_LEN_IN_BYTES);
+ 		break;
+ 	default:
+ 		pr_err("Unsupported service type for ADI: %d.\n",
+@@ -1013,7 +1013,7 @@ static int adf_cfg_process_siov_section(struct adf_accel_dev *accel_dev,
+ 	if (!val)
+ 		goto failed;
+ 
+-	strlcpy(key, ADF_NUM_ADI, ADF_CFG_MAX_VAL_LEN_IN_BYTES);
++	strscpy(key, ADF_NUM_ADI, ADF_CFG_MAX_VAL_LEN_IN_BYTES);
+ 	if (adf_cfg_get_param_value(accel_dev, sec_name,
+ 				    key, val)) {
+ 		device->adi_num = 0;
+@@ -1135,18 +1135,18 @@ static int adf_cfg_create_accel_section(struct adf_accel_dev *accel_dev,
+ 	if (!val)
+ 		goto failed;
+ 
+-	strlcpy(key, ADF_ETRMGR_COALESCING_ENABLED,
++	strscpy(key, ADF_ETRMGR_COALESCING_ENABLED,
+ 		ADF_CFG_MAX_KEY_LEN_IN_BYTES);
+ 	if (adf_cfg_set_value(accel_dev, ADF_GENERAL_SEC, key, &accel_coales))
+ 		accel_coales = ADF_CFG_ACCEL_DEF_COALES;
+ 
+-	strlcpy(key, ADF_ETRMGR_COALESCE_TIMER,
++	strscpy(key, ADF_ETRMGR_COALESCE_TIMER,
+ 		ADF_CFG_MAX_KEY_LEN_IN_BYTES);
+ 	if (adf_cfg_set_value(accel_dev, ADF_GENERAL_SEC, key,
+ 			      &accel_coales_timer))
+ 		accel_coales_timer = hw_device->default_coalesce_timer;
+ 
+-	strlcpy(key, ADF_ETRMGR_COALESCING_MSG_ENABLED,
++	strscpy(key, ADF_ETRMGR_COALESCING_MSG_ENABLED,
+ 		ADF_CFG_MAX_KEY_LEN_IN_BYTES);
+ 	if (adf_cfg_set_value(accel_dev, ADF_GENERAL_SEC, key,
+ 			      &accel_coales_num_msg))
+diff --git a/quickassist/qat/drivers/crypto/qat/qat_common/adf_ctl_drv.c b/quickassist/qat/drivers/crypto/qat/qat_common/adf_ctl_drv.c
+index df435ad..a11d88d 100644
+--- a/quickassist/qat/drivers/crypto/qat/qat_common/adf_ctl_drv.c
++++ b/quickassist/qat/drivers/crypto/qat/qat_common/adf_ctl_drv.c
+@@ -548,10 +548,10 @@ static int adf_get_dev_node_id(struct pci_dev *pdev)
+ 		/* if there is only one physical processor don't need
+ 		 * to do any further calculations
+ 		 */
+-		if (c->phys_proc_id == 0) {
++		if (c->topo.pkg_id == 0) {
+ 			node_id = 0;
+ 		} else {
+-			bus_per_cpu = MAX_PCI_BUS / (c->phys_proc_id + 1);
++			bus_per_cpu = MAX_PCI_BUS / (c->topo.pkg_id + 1);
+ 			if (bus_per_cpu != 0)
+ 				node_id = pdev->bus->number / bus_per_cpu;
+ 		}
+@@ -584,7 +584,7 @@ static int adf_ctl_ioctl_get_status(unsigned long arg)
+ 	dev_info.banks_per_accel = hw_data->num_banks
+ 					/ hw_data->num_logical_accel;
+ 	dev_info.rings_per_bank = hw_data->num_rings_per_bank;
+-	strlcpy(dev_info.name, hw_data->dev_class->name, sizeof(dev_info.name));
++	strscpy(dev_info.name, hw_data->dev_class->name, sizeof(dev_info.name));
+ 	dev_info.instance_id = hw_data->instance_id;
+ 	dev_info.node_id     = adf_get_dev_node_id(accel_to_pci_dev(accel_dev));
+ #ifdef QAT_UIO
+diff --git a/quickassist/qat/drivers/crypto/qat/qat_common/adf_fw_counters.c b/quickassist/qat/drivers/crypto/qat/qat_common/adf_fw_counters.c
+index fbd9770..b46c85a 100644
+--- a/quickassist/qat/drivers/crypto/qat/qat_common/adf_fw_counters.c
++++ b/quickassist/qat/drivers/crypto/qat/qat_common/adf_fw_counters.c
+@@ -344,7 +344,7 @@ static int adf_fw_counters_add_key_value_param(struct adf_accel_dev *accel_dev,
+ 			 "%ld", tmp);
+ 	}
+ 
+-	strlcpy(key_val->key, key, sizeof(key_val->key));
++	strscpy(key_val->key, key, sizeof(key_val->key));
+ 	down_write(&fw_counters_data->lock);
+ 	adf_fw_counters_keyval_add(key_val, section);
+ 	up_write(&fw_counters_data->lock);
+@@ -377,7 +377,7 @@ static int adf_fw_counters_section_add(struct adf_accel_dev *accel_dev,
+ 	if (!sec)
+ 		return -ENOMEM;
+ 
+-	strlcpy(sec->name, name, sizeof(sec->name));
++	strscpy(sec->name, name, sizeof(sec->name));
+ 	INIT_LIST_HEAD(&sec->param_head);
+ 
+ 	down_write(&fw_counters_data->lock);
+diff --git a/quickassist/qat/drivers/crypto/qat/qat_common/adf_transport_debug.c b/quickassist/qat/drivers/crypto/qat/qat_common/adf_transport_debug.c
+index 4354928..96f86db 100644
+--- a/quickassist/qat/drivers/crypto/qat/qat_common/adf_transport_debug.c
++++ b/quickassist/qat/drivers/crypto/qat/qat_common/adf_transport_debug.c
+@@ -114,7 +114,7 @@ int adf_ring_debugfs_add(struct adf_etr_ring_data *ring, const char *name)
+ 	if (!ring_debug)
+ 		return -ENOMEM;
+ 
+-	strlcpy(ring_debug->ring_name, name, sizeof(ring_debug->ring_name));
++	strscpy(ring_debug->ring_name, name, sizeof(ring_debug->ring_name));
+ 	snprintf(entry_name, sizeof(entry_name), "ring_%02d",
+ 		 ring->ring_number);
+ 
+diff --git a/quickassist/qat/drivers/crypto/qat/qat_common/adf_vdcm.h b/quickassist/qat/drivers/crypto/qat/qat_common/adf_vdcm.h
+index 2da63ee..c858060 100644
+--- a/quickassist/qat/drivers/crypto/qat/qat_common/adf_vdcm.h
++++ b/quickassist/qat/drivers/crypto/qat/qat_common/adf_vdcm.h
+@@ -264,7 +264,7 @@ int adf_vqat_irq_ctx_init(struct adf_vqat_irq_ctx *ctx,
+ 	ctx->set_irq = set_irq;
+ 	ctx->data = data;
+ 	if (name)
+-		strlcpy(ctx->name, name, ADF_VQAT_IRQ_NAME_SIZE);
++		strscpy(ctx->name, name, ADF_VQAT_IRQ_NAME_SIZE);
+ 	else
+ 		ctx->name[0] = 0;
+ 
+diff --git a/quickassist/qat/drivers/crypto/qat/qat_common/qat_crypto.c b/quickassist/qat/drivers/crypto/qat/qat_common/qat_crypto.c
+index 39fb601..c5addc5 100644
+--- a/quickassist/qat/drivers/crypto/qat/qat_common/qat_crypto.c
++++ b/quickassist/qat/drivers/crypto/qat/qat_common/qat_crypto.c
+@@ -537,7 +537,7 @@ static int qat_crypto_create_instances(struct adf_accel_dev *accel_dev)
+ 	struct adf_hw_device_data *hw_data = accel_dev->hw_device;
+ 
+ 	INIT_LIST_HEAD(&accel_dev->crypto_list);
+-	strlcpy(key, ADF_NUM_CY, sizeof(key));
++	strscpy(key, ADF_NUM_CY, sizeof(key));
+ 	if (adf_cfg_get_param_value(accel_dev, SEC, key, val))
+ 		return -EFAULT;
+ 
+diff --git a/quickassist/utilities/libusdm_drv/linux/kernel_space/qae_mem_drv.c b/quickassist/utilities/libusdm_drv/linux/kernel_space/qae_mem_drv.c
+index 995bbb9..3695b14 100644
+--- a/quickassist/utilities/libusdm_drv/linux/kernel_space/qae_mem_drv.c
++++ b/quickassist/utilities/libusdm_drv/linux/kernel_space/qae_mem_drv.c
+@@ -202,7 +202,11 @@ typedef struct {
+ /* Kernel space hash for fast slab searching */
+ static slab_list_t g_slab_list[PAGE_SIZE] = {{0}};
+ 
+-extern int handle_other_ioctls(uint32_t cmd);
++static int handle_other_ioctls(uint32_t cmd)
++{
++    mm_err("Invalid IOCTL command specified(0x%x)\n", cmd);
++    return -EINVAL;
++}
+ /******************************************************************************
+  * debug: /sys/kernel/debug/qae_mem_dbg directory
+  * qae_mem_slabs file
+diff --git a/quickassist/utilities/libusdm_drv/linux/kernel_space/qae_mem_drv_utils.c b/quickassist/utilities/libusdm_drv/linux/kernel_space/qae_mem_drv_utils.c
+index 16a1b1d..47d4c1b 100644
+--- a/quickassist/utilities/libusdm_drv/linux/kernel_space/qae_mem_drv_utils.c
++++ b/quickassist/utilities/libusdm_drv/linux/kernel_space/qae_mem_drv_utils.c
+@@ -74,9 +74,3 @@
+ 
+ #include "qae_mem_utils.h"
+ 
+-int handle_other_ioctls(uint32_t cmd)
+-{
+-    mm_err("Invalid IOCTL command specified(0x%x)\n", cmd);
+-    return -EINVAL;
+-}
+-
+-- 
+2.47.1
+

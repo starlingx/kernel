@@ -2,3 +2,4 @@
 0002-phc-print-firmware-ready-status-only-once.patch
 0003-octeon_ep-Drop-redundant-pci_enable_pcie_error_repor.patch
 0004-phc-convert-.adjfreq-to-.adjfine.patch
+0005-octeon_ep-Adapt-the-code-to-be-compatible-with-linux.patch

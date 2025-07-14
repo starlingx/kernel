@@ -1,3 +1,8 @@
+linux-rt (6.12.18-1) unstable; urgency=medium
+  * New upstream update:
+    https://git.yoctoproject.org/linux-yocto/commit/?h=v6.12/standard/preempt-rt/base&id=7c2d49c69f3f7e59a598fa8f618b37836fd56404
+ -- Jiping Ma <jiping.ma2@windriver.com>  Mon, 10 Mar 2025 14:33:21 +0800
+
 linux-rt (6.6.71-1) unstable; urgency=medium
 
   * New upstream update:

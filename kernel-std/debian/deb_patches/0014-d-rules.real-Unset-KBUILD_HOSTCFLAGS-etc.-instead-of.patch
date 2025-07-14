@@ -1,0 +1,44 @@
+From a0a2a37b2d391ca63cbb49f5b80b959617746ab1 Mon Sep 17 00:00:00 2001
+From: Ben Hutchings <benh@debian.org>
+Date: Mon, 5 Aug 2024 04:30:36 +0200
+Subject: [PATCH 14/19] d/rules.real: Unset KBUILD_HOSTCFLAGS etc. instead of
+ overriding to be empty
+
+The upstream Makefile tries to add some flags to KBUILD_HOSTCFLAGS,
+and now fails to build anything if we override it to be empty:
+
+    .../scripts/kconfig/util.c:11:10: fatal error: hashtable.h: No such file or directory
+       11 | #include <hashtable.h>
+          |          ^~~~~~~~~~~~~
+    compilation terminated.
+
+Instead of overriding these flags variables to be empty, unset them in
+the environment.
+
+(cherry picked from commit f77deecbb5d46f1f5034f348952152b0c2d584f7)
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ debian/rules.real | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/debian/rules.real b/debian/rules.real
+index f2ea3ea49b..0825bf3009 100644
+--- a/debian/rules.real
++++ b/debian/rules.real
+@@ -42,10 +42,12 @@ undefine LANGUAGE
+ stamp = [ -d $(dir $@) ] || mkdir $(dir $@); touch $@
+ 
+ setup_env := env -u ABINAME -u ARCH -u FEATURESET -u FLAVOUR -u VERSION -u LOCALVERSION
++# XXX: All the tools leak flags between host and build all the time, just don't care.  See #1050991.
++setup_env += -u KBUILD_HOSTCFLAGS -u HOSTCFLAGS -u KBUILD_HOSTLDFLAGS
+ setup_env += DISTRIBUTION_OFFICIAL_BUILD=1 DISTRIBUTOR="$(DISTRIBUTOR)" DISTRIBUTION_VERSION="$(SOURCEVERSION)" KBUILD_BUILD_TIMESTAMP="$(SOURCE_DATE)" KBUILD_BUILD_VERSION_TIMESTAMP="StarlingX $(DISTRIBUTOR) $(SOURCEVERSION) ($(SOURCE_DATE_UTC_ISO))"
+ setup_env += KBUILD_VERBOSE=$(if $(filter terse,$(DEB_BUILD_OPTIONS)),0,1)
+ 
+-MAKE_CLEAN = $(setup_env) $(MAKE) KCFLAGS=-fdebug-prefix-map=$(CURDIR)/= KBUILD_HOSTCFLAGS='$(CFLAGS) $(CPPFLAGS)' HOSTCFLAGS='$(CFLAGS) $(CPPFLAGS)' KBUILD_HOSTLDFLAGS='$(LDFLAGS)'
++MAKE_CLEAN = $(setup_env) $(MAKE) KCFLAGS=-fdebug-prefix-map=$(CURDIR)/=
+ MAKE_SELF := $(MAKE) -f debian/rules.real $(MAKEOVERRIDES)
+ MAKEOVERRIDES =
+ 
+-- 
+2.47.1
+

@@ -1,3 +1,2 @@
 0001-Enable-mlx5-onboard-udev-name.patch
-0002-mlnx-ofa_kernel-fix-bnxt_re-build-error.patch
-0003-Fix-the-obsolete-module-init.patch
+0002-Fix-the-obsolete-module-init.patch

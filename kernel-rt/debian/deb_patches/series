@@ -11,3 +11,13 @@
 0011-Update-the-patch-for-kernel-6.6.40.patch
 0012-mod-fix-the-undefined-errors.patch
 0013-build-size.patch
+0014-Correct-the-patches-for-the-linux-kernel-6.12.x.patch
+0015-d-rules.real-Unset-KBUILD_HOSTCFLAGS-etc.-instead-of.patch
+0016-d-rules.d-Makefile.inc-Add-scripts-include-to-header.patch
+0017-linux-cpupower-Update-turbostat-Makefile-to-define-B.patch
+0018-hyperv-daemons-Update-for-upstream-removal-of-hv_fco.patch
+0019-d-rules.d-certs-Add-newly-required-include-directory.patch
+0020-Disable-building-rtla-since-bullseye-s-libtraceevent.patch
+0021-Drop-all-ia64-configs-due-to-upstream-dropping-IA64-.patch
+0022-linux-kbuild-Add-scripts-module-common.c-Closes-1087.patch
+0023-linux-cpupower-Add-intel-speed-select-command.patch

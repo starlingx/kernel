@@ -1,7 +1,7 @@
-From 90565225e863d5a8103dd9fc81f88804bdf4c1a0 Mon Sep 17 00:00:00 2001
+From d70f7bf8a78251974580a84c24f5d34c3ca640ba Mon Sep 17 00:00:00 2001
 From: Jiping Ma <jiping.ma2@windriver.com>
 Date: Wed, 23 Mar 2022 22:59:40 -0700
-Subject: [PATCH] mlnx-ofa_kernel: adapt the debian folder for starlingX
+Subject: [PATCH 1/2] mlnx-ofa_kernel: adapt the debian folder for starlingX
 
 Adapt the upstream debian folder for starlingX:
 - don't use dkms and build the kernel modules from source code;
@@ -21,16 +21,18 @@ Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
 Signed-off-by: Yue Tao <Yue.Tao@windriver.com>
 [jm: Adapted the patch for context change]
 Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+[jm: Adapted the patch for context change of the 24.10 version.]
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
 ---
- debian/control                              | 19 +++------
- debian/extra/mlnx.conf                      | 19 +++++++++
+ debian/control                              | 22 +++-------
+ debian/extra/mlnx.conf                      | 20 +++++++++
  debian/mlnx-ofed-kernel-modules-rt.postinst | 17 ++++++++
  debian/mlnx-ofed-kernel-modules-rt.prerm    | 10 +++++
  debian/mlnx-ofed-kernel-utils-rt.postinst   | 47 +++++++++++++++++++++
  debian/mlnx-ofed-kernel-utils-rt.postrm     | 14 ++++++
  debian/mlnx-ofed-kernel-utils-rt.prerm      | 23 ++++++++++
  debian/rules                                | 24 ++++++++---
- 8 files changed, 155 insertions(+), 18 deletions(-)
+ 8 files changed, 156 insertions(+), 21 deletions(-)
  create mode 100644 debian/extra/mlnx.conf
  create mode 100755 debian/mlnx-ofed-kernel-modules-rt.postinst
  create mode 100755 debian/mlnx-ofed-kernel-modules-rt.prerm
@@ -39,7 +41,7 @@ Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
  create mode 100755 debian/mlnx-ofed-kernel-utils-rt.prerm
 
 diff --git a/debian/control b/debian/control
-index 2b00d80..6b59989 100644
+index bd3cf23..701a9c5 100644
 --- a/debian/control
 +++ b/debian/control
 @@ -2,7 +2,7 @@ Source: mlnx-ofed-kernel
@@ -48,10 +50,10 @@ index 2b00d80..6b59989 100644
  Maintainer: Vladimir Sokolovsky <vlad@mellanox.com>
 -Build-Depends: debhelper (>= 8.0.0), autotools-dev, bzip2, dkms,
 +Build-Depends: debhelper (>= 8.0.0), autotools-dev, bzip2, dkms, linux@KERNEL_TYPE@-headers-stx-amd64, linux@KERNEL_TYPE@-keys
- Standards-Version: 3.9.2
+ Standards-Version: 4.2.0
  Homepage: http://www.mellanox.com/page/products_dyn?product_family=26&mtag=linux_sw_drivers
  
-@@ -13,18 +13,11 @@ Depends: ${misc:Depends}, coreutils, pciutils, grep, procps, module-init-tools |
+@@ -13,18 +13,8 @@ Depends: ${misc:Depends}, coreutils, pciutils, grep, procps, module-init-tools |
  Conflicts: mlnx-en-utils
  Description: Userspace tools to restart and tune mlnx-ofed kernel modules
  
@@ -67,20 +69,20 @@ index 2b00d80..6b59989 100644
 - This package provides integration with the DKMS infrastructure for
 - automatically building out of tree kernel modules.
 - .
+- This package provides the source code for the mlnx-ofed kernel modules.
+- .
+- This package contains the source to be built with dkms.
 +Package: mlnx-ofed-kernel-modules@KERNEL_TYPE@
 +Architecture: any
 +Depends: ${shlibs:Depends}, ${misc:Depends}, mlnx-ofed-kernel-utils
 +Description: ofed kernel modules
 + This package provides the mlnx-ofed out of tree kernel modules.
-  This package provides the source code for the mlnx-ofed kernel modules.
-  .
-  This package contains the source to be built with dkms.
 diff --git a/debian/extra/mlnx.conf b/debian/extra/mlnx.conf
 new file mode 100644
-index 0000000..d6ced47
+index 0000000..0cb2131
 --- /dev/null
 +++ b/debian/extra/mlnx.conf
-@@ -0,0 +1,19 @@
+@@ -0,0 +1,20 @@
 +mlx_compat
 +ib_cm
 +ib_core
@@ -100,6 +102,7 @@ index 0000000..d6ced47
 +rpcrdma
 +svcrdma
 +xprtrdma
++
 diff --git a/debian/mlnx-ofed-kernel-modules-rt.postinst b/debian/mlnx-ofed-kernel-modules-rt.postinst
 new file mode 100755
 index 0000000..a67c0c4
@@ -242,7 +245,7 @@ index 0000000..79e96b5
 +
 +exit 0
 diff --git a/debian/rules b/debian/rules
-index 7e32e3c..e9b2564 100755
+index f3cfff4..94d1616 100755
 --- a/debian/rules
 +++ b/debian/rules
 @@ -17,8 +17,20 @@
@@ -267,8 +270,8 @@ index 7e32e3c..e9b2564 100755
 +
  MLXNUMC = $(shell grep ^processor /proc/cpuinfo | wc -l)
  NJOBS ?= $(shell if [ $(MLXNUMC) -lt 16 ]; then echo $(MLXNUMC); else echo 16; fi)
- 
-@@ -27,7 +39,7 @@ psource:=$(pname)-source
+ ifeq ($(WITH_DKMS),1)
+@@ -34,7 +46,7 @@ psource:=$(pname)-source
  ifeq ($(WITH_DKMS),1)
  pdkms:=$(pname)-dkms
  else
@@ -277,7 +280,7 @@ index 7e32e3c..e9b2564 100755
  endif
  putils:=$(pname)-utils
  
-@@ -40,7 +52,6 @@ export INSTALL_MOD_PATH:=$(CURDIR)/debian/$(pdkms)
+@@ -47,7 +59,6 @@ export INSTALL_MOD_PATH:=$(CURDIR)/debian/$(pdkms)
  DIST_NAME := $(shell lsb_release -si)
  DIST_RELEASE := $(DIST_NAME)/$(shell lsb_release -sc)
  
@@ -285,7 +288,7 @@ index 7e32e3c..e9b2564 100755
  kernelver1 = $(shell echo $(kernelver) | sed -e 's/_/-/g')
  kernel_source_dir ?= "/lib/modules/$(kernelver)/build"
  deb_arch = $(shell uname -m)
-@@ -62,7 +73,7 @@ override_dh_auto_configure:
+@@ -69,7 +80,7 @@ override_dh_auto_configure:
  ifneq ($(WITH_DKMS),1)
  	@echo Building for $(kernelver)
  	find compat -type f -exec touch -t 200012201010 '{}' \; || true
@@ -294,8 +297,8 @@ index 7e32e3c..e9b2564 100755
  endif
  
  mod_dev_dir = /usr/src/ofa_kernel/$(deb_arch)/$(kernelver)
-@@ -179,6 +190,9 @@ endif
- 	install -m 0755 source/ofed_scripts/odp_stat.sh			debian/$(putils)/usr/sbin
+@@ -189,6 +200,9 @@ endif
+ 	install -m 0755 source/ofed_scripts/setup_mr_cache.sh		debian/$(putils)/usr/sbin
  	install -m 0755 ofed_scripts/mlnx_bf_assign_ct_cores.sh		debian/$(putils)/usr/share/mlnx_ofed
  
 +	dh_installdirs -p$(putils) /etc/modules-load.d/
@@ -305,5 +308,5 @@ index 7e32e3c..e9b2564 100755
  
  
 -- 
-2.42.0
+2.47.1
 

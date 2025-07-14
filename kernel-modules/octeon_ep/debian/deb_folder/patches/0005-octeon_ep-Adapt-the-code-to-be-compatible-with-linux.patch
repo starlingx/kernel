@@ -1,0 +1,195 @@
+From 6a6ef60aad4f08096f63af67c99992223e6b0132 Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Wed, 2 Apr 2025 01:42:59 +0000
+Subject: [PATCH 5/5] octeon_ep:Adapt the code to be compatible with
+
+This commit does the following changes to fix the compatible build errors.
+
+* Change the parameter ethtool_ts_info to kernel_ethtool_ts_info refer
+  to commit 2111375b85ad ("net: Add struct kernel_ethtool_ts_info").
+* Include <linux/vmalloc.h> to fix "implicit declaration of function 'vzalloc'"
+* Put these three function declarations
+  int octeon_chip_specific_setup(octeon_device_t *oct_dev),
+  uint64_t octeon_pci_bar4_read64(octeon_device_t *oct_dev, int baridx, \
+                                 uint64_t bar_offset)
+  void octeon_pci_bar4_write64(octeon_device_t *oct_dev, int baridx,  \
+                               uint64_t bar_offset, uint64_t val)
+  into drivers/phc/include/octeon_device.h
+* Add “static" before the function that only is used in the local file.
+
+References:
+* https://git.yoctoproject.org/linux-yocto/commit/?h=2111375b85ad
+
+Resolved compilation errors:
+
+drivers/phc/octeon_device.c:327:5: error: no previous prototype for 'octeon_chip_specific_setup' [-Werror=missing-prototypes]
+  327 | int octeon_chip_specific_setup(octeon_device_t *oct_dev)
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~
+drivers/phc/octeon_device.c:441:10: error: no previous prototype for 'octeon_pci_bar4_read64' [-Werror=missing-prototypes]
+  441 | uint64_t octeon_pci_bar4_read64(octeon_device_t *oct_dev, int baridx, uint64_t bar_offset)
+      |          ^~~~~~~~~~~~~~~~~~~~~~
+......
+
+drivers/octeon_ep_vf/octep_vf_mbox.c:30:14: error: implicit declaration of function 'vzalloc'; did you mean 'kzalloc'? [-Werror=implicit-function-declaration]
+   30 |  oct->mbox = vzalloc(sizeof(*oct->mbox));
+      |              ^~~~~~~
+      |              kzalloc
+drivers/octeon_ep_vf/octep_vf_mbox.c: In function 'octep_vf_delete_mbox':
+/build/octeon-ep-rUpzbc/octeon-ep-112311/drivers/octeon_ep_vf/octep_vf_mbox.c:51:3: error: implicit declaration of function 'vfree'; did you mean 'kvfree'? [-Werror=implicit-function-declaration]
+   51 |   vfree(oct->mbox);
+      |   ^~~~~
+      |   kvfree
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ drivers/octeon_ep/octep_ethtool.c    |  2 +-
+ drivers/octeon_ep/octep_main.c       | 10 +++++-----
+ drivers/octeon_ep/octep_pfvf_mbox.c  |  2 +-
+ drivers/octeon_ep_vf/octep_vf_main.c |  2 +-
+ drivers/octeon_ep_vf/octep_vf_mbox.c |  1 +
+ drivers/phc/ep_phc.c                 |  7 +------
+ drivers/phc/include/octeon_device.h  |  3 +++
+ 7 files changed, 13 insertions(+), 14 deletions(-)
+
+diff --git a/drivers/octeon_ep/octep_ethtool.c b/drivers/octeon_ep/octep_ethtool.c
+index 5bf96a6..57a2159 100644
+--- a/drivers/octeon_ep/octep_ethtool.c
++++ b/drivers/octeon_ep/octep_ethtool.c
+@@ -452,7 +452,7 @@ static int octep_set_link_ksettings(struct net_device *netdev,
+ 	return 0;
+ }
+ 
+-static int octep_get_ts_info(struct net_device *ndev, struct ethtool_ts_info *info)
++static int octep_get_ts_info(struct net_device *ndev, struct kernel_ethtool_ts_info *info)
+ {
+ 	info->so_timestamping =
+ 		SOF_TIMESTAMPING_TX_SOFTWARE |
+diff --git a/drivers/octeon_ep/octep_main.c b/drivers/octeon_ep/octep_main.c
+index 43f388e..bd909fe 100644
+--- a/drivers/octeon_ep/octep_main.c
++++ b/drivers/octeon_ep/octep_main.c
+@@ -1908,7 +1908,7 @@ static int octep_reset_done(struct pci_dev *pdev)
+ 	return 0;
+ }
+ 
+-void octep_cleanup_aer_uncorrect_error_status(struct pci_dev *pdev)
++static void octep_cleanup_aer_uncorrect_error_status(struct pci_dev *pdev)
+ {
+ 	int pos = 0x100;
+ 	u32 status, mask;
+@@ -1932,7 +1932,7 @@ void octep_cleanup_aer_uncorrect_error_status(struct pci_dev *pdev)
+  * This function is called after a PCI bus error affecting
+  * this device has been detected.
+  */
+-pci_ers_result_t
++static pci_ers_result_t
+ octep_pcie_error_detected(struct pci_dev *pdev, pci_channel_state_t state)
+ {
+ 	struct octep_device *oct = pci_get_drvdata(pdev);
+@@ -1950,7 +1950,7 @@ octep_pcie_error_detected(struct pci_dev *pdev, pci_channel_state_t state)
+ 	return PCI_ERS_RESULT_DISCONNECT;
+ }
+ 
+-pci_ers_result_t octep_pcie_mmio_enabled(struct pci_dev *pdev)
++static pci_ers_result_t octep_pcie_mmio_enabled(struct pci_dev *pdev)
+ {
+ 	/* We should never hit this since we never ask for a reset for a Fatal
+ 	 * Error. We always return DISCONNECT in io_error above. */
+@@ -1966,7 +1966,7 @@ pci_ers_result_t octep_pcie_mmio_enabled(struct pci_dev *pdev)
+  * Restart the card from scratch, as if from a cold-boot. Implementation
+  * resembles the first-half of the octeon_resume routine.
+  */
+-pci_ers_result_t octep_pcie_slot_reset(struct pci_dev * pdev)
++static pci_ers_result_t octep_pcie_slot_reset(struct pci_dev * pdev)
+ {
+ 	/* We should never hit this since we never ask for a reset for a Fatal
+ 	 * Error. We always return DISCONNECT in io_error above. */
+@@ -1983,7 +1983,7 @@ pci_ers_result_t octep_pcie_slot_reset(struct pci_dev * pdev)
+  * its OK to resume normal operation. Implementation resembles the
+  * second-half of the octeon_resume routine.
+  */
+-void octep_pcie_resume(struct pci_dev *pdev)
++static void octep_pcie_resume(struct pci_dev *pdev)
+ {
+ 	dev_err(&pdev->dev, "octep_pcie_resume\n");
+ 	/* Nothing to be done here. */
+diff --git a/drivers/octeon_ep/octep_pfvf_mbox.c b/drivers/octeon_ep/octep_pfvf_mbox.c
+index 061f90b..2f591af 100644
+--- a/drivers/octeon_ep/octep_pfvf_mbox.c
++++ b/drivers/octeon_ep/octep_pfvf_mbox.c
+@@ -15,7 +15,7 @@
+ #include <linux/io.h>
+ #include <linux/pci.h>
+ #include <linux/etherdevice.h>
+-
++#include <linux/vmalloc.h>
+ #include "octep_config.h"
+ #include "octep_main.h"
+ #include "octep_pfvf_mbox.h"
+diff --git a/drivers/octeon_ep_vf/octep_vf_main.c b/drivers/octeon_ep_vf/octep_vf_main.c
+index 7cebea1..47efd1c 100644
+--- a/drivers/octeon_ep_vf/octep_vf_main.c
++++ b/drivers/octeon_ep_vf/octep_vf_main.c
+@@ -1137,7 +1137,7 @@ static void octep_vf_device_cleanup(struct octep_vf_device *oct)
+ 	oct->conf = NULL;
+ }
+ 
+-int octep_vf_get_mac_addr(struct octep_vf_device *oct, u8 *addr)
++static int octep_vf_get_mac_addr(struct octep_vf_device *oct, u8 *addr)
+ {
+ 	return octep_vf_mbox_get_mac_addr(oct, addr);
+ }
+diff --git a/drivers/octeon_ep_vf/octep_vf_mbox.c b/drivers/octeon_ep_vf/octep_vf_mbox.c
+index 0b7506d..bbc2066 100644
+--- a/drivers/octeon_ep_vf/octep_vf_mbox.c
++++ b/drivers/octeon_ep_vf/octep_vf_mbox.c
+@@ -7,6 +7,7 @@
+ #include <linux/types.h>
+ #include <linux/pci.h>
+ #include <linux/netdevice.h>
++#include <linux/vmalloc.h>
+ #include "octep_vf_config.h"
+ #include "octep_vf_main.h"
+ 
+diff --git a/drivers/phc/ep_phc.c b/drivers/phc/ep_phc.c
+index cc4917f..bbe6360 100644
+--- a/drivers/phc/ep_phc.c
++++ b/drivers/phc/ep_phc.c
+@@ -34,11 +34,6 @@ MODULE_PARM_DESC(startup_set_ptp, "Flag to set PTP clock to host clock at startu
+ 
+ void __iomem *nwa_bar0_internal_addr;
+ 
+-uint64_t octeon_pci_bar4_read64(octeon_device_t *oct_dev, int baridx, uint64_t bar_offset);
+-void octeon_pci_bar4_write64(octeon_device_t *oct_dev, int baridx, uint64_t bar_offset, uint64_t val);
+-
+-int octeon_chip_specific_setup(octeon_device_t *oct_dev);
+-
+ #ifndef  DEFINE_PCI_DEVICE_TABLE
+ #define  DEFINE_PCI_DEVICE_TABLE(octeon_ep_phc_pci_tbl) struct pci_device_id octeon_ep_phc_pci_tbl[]
+ #endif
+@@ -355,7 +350,7 @@ static ssize_t octeon_ep_phc_sysfs_device_show(struct kobject *kobj,
+ }
+ 
+ /* Device initialization for each Octeon device. */
+-int octeon_device_init(octeon_device_t *oct_dev)
++static int octeon_device_init(octeon_device_t *oct_dev)
+ {
+ 	int ret;
+ 
+diff --git a/drivers/phc/include/octeon_device.h b/drivers/phc/include/octeon_device.h
+index 6633134..043ec4e 100644
+--- a/drivers/phc/include/octeon_device.h
++++ b/drivers/phc/include/octeon_device.h
+@@ -339,6 +339,9 @@ struct _OCTEON_DEVICE {
+ 
+ } ____cacheline_aligned_in_smp;
+ 
++int octeon_chip_specific_setup(octeon_device_t *oct_dev);
++uint64_t octeon_pci_bar4_read64(octeon_device_t *oct_dev, int baridx, uint64_t bar_offset);
++void octeon_pci_bar4_write64(octeon_device_t *oct_dev, int baridx, uint64_t bar_offset, uint64_t val);
+ #define CHIP_FIELD(oct, TYPE, field)             \
+ 	(((octeon_##TYPE##_t *)(oct->chip))->field)
+ 
+-- 
+2.47.1
+

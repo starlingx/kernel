@@ -1,14 +1,14 @@
 ---
-debver: 227.0.130.0
+debver: 232.0.155.5
 debname: libbnxt-re
 dl_hook: dl_hook
 dl_files:
-  bcm_227.1.111.0b.tar.gz:
+  bcm_232.1.132.8c.tar.gz:
     topdir: null
     url: "https://docs.broadcom.com/docs-and-downloads/\
-          ethernet-network-adapters/NXE/BRCM_227.1.111.0/\
-          bcm_227.1.111.0b.tar.gz"
-    sha256sum: 184977c9043b64358d65c9412063377ed5fc4d9efb225c31ce5e11f1b16b5418
+          ethernet-network-adapters/NXE/BRCM_232.1.132.8/\
+          bcm_232.1.132.8c.tar.gz"
+    sha256sum: 01c64854af7359a9738e4509a993e51f48046e3f5d6736c933145583d0bcfdf0
 revision:
   dist: $STX_DIST
   GITREVCOUNT:

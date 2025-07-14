@@ -1,0 +1,39 @@
+From 7fe4924f07a44f0080d1ea8d9a0f276775dbfdcb Mon Sep 17 00:00:00 2001
+From: "M. Vefa Bicakci" <vefa.bicakci@windriver.com>
+Date: Fri, 15 Apr 2022 04:29:31 +0000
+Subject: [PATCH 4/4] bnxt_en/Makefile: Allow parallelized build
+
+This commit allows bnxt_en's build to be parallelized via the use of
+"$(MAKE)" instead of "make". Without this change, make for bnxt_en
+reports the following error and continues the build in a serialized
+manner:
+
+  warning: jobserver unavailable: using -j1. \
+    Add '+' to parent make rule.
+
+Signed-off-by: M. Vefa Bicakci <vefa.bicakci@windriver.com>
+[jm: Adapted the patch for context change]
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ bnxt_en-1.10.3-232.0.155.5/Makefile | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/bnxt_en-1.10.3-232.0.155.5/Makefile b/bnxt_en-1.10.3-232.0.155.5/Makefile
+index 472f775..2fa27f0 100644
+--- a/bnxt_en-1.10.3-232.0.155.5/Makefile
++++ b/bnxt_en-1.10.3-232.0.155.5/Makefile
+@@ -1584,9 +1584,9 @@ endef
+ 
+ default:
+ ifeq ($(CROSS_COMPILE),)
+-	make -C $(LINUX) M=$(shell pwd) $(call fwd_ver)modules
++	$(MAKE) -C $(LINUX) M=$(shell pwd) $(call fwd_ver)modules
+ else ifneq ($(CROSS_COMPILE),)
+-	make -C $(LINUXSRC) M=$(shell pwd) $(call fwd_ver)modules CROSS_COMPILE=$(CROSS_COMPILE) ARCH=$(ARCH)
++	$(MAKE) -C $(LINUXSRC) M=$(shell pwd) $(call fwd_ver)modules CROSS_COMPILE=$(CROSS_COMPILE) ARCH=$(ARCH)
+ endif
+ 
+ yocto_all:
+-- 
+2.47.1
+

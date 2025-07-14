@@ -1,0 +1,52 @@
+From a6ff0fd984bbf3892f71a1b1213c97f992244c8e Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Thu, 27 Mar 2025 11:07:47 +0000
+Subject: [PATCH 1/4] bnxt_en: fix the build issue.
+
+Actually IFF_RXFH_CONFIGURED is defined in enum netdev_priv_flags,
+so we remove all unused code for IFF_RXFH_CONFIGURED.
+Since the commit 49675f5bdf9a "net: remove IFF_* re-definition"	that
+remove all IFF_* definition, which casued the current build issue.
+
+References:
+* https://git.yoctoproject.org/linux-yocto/commit/?h=49675f5bdf9a
+
+In file included from bnxt_en-1.10.3-232.0.155.5/bnxt.c:98:
+bnxt_en-1.10.3-232.0.155.5/bnxt_compat.h:1252:20: error: redefinition \
+ of netif_is_rxfh_configured
+ 1252 | static inline bool netif_is_rxfh_configured(const struct net_device *dev)
+      |                    ^~~~~~~~~~~~~~~~~~~~~~~~
+In file included from bnxt_en-1.10.3-232.0.155.5/bnxt.c:26:
+/usr/src/linux-headers-6.12.0-1-common/include/linux/netdevice.h:5174:20:\
+ note: previous definition of netif_is_rxfh_configured was here
+ 5174 | static inline bool netif_is_rxfh_configured(const struct net_device *dev)
+      |                    ^~~~~~~~~~~~~~~~~~~~~~~~
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ bnxt_en-1.10.3-232.0.155.5/bnxt_compat.h | 9 ---------
+ 1 file changed, 9 deletions(-)
+
+diff --git a/bnxt_en-1.10.3-232.0.155.5/bnxt_compat.h b/bnxt_en-1.10.3-232.0.155.5/bnxt_compat.h
+index 574c3da..8cb0e99 100644
+--- a/bnxt_en-1.10.3-232.0.155.5/bnxt_compat.h
++++ b/bnxt_en-1.10.3-232.0.155.5/bnxt_compat.h
+@@ -1246,15 +1246,6 @@ static inline int netif_get_num_default_rss_queues(void)
+ }
+ #endif
+ 
+-#ifndef IFF_RXFH_CONFIGURED
+-#define IFF_RXFH_CONFIGURED	0
+-#undef HAVE_SET_RXFH
+-static inline bool netif_is_rxfh_configured(const struct net_device *dev)
+-{
+-	return false;
+-}
+-#endif
+-
+ #if defined(HAVE_NETDEV_TX_DROPPED)
+ #if !defined(HAVE_NETDEV_TX_DROPPED_CORE_STATS)
+ #if defined(HAVE_NETDEV_RH_TX_DROPPED)
+-- 
+2.47.1
+

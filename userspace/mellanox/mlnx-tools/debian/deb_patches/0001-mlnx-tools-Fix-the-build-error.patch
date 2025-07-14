@@ -1,9 +1,9 @@
-From 102c8648edf5271262c8488721f61182f0adca54 Mon Sep 17 00:00:00 2001
+From 9280c296d0f8c3bc880fb5d551945c1cc01a6fc8 Mon Sep 17 00:00:00 2001
 From: Jiping Ma <jiping.ma2@windriver.com>
 Date: Sun, 5 Nov 2023 18:51:31 -0800
 Subject: [PATCH] mlnx-tools: Fix the build error.
 
-This changes 5.2.0 from 5.2.0-OFED.5.9.0.5.5 in changelog to
+This changes 24.10 from 24.10-OFED.24.10.0.4.9 in changelog to
 fix the following build error.
 
 debrepack - ERROR - dpkg-architecture: warning: cannot determine CC system type, falling back to default (native compilation)
@@ -25,15 +25,15 @@ Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/debian/changelog b/debian/changelog
-index 41fed5c..c9b4370 100644
+index 7201de2..9f6c974 100644
 --- a/debian/changelog
 +++ b/debian/changelog
 @@ -1,4 +1,4 @@
--mlnx-tools (5.2.0-OFED.5.9.0.5.5) UNRELEASED; urgency=medium
-+mlnx-tools (5.2.0) UNRELEASED; urgency=medium
+-mlnx-tools (24.10-OFED.24.10.0.4.9) UNRELEASED; urgency=medium
++mlnx-tools (24.10) UNRELEASED; urgency=medium
  
-   * Switched to a MLNX_OFED branch
-   * Native package
+   * New release cycle.
+ 
 -- 
-2.42.0
+2.47.1
 

@@ -1,7 +1,7 @@
-From 52de1a7c4bcaf87293a85cc80324bb23ca6c1508 Mon Sep 17 00:00:00 2001
+From 0745b2833fe90aa6d90baa6758b6dffb42a00577 Mon Sep 17 00:00:00 2001
 From: Chris Friesen <chris.friesen@windriver.com>
 Date: Thu, 17 Jun 2021 07:44:04 +0000
-Subject: [PATCH 01/17] Notification of death of arbitrary processes
+Subject: [PATCH 01/14] Notification of death of arbitrary processes
 
 Note: this commit was copied from Titanium Cloud Rel2
 
@@ -28,6 +28,8 @@ Signed-off-by: Peng Zhang <Peng.Zhang2@windriver.com>
 Signed-off-by: Li Zhou <li.zhou@windriver.com>
 [jm: Adapted the patch for context changes.]
 Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+[jm: Adapted the patch for context changes.]
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
 ---
  include/linux/init_task.h  |   9 ++
  include/linux/sched.h      |   6 +
@@ -38,15 +40,15 @@ Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
  kernel/death_notify.c      | 228 +++++++++++++++++++++++++++++++++++++
  kernel/death_notify.h      |  46 ++++++++
  kernel/exit.c              |   6 +
- kernel/fork.c              |   4 +
- kernel/signal.c            |  11 ++
+ kernel/fork.c              |   5 +-
+ kernel/signal.c            |   9 ++
  kernel/sys.c               |   8 ++
- 12 files changed, 351 insertions(+)
+ 12 files changed, 349 insertions(+), 1 deletion(-)
  create mode 100644 kernel/death_notify.c
  create mode 100644 kernel/death_notify.h
 
 diff --git a/include/linux/init_task.h b/include/linux/init_task.h
-index 40fc5813cf93..4fe260a1c280 100644
+index bccb3f1f6262..88275e28ccad 100644
 --- a/include/linux/init_task.h
 +++ b/include/linux/init_task.h
 @@ -25,6 +25,15 @@
@@ -66,11 +68,11 @@ index 40fc5813cf93..4fe260a1c280 100644
  
  #ifndef CONFIG_VIRT_CPU_ACCOUNTING_NATIVE
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 77f01ac385f7..7b92c4d35ddd 100644
+index c547dedac7b1..7edd22c1e426 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -1254,6 +1254,12 @@ struct task_struct {
- 	short				il_prev;
+@@ -1313,6 +1313,12 @@ struct task_struct {
+ 	u8				il_weight;
  	short				pref_node_fork;
  #endif
 +#ifdef CONFIG_SIGEXIT
@@ -83,15 +85,15 @@ index 77f01ac385f7..7b92c4d35ddd 100644
  	int				numa_scan_seq;
  	unsigned int			numa_scan_period;
 diff --git a/include/uapi/linux/prctl.h b/include/uapi/linux/prctl.h
-index 370ed14b1ae0..4d5d1c7b7902 100644
+index 35791791a879..27852b28ab88 100644
 --- a/include/uapi/linux/prctl.h
 +++ b/include/uapi/linux/prctl.h
 @@ -63,6 +63,22 @@
  # define PR_ENDIAN_LITTLE	1	/* True little endian mode */
  # define PR_ENDIAN_PPC_LITTLE	2	/* "PowerPC" pseudo little endian */
  
-+#define PR_DO_NOTIFY_TASK_STATE 17     /* Set/get notification for task
-+                                          state changes */
++#define PR_DO_NOTIFY_TASK_STATE 17	/* Set/get notification for task
++					   state changes */
 +
 +/* This is the data structure for requestion process death
 + * (and other state change) information.  Sig of -1 means
@@ -110,36 +112,36 @@ index 370ed14b1ae0..4d5d1c7b7902 100644
  #define PR_GET_SECCOMP	21
  #define PR_SET_SECCOMP	22
 diff --git a/init/Kconfig b/init/Kconfig
-index e403a2925635..b946cfd059b9 100644
+index 7256fa127530..38737731dbed 100644
 --- a/init/Kconfig
 +++ b/init/Kconfig
-@@ -1866,6 +1866,21 @@ config DEBUG_PERF_USE_VMALLOC
+@@ -1927,6 +1927,21 @@ config DEBUG_PERF_USE_VMALLOC
  
  endmenu
  
 +config SIGEXIT
-+        bool "Notification of death of arbitrary processes"
-+        default n
-+        help
-+          When enabled this exposes a new feature which may be called to request
-+          notification when an arbitrary process changes state.  The caller specifies
-+          a pid, signal number, and event mask, and when that pid dies, or is
-+          stopped, or anything else that would normally cause a SIGCHLD, the
-+          kernel will send the specified signal to the caller if the event is in
-+          the event mask originally passed down. The siginfo_t struct will
-+          contain the same information as would be included with SIGCHLD.
++	bool "Notification of death of arbitrary processes"
++	default n
++	help
++	  When enabled this exposes a new feature which may be called to request
++	  notification when an arbitrary process changes state.  The caller specifies
++	  a pid, signal number, and event mask, and when that pid dies, or is
++	  stopped, or anything else that would normally cause a SIGCHLD, the
++	  kernel will send the specified signal to the caller if the event is in
++	  the event mask originally passed down. The siginfo_t struct will
++	  contain the same information as would be included with SIGCHLD.
 +
-+          This is exposed to userspace via the prctl()
-+          call with the PR_DO_NOTIFY_TASK_STATE option
++	  This is exposed to userspace via the prctl()
++	  call with the PR_DO_NOTIFY_TASK_STATE option
 +
  config SYSTEM_DATA_VERIFICATION
  	def_bool n
  	select SYSTEM_TRUSTED_KEYRING
 diff --git a/init/init_task.c b/init/init_task.c
-index ff6c4b9bfe6b..ce224088251c 100644
+index 136a8231355a..7cabef0ca921 100644
 --- a/init/init_task.c
 +++ b/init/init_task.c
-@@ -129,6 +129,7 @@ struct task_struct init_task
+@@ -138,6 +138,7 @@ struct task_struct init_task __aligned(L1_CACHE_BYTES) = {
  	.alloc_lock	= __SPIN_LOCK_UNLOCKED(init_task.alloc_lock),
  	.journal_info	= NULL,
  	INIT_CPU_TIMERS(init_task)
@@ -148,17 +150,17 @@ index ff6c4b9bfe6b..ce224088251c 100644
  	.timer_slack_ns = 50000, /* 50 usec default slack */
  	.thread_pid	= &init_struct_pid,
 diff --git a/kernel/Makefile b/kernel/Makefile
-index ce105a5558fc..11fec2c76af0 100644
+index 87866b037fbe..a5d38470e0b3 100644
 --- a/kernel/Makefile
 +++ b/kernel/Makefile
-@@ -113,6 +113,7 @@ obj-$(CONFIG_KCSAN) += kcsan/
+@@ -115,6 +115,7 @@ obj-$(CONFIG_KCSAN) += kcsan/
  obj-$(CONFIG_SHADOW_CALL_STACK) += scs.o
  obj-$(CONFIG_HAVE_STATIC_CALL) += static_call.o
  obj-$(CONFIG_HAVE_STATIC_CALL_INLINE) += static_call_inline.o
 +obj-$(CONFIG_SIGEXIT) += death_notify.o
  obj-$(CONFIG_CFI_CLANG) += cfi.o
- obj-$(CONFIG_NUMA) += numa.o
  
+ obj-$(CONFIG_PERF_EVENTS) += events/
 diff --git a/kernel/death_notify.c b/kernel/death_notify.c
 new file mode 100644
 index 000000000000..5819d35a2564
@@ -446,49 +448,50 @@ index 000000000000..14a0995b79af
 +#endif
 +
 diff --git a/kernel/exit.c b/kernel/exit.c
-index 21a59a6e1f2e..0b1bf34a1550 100644
+index 619f0014c33b..12eefc9f3e24 100644
 --- a/kernel/exit.c
 +++ b/kernel/exit.c
-@@ -73,6 +73,9 @@
- #include <linux/uaccess.h>
- #include <asm/unistd.h>
+@@ -77,6 +77,9 @@
  #include <asm/mmu_context.h>
+ 
+ #include "exit.h"
 +#ifdef CONFIG_SIGEXIT
 +#include "death_notify.h"
 +#endif
  
  /*
   * The default value should be high enough to not crash a system that randomly
-@@ -251,6 +254,9 @@ void release_task(struct task_struct *p)
+@@ -253,6 +256,9 @@ void release_task(struct task_struct *p)
  	cgroup_release(p);
  
  	write_lock_irq(&tasklist_lock);
 +#ifdef CONFIG_SIGEXIT
 +	release_notify_others(p);
-+#endif
++#endif	
  	ptrace_release_task(p);
  	thread_pid = get_pid(p->thread_pid);
  	__exit_signal(p);
 diff --git a/kernel/fork.c b/kernel/fork.c
-index 869467885640..9a79ab5b7d77 100644
+index 8434ff53ab23..00f2f7392078 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -2466,6 +2466,10 @@ __latent_entropy struct task_struct *copy_process(
+@@ -2358,7 +2358,10 @@ __latent_entropy struct task_struct *copy_process(
  	RCU_INIT_POINTER(p->bpf_storage, NULL);
  	p->bpf_ctx = NULL;
  #endif
+-
 +#ifdef CONFIG_SIGEXIT
 +	INIT_LIST_HEAD(&p->notify);
 +	INIT_LIST_HEAD(&p->monitor);
 +#endif
- 
  	/* Perform scheduler related setup. Assign this task to a CPU. */
  	retval = sched_fork(clone_flags, p);
+ 	if (retval)
 diff --git a/kernel/signal.c b/kernel/signal.c
-index 09019017d669..883f7fa7f738 100644
+index 2ae45e6eb6bb..c181894345b9 100644
 --- a/kernel/signal.c
 +++ b/kernel/signal.c
-@@ -57,6 +57,9 @@
+@@ -58,6 +58,9 @@
  #include <asm/siginfo.h>
  #include <asm/cacheflush.h>
  #include <asm/syscall.h>	/* for syscall_get_* */
@@ -498,22 +501,20 @@ index 09019017d669..883f7fa7f738 100644
  
  /*
   * SLAB caches for signal bits.
-@@ -2150,6 +2153,10 @@ bool do_notify_parent(struct task_struct *tsk, int sig)
+@@ -2145,6 +2148,9 @@ bool do_notify_parent(struct task_struct *tsk, int sig)
  	__wake_up_parent(tsk, tsk->parent);
  	spin_unlock_irqrestore(&psig->siglock, flags);
  
 +#ifdef CONFIG_SIGEXIT
 +	do_notify_others(tsk, &info);
 +#endif
-+
  	return autoreap;
  }
  
-@@ -2222,6 +2229,10 @@ static void do_notify_parent_cldstop(struct task_struct *tsk,
+@@ -2217,6 +2223,9 @@ static void do_notify_parent_cldstop(struct task_struct *tsk,
  	 */
  	__wake_up_parent(tsk, parent);
  	spin_unlock_irqrestore(&sighand->siglock, flags);
-+
 +#ifdef CONFIG_SIGEXIT
 +	do_notify_others(tsk, &info);
 +#endif
@@ -521,7 +522,7 @@ index 09019017d669..883f7fa7f738 100644
  
  /*
 diff --git a/kernel/sys.c b/kernel/sys.c
-index 44b575990333..4db207723ff9 100644
+index 4da31f28fda8..ad4f05c66e9f 100644
 --- a/kernel/sys.c
 +++ b/kernel/sys.c
 @@ -76,6 +76,9 @@
@@ -534,7 +535,7 @@ index 44b575990333..4db207723ff9 100644
  
  #ifndef SET_UNALIGN_CTL
  # define SET_UNALIGN_CTL(a, b)	(-EINVAL)
-@@ -2575,6 +2578,11 @@ SYSCALL_DEFINE5(prctl, int, option, unsigned long, arg2, unsigned long, arg3,
+@@ -2599,6 +2602,11 @@ SYSCALL_DEFINE5(prctl, int, option, unsigned long, arg2, unsigned long, arg3,
  		else
  			error = PR_MCE_KILL_DEFAULT;
  		break;
@@ -547,5 +548,5 @@ index 44b575990333..4db207723ff9 100644
  		error = prctl_set_mm(arg2, arg3, arg4, arg5);
  		break;
 -- 
-2.43.0
+2.49.0
 

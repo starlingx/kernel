@@ -1,0 +1,97 @@
+From dac440c75df75b0e656ef5d3b7481599b60f929d Mon Sep 17 00:00:00 2001
+From: "M. Vefa Bicakci" <vefa.bicakci@windriver.com>
+Date: Wed, 2 Mar 2022 14:14:12 -0500
+Subject: [PATCH 3/4] bnxt_en, bnxt_re: Use irq_update_affinity_hint
+
+This commit updates the bnxt_en and bnxt_re device drivers to use the
+irq_update_affinity_hint function instead of the irq_set_affinity_hint
+function, so that StarlingX's CPU affinity requirements for interrupts
+are met. 
+
+irq_set_affinity_hint sets the IRQ affinity hint as well as the actual
+IRQ affinity, which causes the IRQ affinity to not align with the value
+of the irqaffinity= command line option.
+
+StarlingX's user-space initialization scripts set the IRQ affinities
+too, but if a network interface is initialized after the completion of
+the initialization scripts, then the network adapter's preferred IRQ
+affinity passed to irq_set_affinity_hint takes effect. The latter is
+undesirable if the CPU affinity of an interrupt includes CPUs that are
+in the set of isolated CPUs configured by StarlingX, as isolated CPUs
+should not service unrelated interrupts.
+
+To resolve the aforementioned issues, this patch updates the bnxt_en and
+bnxt_re drivers to use irq_update_affinity_hint, which only sets the IRQ
+affinity hint, and not the actual IRQ affinity. This allows interrupts
+to be affined to the CPUs listed in the irqaffinity= command line
+argument by default, and eliminates the need to set the IRQ affinities
+after the initialization of network interfaces.
+
+Our imperfect understanding of the intent is that the out-of-tree
+bnxt_en driver's authors decided to rely on the IRQ matrix allocator's
+default IRQ vector distribution behaviour (which appears to occur at a
+lower level) instead of setting the IRQ affinity hints explicitly.
+
+Signed-off-by: M. Vefa Bicakci <vefa.bicakci@windriver.com>
+[jm: Adapted the patch for context change, also adaptthe comment.]
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ bnxt_en-1.10.3-232.0.155.5/bnxt.c | 6 +++---
+ bnxt_re-232.0.155.5/qplib_fp.c    | 6 +++---
+ 2 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/bnxt_en-1.10.3-232.0.155.5/bnxt.c b/bnxt_en-1.10.3-232.0.155.5/bnxt.c
+index ee2303e..1d878a3 100644
+--- a/bnxt_en-1.10.3-232.0.155.5/bnxt.c
++++ b/bnxt_en-1.10.3-232.0.155.5/bnxt.c
+@@ -14232,7 +14232,7 @@ static void bnxt_free_irq(struct bnxt *bp)
+ 		if (irq->requested) {
+ #if defined(HAVE_CPUMASK_LOCAL_FIRST) || defined(HAVE_CPUMASK_LOCAL_SPREAD)
+ 			if (irq->have_cpumask) {
+-				irq_set_affinity_hint(irq->vector, NULL);
++				irq_update_affinity_hint(irq->vector, NULL);
+ 				free_cpumask_var(irq->cpu_mask);
+ 				irq->have_cpumask = 0;
+ 			}
+@@ -14344,10 +14344,10 @@ static int bnxt_request_irq(struct bnxt *bp)
+ 				break;
+ 			}
+ #endif
+-			rc = irq_set_affinity_hint(irq->vector, irq->cpu_mask);
++			rc = irq_update_affinity_hint(irq->vector, irq->cpu_mask);
+ 			if (rc) {
+ 				netdev_warn(bp->dev,
+-					    "Set affinity failed, IRQ = %d\n",
++					    "Update affinity failed, IRQ = %d\n",
+ 					    irq->vector);
+ 				break;
+ 			}
+diff --git a/bnxt_re-232.0.155.5/qplib_fp.c b/bnxt_re-232.0.155.5/qplib_fp.c
+index 007d4b3..e202006 100644
+--- a/bnxt_re-232.0.155.5/qplib_fp.c
++++ b/bnxt_re-232.0.155.5/qplib_fp.c
+@@ -551,7 +551,7 @@ void bnxt_qplib_nq_stop_irq(struct bnxt_qplib_nq *nq, bool kill)
+ 	bnxt_qplib_ring_nq_db(&nq->nq_db.dbinfo, res->cctx, false);
+ 	/* Sync with last running IRQ handler */
+ 	synchronize_irq(nq->msix_vec);
+-	irq_set_affinity_hint(nq->msix_vec, NULL);
++	irq_update_affinity_hint(nq->msix_vec, NULL);
+ 	free_irq(nq->msix_vec, nq);
+ 	kfree(nq->name);
+ 	nq->name = NULL;
+@@ -610,10 +610,10 @@ int bnxt_qplib_nq_start_irq(struct bnxt_qplib_nq *nq, int nq_indx,
+ 
+ 	cpumask_clear(&nq->mask);
+ 	cpumask_set_cpu(nq_indx, &nq->mask);
+-	rc = irq_set_affinity_hint(nq->msix_vec, &nq->mask);
++	rc = irq_update_affinity_hint(nq->msix_vec, &nq->mask);
+ 	if (rc)
+ 		dev_warn(&res->pdev->dev,
+-			 "QPLIB: set affinity failed; vector: %d nq_idx: %d\n",
++			 "QPLIB: update affinity failed; vector: %d nq_idx: %d\n",
+ 			 nq->msix_vec, nq_indx);
+         nq->requested = true;
+ 	bnxt_qplib_ring_nq_db(&nq->nq_db.dbinfo, res->cctx, true);
+-- 
+2.47.1
+
