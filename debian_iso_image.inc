@@ -44,9 +44,9 @@ mlnx-ofed-kernel-modules
 mlnx-ofed-kernel-modules-rt
 mlnx-ofed-kernel-utils
 
-#qat20
-qat2.0.l
-qat2.0.l-rt
+#qat22
+qat2.2.l
+qat2.2.l-rt
 
 #rdma-core
 ibacm
