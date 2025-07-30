@@ -1,11 +1,11 @@
 ---
-debver: 1.17.2
+debver: 2.2.8
 debname: ice
 dl_path:
-  name: v1.17.2.tar.gz
+  name: v2.2.8.tar.gz
   url: "https://github.com/intel/ethernet-linux-ice/\
-        archive/refs/tags/v1.17.2.tar.gz"
-  sha256sum: 4182fde63c44485bdf374227ac417230416329f5d979f345de2de7ca32c25569
+        archive/refs/tags/v2.2.8.tar.gz"
+  sha256sum: 131660d70ef2f99ff71d2593cc3329c5a0e5a36b9325d0a58f9b2aed3209d6aa
 dl_files:
   800-Series-DDP-Comms-Package-1.3.37.0.zip:
     topdir: null
