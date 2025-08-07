@@ -1,25 +1,41 @@
-Source: qat2.0.l
+Source: qat2.2.l
 Section: kernel
 Priority: optional
 Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
-Build-Depends: debhelper-compat (= 13), autotools-dev, pkg-config, libudev-dev, yasm, libssl-dev, libz-dev, pciutils, libboost-dev, perl, openssl, libboost-regex-dev, linux@KERNEL_TYPE@-headers-stx-amd64, linux@KERNEL_TYPE@-keys
+Build-Depends: debhelper-compat (= 13),
+  autotools-dev,
+  libboost-dev,
+  libboost-regex-dev,
+  libnl-3-dev,
+  libnl-genl-3-dev,
+  linux@KERNEL_TYPE@-headers-stx-amd64,
+  linux@KERNEL_TYPE@-keys,
+  libssl-dev,
+  libudev-dev,
+  libz-dev,
+  nasm,
+  openssl,
+  pciutils,
+  perl,
+  pkg-config,
+  yasm
 Standards-Version: 4.5.1
 Rules-Requires-Root: no
 
-Package: qat2.0.l@KERNEL_TYPE@
+Package: qat2.2.l@KERNEL_TYPE@
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, qat2.0.l-common
+Depends: ${shlibs:Depends}, ${misc:Depends}, qat2.2.l-common
 Description: Intel(r) QuickAssist Technology API
  Intel® QuickAssist Technology provides security and compression acceleration
  capabilities used to improve performance and efficiency across the data center.
 
-Package: qat2.0.l-common
+Package: qat2.2.l-common
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: This package provides the common files of Intel(r) QuickAssist Technology API
  This package provides the common files of Intel(r) QuickAssist Technology API
 
-Package: qat2.0.l-dev
+Package: qat2.2.l-dev
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: This package provides the dev files of Intel(r) QuickAssist Technology API

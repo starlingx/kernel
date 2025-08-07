@@ -2,7 +2,7 @@ Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 
 Upstream-Name: QAT
 Upstream-Contact: Intel Corporation
-Source: https://downloadmirror.intel.com/777529/QAT20.L.1.0.20-00008.tar.gz
+Source: https://downloadmirror.intel.com/861195/QAT22.L.1.0.0-00001.tar.gz
 Files: *
 Copyright: (C) Intel Corporation 2022
 License:
@@ -11,12 +11,12 @@ License:
   - Dual BSD/GPLv2 License
   - BSD License
   - GPLv2 License
-  - OpenSSL License
+  - APACHE License
   - ZLIB License
 
  For full GPLv2 License, please see the file LICENSE.GPL contained in the top
  level folder.
- For full OpenSSL License, please see the file LICENSE.OPENSSL contained in
+ For full APACHE License, please see the file LICENSE.APACHE contained in
  the top level folder.
  For Dual BSD/GPLv2, BSD and ZLIB Licenses, please see the file headers of
  the relevant files.
