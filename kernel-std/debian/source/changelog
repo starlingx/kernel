@@ -1,3 +1,8 @@
+linux (6.12.40-1) unstable; urgency=medium
+  * New upstream update:
+    https://git.yoctoproject.org/linux-yocto/commit/?h=v6.12/standard/base&id=50893c3858cc7bbc15a174f06fa30fba25306cac
+ -- Jiping Ma <jiping.ma2@windriver.com>  Thu, 6 Aug 2025 11:00:31 +0800
+
 linux (6.12.32-1) unstable; urgency=medium
   * New upstream update:
     https://git.yoctoproject.org/linux-yocto/commit/?h=v6.12/standard/base&id=f724ffca3fef3541b4be9f30f0a3261674c60e13

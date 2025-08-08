@@ -1,14 +1,14 @@
 ---
-debver: 6.12.32
+debver: 6.12.40
 debname: linux-rt
 dl_hook: dl_hook
 dl_files:
-  linux-yocto-b1b3b3bd2dca380a849e9c593a1186d4f5f6b57d.tar.gz:
+  linux-yocto-96c3b8967c299edb7c8fd1beff358624e3aac443.tar.gz:
     topdir: null
     url:
       "https://git.yoctoproject.org/linux-yocto/snapshot/\
-       linux-yocto-b1b3b3bd2dca380a849e9c593a1186d4f5f6b57d.tar.gz"
-    sha256sum: be3297eeca36f091e91ff3b45759326ec691652f7a4465bf30fd4c08affc985f
+       linux-yocto-96c3b8967c299edb7c8fd1beff358624e3aac443.tar.gz"
+    sha256sum: 7c9c0aff9319d58529095f35ae28cc4ead9fbe6fa8d2b73360717f48fbd79826
   linux_6.1.27-1~bpo11%2B1.debian.tar.xz:
     topdir: null
     url:
