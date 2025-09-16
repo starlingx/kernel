@@ -1,11 +1,11 @@
 ---
-debver: 2.25.7
+debver: 2.28.9
 debname: i40e
 dl_path:
-  name: i40e-2.25.7.tar.gz
-  url: "https://sourceforge.net/projects/e1000/files/i40e%20stable/\
-    2.25.7/i40e-2.25.7.tar.gz/download"
-  sha256sum: 3ee4d3ac2be2622b7ea811075bf7dd50cf74ec12db7d58bb37b83b884ceb283d
+  name: i40e-2.28.9.tar.gz
+  url: "https://github.com/intel/ethernet-linux-i40e/releases/download/\
+    v2.28.9/i40e-2.28.9.tar.gz"
+  sha256sum: bb2efe270bcd68aa2d875eaf9d5f85b86637b8c227462d3a272df03a0417a20f
 revision:
   dist: $STX_DIST
   GITREVCOUNT:
