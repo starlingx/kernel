@@ -1,3 +1,4 @@
 0001-intel-ice-pass-linux-common-header-to-check_aux_bus.patch
 0002-rename-the-ddp-file-to-avoid-conflict.patch
 0003-ice-Remove-deprecated-ice_lag_move_new_vf_nodes-call.patch
+0004-ice-fix-DPLL-pin-handling-for-SMA-UFL-pin-types.patch
