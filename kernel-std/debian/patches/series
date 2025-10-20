@@ -37,4 +37,3 @@ zl3073x-backport/0003-devlink-introduce-devlink_nl_put_u64.patch
 zl3073x-backport/0004-dpll-zl3073x-Fix-missing-header-build-error-on-older.patch
 zl3073x-backport/0005-dpll-add-phase-offset-monitor-feature-to-netlink-spe.patch
 zl3073x-backport/0006-dpll-add-phase_offset_monitor_get-set-callback-ops.patch
-0014-sched-fair-Block-delayed-tasks-on-throttled-hierarch.patch

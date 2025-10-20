@@ -24,7 +24,7 @@
 # building.
 # Tools needed: tar/sed
 
-KERNEL_HEAD_COMMIT=96c3b8967c299edb7c8fd1beff358624e3aac443
+KERNEL_HEAD_COMMIT=af2d3ab81402c14f81072715d771097a0dfcb427
 DEBIAN_FILE=linux_6.1.27-1~bpo11%2B1.debian.tar.xz
 
 tar xvf linux-yocto-${KERNEL_HEAD_COMMIT}.tar.gz

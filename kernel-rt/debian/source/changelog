@@ -1,3 +1,8 @@
+linux-rt (6.12.57-1) unstable; urgency=medium
+  * New upstream update:
+    https://git.yoctoproject.org/linux-yocto/commit/?h=v6.12/standard/preempt-rt/base&id=af2d3ab81402c14f81072715d771097a0dfcb427
+ -- Virgil Bucoci <virgil.bucoci@windriver.com>  Tue, 11 Nov 2025 19:11:36 +0300
+
 linux-rt (6.12.40-1) unstable; urgency=medium
   * New upstream update:
     https://git.yoctoproject.org/linux-yocto/commit/?h=v6.12/standard/preempt-rt/base&id=96c3b8967c299edb7c8fd1beff358624e3aac443
