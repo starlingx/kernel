@@ -1,12 +1,11 @@
 ---
-debver: 1.2.0.19-1
+debver: 1.2.0.21
 debname: iqvlinux
 dl_path:
   name: iqvlinux.tar.gz
-  url: "https://mirror.starlingx.windriver.com/mirror/debian/sourceforge.net/\
-    projects/e1000/files/iqvlinux/1.2.0.19/iqvlinux.tar.gz/download"
-  md5sum: a1277f6c75c62005d75a8c9676032236
-  sha256sum: c86c1a394c27474f793641db82803a9784d02ce92de802b99b46a7736757019d
+  url: "https://sourceforge.net/projects/e1000/files/iqvlinux/1.2.0.21/\
+    iqvlinux.tar.gz/download"
+  sha256sum: f0ea34fa3a2cd4fd3023ad3f866703cf7edcc720854082b3e42961ed1d4993f5
 dl_hook: dl_hook
 revision:
   dist: $STX_DIST
