@@ -46,7 +46,7 @@ rmdir source-template
 # Add extra functions in image pkg's postinst to follow LAT secure boot
 cd debian || exit 1
 cp "${MY_REPO_ROOT_DIR}"/cgcs-root/stx/kernel/kernel-signed/\
-kernel-rt-signed/debian/linux-rt-image.postinst.extra ./
+kernel-rt-signed/debian/all/linux-rt-image.postinst.extra ./
 # Remove the end line ( "exit 0" ) in the init script
 sed -i '$d' linux-rt-image-*.postinst
 cat linux-rt-image.postinst.extra >> linux-rt-image-*.postinst
