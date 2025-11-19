@@ -1,0 +1,22 @@
+---
+debver: 6.12.57
+debname: linux
+dl_hook: dl_hook
+dl_files:
+  linux-yocto-95efd6fa4403e21402aeb96b4b54be01e076016e.tar.gz:
+    topdir: null
+    url:
+      "https://git.yoctoproject.org/linux-yocto/snapshot/\
+       linux-yocto-95efd6fa4403e21402aeb96b4b54be01e076016e.tar.gz"
+    sha256sum: a68a3f213562d58c44b08d5fb3c7d416982ddc43e3e8ee301303095bc2bd7f61
+  linux_6.1.27-1~bpo11%2B1.debian.tar.xz:
+    topdir: null
+    url:
+      "https://snapshot.debian.org/archive/debian/20230718T030758Z/pool/main/\
+       l/linux/linux_6.1.27-1~bpo11%2B1.debian.tar.xz"
+    sha256sum: 903cc8184efe94fa8f67bc85e12264b3e4c299153091ab88130c15c272d09478
+revision:
+  dist: $STX_DIST
+  GITREVCOUNT:
+    BASE_SRCREV: 92efe6f6668a66b7a16261a7bd40a1f648764590
+    SRC_DIR: ${MY_REPO}/stx/kernel/kernel-std

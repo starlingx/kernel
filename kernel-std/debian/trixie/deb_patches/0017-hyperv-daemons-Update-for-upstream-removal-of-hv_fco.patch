@@ -1,0 +1,252 @@
+From 9f262b353d0461abc9e42fa70d3e4329d66df3f7 Mon Sep 17 00:00:00 2001
+From: Ben Hutchings <benh@debian.org>
+Date: Sat, 6 Jul 2024 06:28:03 +0200
+Subject: [PATCH 17/19] hyperv-daemons: Update for upstream removal of
+ hv_fcopy_daemon
+
+- Don't try to build it.
+- Remove the init script, service file, and udev rule.
+- Use dpkg-maintscript rm_conffile to remove the init script on
+  upgrade.
+- In preinst, stop the service only if upgrading from an older
+  version.  In postinst do nothing with it.
+- Remove it from the package description.
+
+(cherry picked from commit fced95b415be4c1fbeec29e02a667168f00ee8e4)
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ debian/hyperv-daemons.hv-fcopy-daemon.init    | 109 ------------------
+ debian/hyperv-daemons.hv-fcopy-daemon.service |  10 --
+ debian/hyperv-daemons.maintscript             |   1 +
+ debian/hyperv-daemons.postinst                |   2 +-
+ debian/hyperv-daemons.preinst                 |   6 +-
+ debian/hyperv-daemons.udev                    |   1 -
+ debian/rules.d/tools/hv/Makefile              |   1 -
+ debian/rules.real                             |   2 +-
+ debian/templates/tools-unversioned.control.in |   5 +-
+ 9 files changed, 9 insertions(+), 128 deletions(-)
+ delete mode 100644 debian/hyperv-daemons.hv-fcopy-daemon.init
+ delete mode 100644 debian/hyperv-daemons.hv-fcopy-daemon.service
+
+diff --git a/debian/hyperv-daemons.hv-fcopy-daemon.init b/debian/hyperv-daemons.hv-fcopy-daemon.init
+deleted file mode 100644
+index 5866dc60ed..0000000000
+--- a/debian/hyperv-daemons.hv-fcopy-daemon.init
++++ /dev/null
+@@ -1,109 +0,0 @@
+-#! /bin/sh
+-### BEGIN INIT INFO
+-# Provides:          hv-fcopy-daemon
+-# Required-Start:    $remote_fs $syslog
+-# Required-Stop:     $remote_fs $syslog
+-# Default-Start:     2 3 4 5
+-# Default-Stop:      0 1 6
+-# Short-Description: Hyper-V file copy service (FCOPY) daemon
+-### END INIT INFO
+-
+-PATH=/sbin:/usr/sbin:/bin:/usr/bin
+-DESC="Hyper-V file copy service (FCOPY) daemon"
+-NAME=hv_fcopy_daemon
+-DAEMON=/usr/sbin/$NAME
+-PIDFILE=/run/$NAME.pid
+-SCRIPTNAME=/etc/init.d/hv-fcopy-daemon
+-
+-# Exit if the package is not installed
+-[ -x "$DAEMON" ] || exit 0
+-
+-# Exit if the kernel device does not exist
+-[ -e "/dev/vmbus/hv_fcopy" ] || exit 0
+-
+-# Load the VERBOSE setting and other rcS variables
+-. /lib/init/vars.sh
+-
+-# Define LSB log_* functions.
+-. /lib/lsb/init-functions
+-
+-#
+-# Function that starts the daemon/service
+-#
+-do_start()
+-{
+-	# Return
+-	#   0 if daemon has been started
+-	#   1 if daemon was already running
+-	#   2 if daemon could not be started
+-	start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $DAEMON --test > /dev/null \
+-		|| return 1
+-	start-stop-daemon --start --quiet --pidfile $PIDFILE --exec $DAEMON --background --make-pidfile -- -n \
+-		|| return 2
+-}
+-
+-#
+-# Function that stops the daemon/service
+-#
+-do_stop()
+-{
+-	# Return
+-	#   0 if daemon has been stopped
+-	#   1 if daemon was already stopped
+-	#   2 if daemon could not be stopped
+-	#   other if a failure occurred
+-	start-stop-daemon --stop --quiet --retry=TERM/30/KILL/5 --pidfile $PIDFILE --name $NAME
+-	[ "$?" = 2 ] && return 2
+-	start-stop-daemon --stop --quiet --oknodo --retry=0/30/KILL/5 --exec $DAEMON
+-	RETVAL=$?
+-	[ "$RETVAL" = 2 ] && return 2
+-	# Many daemons don't delete their pidfiles when they exit.
+-	rm -f $PIDFILE
+-	return "$RETVAL"
+-}
+-
+-case "$1" in
+-  start)
+-	[ "$VERBOSE" != no ] && log_daemon_msg "Starting $DESC" "$NAME"
+-	do_start
+-	case "$?" in
+-		0|1) [ "$VERBOSE" != no ] && log_end_msg 0 ;;
+-		2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
+-	esac
+-	;;
+-  stop)
+-	[ "$VERBOSE" != no ] && log_daemon_msg "Stopping $DESC" "$NAME"
+-	do_stop
+-	case "$?" in
+-		0|1) [ "$VERBOSE" != no ] && log_end_msg 0 ;;
+-		2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
+-	esac
+-	;;
+-  status)
+-	status_of_proc -p "$PIDFILE" "$DAEMON" "$NAME"
+-	;;
+-  restart|force-reload)
+-	log_daemon_msg "Restarting $DESC" "$NAME"
+-	do_stop
+-	case "$?" in
+-	  0|1)
+-		do_start
+-		case "$?" in
+-			0) log_end_msg 0 ;;
+-			1) log_end_msg 1 ;; # Old process is still running
+-			*) log_end_msg 1 ;; # Failed to start
+-		esac
+-		;;
+-	  *)
+-		# Failed to stop
+-		log_end_msg 1
+-		;;
+-	esac
+-	;;
+-  *)
+-	echo "Usage: $SCRIPTNAME {start|stop|status|restart|force-reload}" >&2
+-	exit 3
+-	;;
+-esac
+-
+-:
+diff --git a/debian/hyperv-daemons.hv-fcopy-daemon.service b/debian/hyperv-daemons.hv-fcopy-daemon.service
+deleted file mode 100644
+index d8e4d3b8a3..0000000000
+--- a/debian/hyperv-daemons.hv-fcopy-daemon.service
++++ /dev/null
+@@ -1,10 +0,0 @@
+-[Unit]
+-Description=Hyper-V file copy service (FCOPY) daemon
+-Conflicts=hyperv-daemons.hv-fcopy-daemon.service
+-BindsTo=sys-devices-virtual-misc-vmbus\x21hv_fcopy.device
+-
+-[Service]
+-ExecStart=/usr/sbin/hv_fcopy_daemon -n
+-
+-[Install]
+-WantedBy=multi-user.target
+diff --git a/debian/hyperv-daemons.maintscript b/debian/hyperv-daemons.maintscript
+index a2f28e4677..96ed55fb27 100644
+--- a/debian/hyperv-daemons.maintscript
++++ b/debian/hyperv-daemons.maintscript
+@@ -1,3 +1,4 @@
+ mv_conffile /etc/init.d/hyperv-daemons.hv-fcopy-daemon /etc/init.d/hv-fcopy-daemon 5.8~rc7-1~exp1
++rm_conffile /etc/init.d/hv-fcopy-daemon 6.10~rc6-1~exp1
+ mv_conffile /etc/init.d/hyperv-daemons.hv-kvp-daemon /etc/init.d/hv-kvp-daemon 5.8~rc7-1~exp1
+ mv_conffile /etc/init.d/hyperv-daemons.hv-vss-daemon /etc/init.d/hv-vss-daemon 5.8~rc7-1~exp1
+diff --git a/debian/hyperv-daemons.postinst b/debian/hyperv-daemons.postinst
+index 3573c9c2ed..9bee3f6b8c 100644
+--- a/debian/hyperv-daemons.postinst
++++ b/debian/hyperv-daemons.postinst
+@@ -8,7 +8,7 @@ if [ "$1" = "configure" ]; then
+             udevadm trigger || true
+         else
+             # On upgrade make sure running daemons are restarted
+-            systemctl try-restart hv-fcopy-daemon.service hv-kvp-daemon.service hv-vss-daemon.service
++            systemctl try-restart hv-kvp-daemon.service hv-vss-daemon.service
+         fi
+     fi
+ fi
+diff --git a/debian/hyperv-daemons.preinst b/debian/hyperv-daemons.preinst
+index 5810d29468..fc13e5116c 100644
+--- a/debian/hyperv-daemons.preinst
++++ b/debian/hyperv-daemons.preinst
+@@ -2,7 +2,11 @@
+ set -e
+ 
+ if [ "$1" = "upgrade" ]; then
+-    for i in fcopy kvp vss; do
++    services='kvp vss'
++    if dpkg --compare-versions "$2" lt 6.10~rc6-1~exp1; then
++	services="fcopy $services"
++    fi
++    for i in $services; do
+         if [ -d /run/systemd/system ]; then
+             systemctl stop hyperv-daemons.hv-$i-daemon.service 2>/dev/null || true
+         fi
+diff --git a/debian/hyperv-daemons.udev b/debian/hyperv-daemons.udev
+index 1daacac696..60e9102a68 100644
+--- a/debian/hyperv-daemons.udev
++++ b/debian/hyperv-daemons.udev
+@@ -1,3 +1,2 @@
+-KERNEL=="vmbus/hv_fcopy", TAG+="systemd", ENV{SYSTEMD_WANTS}+="hv-fcopy-daemon.service"
+ KERNEL=="vmbus/hv_kvp", TAG+="systemd", ENV{SYSTEMD_WANTS}+="hv-kvp-daemon.service"
+ KERNEL=="vmbus/hv_vss", TAG+="systemd", ENV{SYSTEMD_WANTS}+="hv-vss-daemon.service"
+diff --git a/debian/rules.d/tools/hv/Makefile b/debian/rules.d/tools/hv/Makefile
+index 5f00f55136..8e4c3052b6 100644
+--- a/debian/rules.d/tools/hv/Makefile
++++ b/debian/rules.d/tools/hv/Makefile
+@@ -6,7 +6,6 @@ include $(top_rulesdir)/Makefile.inc
+ else
+ 
+ PROGS = \
+-	hv_fcopy_daemon \
+ 	hv_kvp_daemon \
+ 	hv_vss_daemon
+ 
+diff --git a/debian/rules.real b/debian/rules.real
+index 0825bf3009..07b468c773 100644
+--- a/debian/rules.real
++++ b/debian/rules.real
+@@ -714,7 +714,7 @@ binary_hyperv-daemons: build_hyperv-daemons
+ ifeq (,$(filter nodoc,$(DEB_BUILD_PROFILES)))
+ 	dh_installdocs
+ endif
+-	for service in fcopy kvp vss; do \
++	for service in kvp vss; do \
+ 		dh_installsystemd --name hv-$$service-daemon --no-enable --no-start \
+ 			|| break; \
+ 		dh_installinit --name hv-$$service-daemon \
+diff --git a/debian/templates/tools-unversioned.control.in b/debian/templates/tools-unversioned.control.in
+index c71b7e9c03..e0be592ce4 100644
+--- a/debian/templates/tools-unversioned.control.in
++++ b/debian/templates/tools-unversioned.control.in
+@@ -124,10 +124,7 @@ Depends: ${shlibs:Depends}, ${misc:Depends}
+ Section: admin
+ Description: Support daemons for Linux running on Hyper-V
+  Suite of daemons for Linux guests running on Hyper-V, consisting of
+- hv_fcopy_daemon, hv_kvp_daemon and hv_vss_daemon.
+- .
+- hv_fcopy_daemon provides the file copy service, allowing the host to
+- copy files into the guest.
++ hv_kvp_daemon and hv_vss_daemon.
+  .
+  hv_kvp_daemon provides the key-value pair (KVP) service, allowing the
+  host to get and set the IP networking configuration of the guest.
+-- 
+2.47.1
+

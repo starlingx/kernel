@@ -1,0 +1,31 @@
+From 2ce8c8aa1aae79c02125fce21f15e22e7f3fb22a Mon Sep 17 00:00:00 2001
+From: Ben Hutchings <benh@debian.org>
+Date: Sat, 6 Jul 2024 06:32:05 +0200
+Subject: [PATCH 16/19] [x86] linux-cpupower: Update turbostat Makefile to
+ define BUILD_BUG_HEADER
+
+turbostat continues to abuse headers not meant for-user-space, now
+including <linux/build_bug.h>.  Define the necessary macro so it can
+find that.
+
+(cherry picked from commit 4ad01663251dc89c2290aa29aef5917b4c9f1cb9)
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ debian/rules.d/tools/power/x86/turbostat/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/debian/rules.d/tools/power/x86/turbostat/Makefile b/debian/rules.d/tools/power/x86/turbostat/Makefile
+index eb5124d3a5..9f5275c580 100644
+--- a/debian/rules.d/tools/power/x86/turbostat/Makefile
++++ b/debian/rules.d/tools/power/x86/turbostat/Makefile
+@@ -4,6 +4,6 @@ installdir = /usr/sbin
+ 
+ include $(top_rulesdir)/Makefile.inc
+ 
+-CPPFLAGS += -I"$(top_srcdir)/tools/include" -DMSRHEADER='"$(top_srcdir)/arch/x86/include/asm/msr-index.h"' -DINTEL_FAMILY_HEADER='"$(top_srcdir)/arch/x86/include/asm/intel-family.h"'
++CPPFLAGS += -I"$(top_srcdir)/tools/include" -DMSRHEADER='"$(top_srcdir)/arch/x86/include/asm/msr-index.h"' -DINTEL_FAMILY_HEADER='"$(top_srcdir)/arch/x86/include/asm/intel-family.h"' -DBUILD_BUG_HEADER='"$(top_srcdir)/include/linux/build_bug.h"'
+ 
+ LDLIBS += -lcap -lrt
+-- 
+2.47.1
+

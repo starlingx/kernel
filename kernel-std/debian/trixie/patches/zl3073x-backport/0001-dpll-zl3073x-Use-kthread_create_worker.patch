@@ -1,0 +1,35 @@
+From d992824dbc0deffb0ac267c5352e32ccc2047e57 Mon Sep 17 00:00:00 2001
+From: Caio Felipe Cruz <caio.soaresdacruz@windriver.com>
+Date: Tue, 17 Jun 2025 15:29:44 -0400
+Subject: [PATCH] dpll: zl3073x: Use kthread_create_worker()
+
+The driver previously used kthread_run_worker(), which was introduced in newer
+kernel versions and is not available in kernel 6.12.32.  This function was
+introduced upstream in commit:
+
+  commit b04e317b5226 ("treewide: Introduce kthread_run_worker[_on_cpu]()")
+  
+To maintain compatibility with our kernel, replace kthread_run_worker() with
+kthread_create_worker(). This function is available in older kernels and
+provides equivalent functionality for our current use case.
+
+Signed-off-by: Caio Felipe Cruz <caio.soaresdacruz@windriver.com> ---
+ drivers/dpll/zl3073x/core.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/dpll/zl3073x/core.c b/drivers/dpll/zl3073x/core.c
+index 5e0535032..ce8a933c3 100644
+--- a/drivers/dpll/zl3073x/core.c
++++ b/drivers/dpll/zl3073x/core.c
+@@ -846,7 +846,7 @@ zl3073x_devm_dpll_init(struct zl3073x_dev *zldev, u8 num_dplls)
+ 
+ 	/* Initialize monitoring thread */
+ 	kthread_init_delayed_work(&zldev->work, zl3073x_dev_periodic_work);
+-	kworker = kthread_run_worker(0, "zl3073x-%s", dev_name(zldev->dev));
++	kworker = kthread_create_worker(0, "zl3073x-%s", dev_name(zldev->dev));
+ 	if (IS_ERR(kworker)) {
+ 		rc = PTR_ERR(kworker);
+ 		goto error;
+-- 
+2.34.1
+
