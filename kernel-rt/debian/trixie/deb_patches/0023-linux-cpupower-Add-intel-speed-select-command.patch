@@ -1,0 +1,109 @@
+From 32cdeb3517090895bce84d3b1046bd625fefdb97 Mon Sep 17 00:00:00 2001
+From: Miguel Bernal Marin <miguel.bernal.marin@linux.intel.com>
+Date: Fri, 28 Apr 2023 00:51:08 -0600
+Subject: [PATCH] linux-cpupower: Add intel-speed-select command
+
+This patch adds support for the intel-speed-select command to the
+linux-cpupower package, enabling enumeration and control of Intel Speed
+Select Technology (SST) features.
+
+The intel-speed-select tool allows configuration of power and
+performance profiles on supported Intel platforms, tailored for diverse
+workload requirements.
+
+To support building this tool, add `libnl-3-dev` and `libnl-genl-3-dev`
+to Build-Depends-Arch. These packages provide the Netlink interface
+required by intel-speed-select.
+
+Link: https://bugs.debian.org/1036714
+
+Signed-off-by: Miguel Bernal Marin <miguel.bernal.marin@linux.intel.com>
+Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
+Signed-off-by: Caio Felipe Cruz <caio.soaresdacruz@windriver.com>
+---
+ debian/control                                    |  2 +-
+ debian/rules.d/tools/power/x86/Makefile           |  1 +
+ .../tools/power/x86/intel-speed-select/Makefile   | 15 +++++++++++++++
+ debian/rules.real                                 |  7 ++++++-
+ debian/templates/tools-unversioned.control.in     |  2 ++
+ 5 files changed, 25 insertions(+), 2 deletions(-)
+ create mode 100644 debian/rules.d/tools/power/x86/intel-speed-select/Makefile
+
+diff --git a/debian/control b/debian/control
+index fdc0596..77ae87b 100644
+--- a/debian/control
++++ b/debian/control
+@@ -5,7 +5,7 @@ Maintainer: Debian Kernel Team <debian-kernel@lists.debian.org>
+ Uploaders: Bastian Blank <waldi@debian.org>, maximilian attems <maks@debian.org>, Ben Hutchings <benh@debian.org>, Salvatore Bonaccorso <carnil@debian.org>
+ Standards-Version: 4.2.0
+ Build-Depends: debhelper-compat (= 12), dh-exec, python3:native, python3-jinja2:native, quilt, cpio <!stage1>, xz-utils <!stage1>, dh-python <!stage1>, bison <!stage1>, flex (>= 2.6.1-1.1~) <!stage1>
+-Build-Depends-Arch: kernel-wedge (>= 2.102~) <!pkg.linux.nokernel !stage1>, kmod <!pkg.linux.nokernel !stage1>, bc <!pkg.linux.nokernel !stage1>, libssl-dev:native <!pkg.linux.nokernel !stage1>, libssl-dev <!pkg.linux.notools !stage1>, openssl (>= 1.1.0-1~) <!pkg.linux.nokernel !stage1>, libelf-dev:native <!pkg.linux.nokernel !stage1>, libelf-dev <!pkg.linux.notools !stage1>, rsync, lz4 [amd64 arm64] <!pkg.linux.nokernel !stage1>, pahole <!pkg.linux.nokernel !stage1> | dwarves:native (>= 1.16~) <!pkg.linux.nokernel !stage1>, gcc-10 [alpha amd64 arm64 armel armhf hppa i386 ia64 m68k mips mips64 mips64el mips64r6 mips64r6el mipsel mipsr6 mipsr6el powerpc ppc64 ppc64el riscv64 s390x sh4 sparc64] <!cross !pkg.linux.nokernel !stage1>, gcc-10-alpha-linux-gnu [alpha] <cross !pkg.linux.nokernel !stage1>, gcc-10-x86-64-linux-gnu [amd64] <cross !pkg.linux.nokernel !stage1>, gcc-10-aarch64-linux-gnu [arm64] <cross !pkg.linux.nokernel !stage1>, gcc-arm-linux-gnueabihf [arm64] <!pkg.linux.nokernel !stage1>, gcc-10-arm-linux-gnueabi [armel] <cross !pkg.linux.nokernel !stage1>, gcc-10-arm-linux-gnueabihf [armhf] <cross !pkg.linux.nokernel !stage1>, gcc-10-hppa-linux-gnu [hppa] <cross !pkg.linux.nokernel !stage1>, binutils-hppa64-linux-gnu [hppa] <!pkg.linux.nokernel !stage1>, gcc-10-hppa64-linux-gnu [hppa] <!pkg.linux.nokernel !stage1>, gcc-10-i686-linux-gnu [i386] <cross !pkg.linux.nokernel !stage1>, gcc-10-ia64-linux-gnu [ia64] <cross !pkg.linux.nokernel !stage1>, gcc-10-m68k-linux-gnu [m68k] <cross !pkg.linux.nokernel !stage1>, gcc-10-mips-linux-gnu [mips] <cross !pkg.linux.nokernel !stage1>, gcc-10-mips64-linux-gnuabi64 [mips64] <cross !pkg.linux.nokernel !stage1>, gcc-10-mips64el-linux-gnuabi64 [mips64el] <cross !pkg.linux.nokernel !stage1>, gcc-10-mipsisa64r6-linux-gnuabi64 [mips64r6] <cross !pkg.linux.nokernel !stage1>, gcc-10-mipsisa64r6el-linux-gnuabi64 [mips64r6el] <cross !pkg.linux.nokernel !stage1>, gcc-10-mipsel-linux-gnu [mipsel] <cross !pkg.linux.nokernel !stage1>, gcc-10-mipsisa32r6-linux-gnu [mipsr6] <cross !pkg.linux.nokernel !stage1>, gcc-10-mipsisa32r6el-linux-gnu [mipsr6el] <cross !pkg.linux.nokernel !stage1>, gcc-10-powerpc-linux-gnu [powerpc] <cross !pkg.linux.nokernel !stage1>, gcc-10-powerpc64-linux-gnu [ppc64] <cross !pkg.linux.nokernel !stage1>, gcc-10-powerpc64le-linux-gnu [ppc64el] <cross !pkg.linux.nokernel !stage1>, gcc-10-riscv64-linux-gnu [riscv64] <cross !pkg.linux.nokernel !stage1>, gcc-10-s390x-linux-gnu [s390x] <cross !pkg.linux.nokernel !stage1>, gcc-10-sh4-linux-gnu [sh4] <cross !pkg.linux.nokernel !stage1>, gcc-10-sparc64-linux-gnu [sparc64] <cross !pkg.linux.nokernel !stage1>, python3-docutils [linux-any] <!nodoc !pkg.linux.notools !stage1>, zlib1g-dev [linux-any] <!pkg.linux.notools !stage1>, libcap-dev [linux-any] <!pkg.linux.notools !stage1>, libpci-dev [linux-any] <!pkg.linux.notools !stage1>, asciidoctor [alpha amd64 arm64 armel armhf hppa i386 mips mips64 mips64el mips64r6 mips64r6el mipsel mipsn32 mipsn32el mipsn32r6 mipsn32r6el mipsr6 mipsr6el powerpc ppc64 ppc64el riscv64 s390 s390x sh4 sparc sparc64] <!nodoc !nopython !pkg.linux.notools !stage1>, gcc-multilib [amd64 mips64 mips64el mips64r6 mips64r6el ppc64 s390x sparc64] <!nopython !pkg.linux.notools !stage1>, libaudit-dev [alpha amd64 arm64 armel armhf hppa i386 mips mips64 mips64el mips64r6 mips64r6el mipsel mipsn32 mipsn32el mipsn32r6 mipsn32r6el mipsr6 mipsr6el powerpc ppc64 ppc64el riscv64 s390 s390x sh4 sparc sparc64] <!nopython !pkg.linux.notools !stage1>, libbabeltrace-dev [alpha amd64 arm64 armel armhf hppa i386 mips mips64 mips64el mips64r6 mips64r6el mipsel mipsn32 mipsn32el mipsn32r6 mipsn32r6el mipsr6 mipsr6el powerpc ppc64 ppc64el riscv64 s390 s390x sh4 sparc sparc64] <!nopython !pkg.linux.notools !stage1>, libdw-dev [alpha amd64 arm64 armel armhf hppa i386 mips mips64 mips64el mips64r6 mips64r6el mipsel mipsn32 mipsn32el mipsn32r6 mipsn32r6el mipsr6 mipsr6el powerpc ppc64 ppc64el riscv64 s390 s390x sh4 sparc sparc64] <!nopython !pkg.linux.notools !stage1>, libiberty-dev [alpha amd64 arm64 armel armhf hppa i386 mips mips64 mips64el mips64r6 mips64r6el mipsel mipsn32 mipsn32el mipsn32r6 mipsn32r6el mipsr6 mipsr6el powerpc ppc64 ppc64el riscv64 s390 s390x sh4 sparc sparc64] <!nopython !pkg.linux.notools !stage1>, libnewt-dev [alpha amd64 arm64 armel armhf hppa i386 mips mips64 mips64el mips64r6 mips64r6el mipsel mipsn32 mipsn32el mipsn32r6 mipsn32r6el mipsr6 mipsr6el powerpc ppc64 ppc64el riscv64 s390 s390x sh4 sparc sparc64] <!nopython !pkg.linux.notools !stage1>, libnuma-dev [alpha amd64 arm64 armel armhf hppa i386 mips mips64 mips64el mips64r6 mips64r6el mipsel mipsn32 mipsn32el mipsn32r6 mipsn32r6el mipsr6 mipsr6el powerpc ppc64 ppc64el riscv64 s390 s390x sh4 sparc sparc64] <!nopython !pkg.linux.notools !stage1>, libperl-dev [alpha amd64 arm64 armel armhf hppa i386 mips mips64 mips64el mips64r6 mips64r6el mipsel mipsn32 mipsn32el mipsn32r6 mipsn32r6el mipsr6 mipsr6el powerpc ppc64 ppc64el riscv64 s390 s390x sh4 sparc sparc64] <!nopython !pkg.linux.notools !stage1>, libpython3-dev [alpha amd64 arm64 armel armhf hppa i386 mips mips64 mips64el mips64r6 mips64r6el mipsel mipsn32 mipsn32el mipsn32r6 mipsn32r6el mipsr6 mipsr6el powerpc ppc64 ppc64el riscv64 s390 s390x sh4 sparc sparc64] <!nopython !pkg.linux.notools !stage1>, libunwind-dev [amd64 arm64 armel armhf hppa i386 mips mips64 mips64el mipsel powerpc ppc64 ppc64el sh4] <!nopython !pkg.linux.notools !stage1>, libzstd-dev [alpha amd64 arm64 armel armhf hppa i386 mips mips64 mips64el mips64r6 mips64r6el mipsel mipsn32 mipsn32el mipsn32r6 mipsn32r6el mipsr6 mipsr6el powerpc ppc64 ppc64el riscv64 s390 s390x sh4 sparc sparc64] <!nopython !pkg.linux.notools !stage1>, python3-dev:any [alpha amd64 arm64 armel armhf hppa i386 mips mips64 mips64el mips64r6 mips64r6el mipsel mipsn32 mipsn32el mipsn32r6 mipsn32r6el mipsr6 mipsr6el powerpc ppc64 ppc64el riscv64 s390 s390x sh4 sparc sparc64] <!nopython !pkg.linux.notools !stage1>, python3-setuptools [alpha amd64 arm64 armel armhf hppa i386 mips mips64 mips64el mips64r6 mips64r6el mipsel mipsn32 mipsn32el mipsn32r6 mipsn32r6el mipsr6 mipsr6el powerpc ppc64 ppc64el riscv64 s390 s390x sh4 sparc sparc64] <!nopython !pkg.linux.notools !stage1>, autoconf [linux-any] <!pkg.linux.notools !stage1>, automake [linux-any] <!pkg.linux.notools !stage1>, libtool [linux-any] <!pkg.linux.notools !stage1>, libglib2.0-dev [linux-any] <!pkg.linux.notools !stage1>, libudev-dev [linux-any] <!pkg.linux.notools !stage1>, libwrap0-dev [linux-any] <!pkg.linux.notools !stage1>, libtracefs-dev (>= 1.3) [amd64 arm64 armhf i386 x32] <!pkg.linux.notools !stage1>, libtraceevent-dev (>= 1:1.5) [amd64 arm64 armhf i386 x32] <!pkg.linux.notools !stage1>, python3-docutils [amd64 arm64 armhf i386 x32] <!pkg.linux.notools !stage1>
++Build-Depends-Arch: kernel-wedge (>= 2.102~) <!pkg.linux.nokernel !stage1>, kmod <!pkg.linux.nokernel !stage1>, bc <!pkg.linux.nokernel !stage1>, libssl-dev:native <!pkg.linux.nokernel !stage1>, libssl-dev <!pkg.linux.notools !stage1>, openssl (>= 1.1.0-1~) <!pkg.linux.nokernel !stage1>, libelf-dev:native <!pkg.linux.nokernel !stage1>, libelf-dev <!pkg.linux.notools !stage1>, rsync, lz4 [amd64 arm64] <!pkg.linux.nokernel !stage1>, pahole <!pkg.linux.nokernel !stage1> | dwarves:native (>= 1.16~) <!pkg.linux.nokernel !stage1>, gcc-10 [alpha amd64 arm64 armel armhf hppa i386 ia64 m68k mips mips64 mips64el mips64r6 mips64r6el mipsel mipsr6 mipsr6el powerpc ppc64 ppc64el riscv64 s390x sh4 sparc64] <!cross !pkg.linux.nokernel !stage1>, gcc-10-alpha-linux-gnu [alpha] <cross !pkg.linux.nokernel !stage1>, gcc-10-x86-64-linux-gnu [amd64] <cross !pkg.linux.nokernel !stage1>, gcc-10-aarch64-linux-gnu [arm64] <cross !pkg.linux.nokernel !stage1>, gcc-arm-linux-gnueabihf [arm64] <!pkg.linux.nokernel !stage1>, gcc-10-arm-linux-gnueabi [armel] <cross !pkg.linux.nokernel !stage1>, gcc-10-arm-linux-gnueabihf [armhf] <cross !pkg.linux.nokernel !stage1>, gcc-10-hppa-linux-gnu [hppa] <cross !pkg.linux.nokernel !stage1>, binutils-hppa64-linux-gnu [hppa] <!pkg.linux.nokernel !stage1>, gcc-10-hppa64-linux-gnu [hppa] <!pkg.linux.nokernel !stage1>, gcc-10-i686-linux-gnu [i386] <cross !pkg.linux.nokernel !stage1>, gcc-10-ia64-linux-gnu [ia64] <cross !pkg.linux.nokernel !stage1>, gcc-10-m68k-linux-gnu [m68k] <cross !pkg.linux.nokernel !stage1>, gcc-10-mips-linux-gnu [mips] <cross !pkg.linux.nokernel !stage1>, gcc-10-mips64-linux-gnuabi64 [mips64] <cross !pkg.linux.nokernel !stage1>, gcc-10-mips64el-linux-gnuabi64 [mips64el] <cross !pkg.linux.nokernel !stage1>, gcc-10-mipsisa64r6-linux-gnuabi64 [mips64r6] <cross !pkg.linux.nokernel !stage1>, gcc-10-mipsisa64r6el-linux-gnuabi64 [mips64r6el] <cross !pkg.linux.nokernel !stage1>, gcc-10-mipsel-linux-gnu [mipsel] <cross !pkg.linux.nokernel !stage1>, gcc-10-mipsisa32r6-linux-gnu [mipsr6] <cross !pkg.linux.nokernel !stage1>, gcc-10-mipsisa32r6el-linux-gnu [mipsr6el] <cross !pkg.linux.nokernel !stage1>, gcc-10-powerpc-linux-gnu [powerpc] <cross !pkg.linux.nokernel !stage1>, gcc-10-powerpc64-linux-gnu [ppc64] <cross !pkg.linux.nokernel !stage1>, gcc-10-powerpc64le-linux-gnu [ppc64el] <cross !pkg.linux.nokernel !stage1>, gcc-10-riscv64-linux-gnu [riscv64] <cross !pkg.linux.nokernel !stage1>, gcc-10-s390x-linux-gnu [s390x] <cross !pkg.linux.nokernel !stage1>, gcc-10-sh4-linux-gnu [sh4] <cross !pkg.linux.nokernel !stage1>, gcc-10-sparc64-linux-gnu [sparc64] <cross !pkg.linux.nokernel !stage1>, python3-docutils [linux-any] <!nodoc !pkg.linux.notools !stage1>, zlib1g-dev [linux-any] <!pkg.linux.notools !stage1>, libcap-dev [linux-any] <!pkg.linux.notools !stage1>, libpci-dev [linux-any] <!pkg.linux.notools !stage1>, libnl-3-dev [linux-any] <!pkg.linux.notools !stage1>, libnl-genl-3-dev [linux-any] <!pkg.linux.notools !stage1>, asciidoctor [alpha amd64 arm64 armel armhf hppa i386 mips mips64 mips64el mips64r6 mips64r6el mipsel mipsn32 mipsn32el mipsn32r6 mipsn32r6el mipsr6 mipsr6el powerpc ppc64 ppc64el riscv64 s390 s390x sh4 sparc sparc64] <!nodoc !nopython !pkg.linux.notools !stage1>, gcc-multilib [amd64 mips64 mips64el mips64r6 mips64r6el ppc64 s390x sparc64] <!nopython !pkg.linux.notools !stage1>, libaudit-dev [alpha amd64 arm64 armel armhf hppa i386 mips mips64 mips64el mips64r6 mips64r6el mipsel mipsn32 mipsn32el mipsn32r6 mipsn32r6el mipsr6 mipsr6el powerpc ppc64 ppc64el riscv64 s390 s390x sh4 sparc sparc64] <!nopython !pkg.linux.notools !stage1>, libbabeltrace-dev [alpha amd64 arm64 armel armhf hppa i386 mips mips64 mips64el mips64r6 mips64r6el mipsel mipsn32 mipsn32el mipsn32r6 mipsn32r6el mipsr6 mipsr6el powerpc ppc64 ppc64el riscv64 s390 s390x sh4 sparc sparc64] <!nopython !pkg.linux.notools !stage1>, libdw-dev [alpha amd64 arm64 armel armhf hppa i386 mips mips64 mips64el mips64r6 mips64r6el mipsel mipsn32 mipsn32el mipsn32r6 mipsn32r6el mipsr6 mipsr6el powerpc ppc64 ppc64el riscv64 s390 s390x sh4 sparc sparc64] <!nopython !pkg.linux.notools !stage1>, libiberty-dev [alpha amd64 arm64 armel armhf hppa i386 mips mips64 mips64el mips64r6 mips64r6el mipsel mipsn32 mipsn32el mipsn32r6 mipsn32r6el mipsr6 mipsr6el powerpc ppc64 ppc64el riscv64 s390 s390x sh4 sparc sparc64] <!nopython !pkg.linux.notools !stage1>, libnewt-dev [alpha amd64 arm64 armel armhf hppa i386 mips mips64 mips64el mips64r6 mips64r6el mipsel mipsn32 mipsn32el mipsn32r6 mipsn32r6el mipsr6 mipsr6el powerpc ppc64 ppc64el riscv64 s390 s390x sh4 sparc sparc64] <!nopython !pkg.linux.notools !stage1>, libnuma-dev [alpha amd64 arm64 armel armhf hppa i386 mips mips64 mips64el mips64r6 mips64r6el mipsel mipsn32 mipsn32el mipsn32r6 mipsn32r6el mipsr6 mipsr6el powerpc ppc64 ppc64el riscv64 s390 s390x sh4 sparc sparc64] <!nopython !pkg.linux.notools !stage1>, libperl-dev [alpha amd64 arm64 armel armhf hppa i386 mips mips64 mips64el mips64r6 mips64r6el mipsel mipsn32 mipsn32el mipsn32r6 mipsn32r6el mipsr6 mipsr6el powerpc ppc64 ppc64el riscv64 s390 s390x sh4 sparc sparc64] <!nopython !pkg.linux.notools !stage1>, libpython3-dev [alpha amd64 arm64 armel armhf hppa i386 mips mips64 mips64el mips64r6 mips64r6el mipsel mipsn32 mipsn32el mipsn32r6 mipsn32r6el mipsr6 mipsr6el powerpc ppc64 ppc64el riscv64 s390 s390x sh4 sparc sparc64] <!nopython !pkg.linux.notools !stage1>, libunwind-dev [amd64 arm64 armel armhf hppa i386 mips mips64 mips64el mipsel powerpc ppc64 ppc64el sh4] <!nopython !pkg.linux.notools !stage1>, libzstd-dev [alpha amd64 arm64 armel armhf hppa i386 mips mips64 mips64el mips64r6 mips64r6el mipsel mipsn32 mipsn32el mipsn32r6 mipsn32r6el mipsr6 mipsr6el powerpc ppc64 ppc64el riscv64 s390 s390x sh4 sparc sparc64] <!nopython !pkg.linux.notools !stage1>, python3-dev:any [alpha amd64 arm64 armel armhf hppa i386 mips mips64 mips64el mips64r6 mips64r6el mipsel mipsn32 mipsn32el mipsn32r6 mipsn32r6el mipsr6 mipsr6el powerpc ppc64 ppc64el riscv64 s390 s390x sh4 sparc sparc64] <!nopython !pkg.linux.notools !stage1>, python3-setuptools [alpha amd64 arm64 armel armhf hppa i386 mips mips64 mips64el mips64r6 mips64r6el mipsel mipsn32 mipsn32el mipsn32r6 mipsn32r6el mipsr6 mipsr6el powerpc ppc64 ppc64el riscv64 s390 s390x sh4 sparc sparc64] <!nopython !pkg.linux.notools !stage1>, autoconf [linux-any] <!pkg.linux.notools !stage1>, automake [linux-any] <!pkg.linux.notools !stage1>, libtool [linux-any] <!pkg.linux.notools !stage1>, libglib2.0-dev [linux-any] <!pkg.linux.notools !stage1>, libudev-dev [linux-any] <!pkg.linux.notools !stage1>, libwrap0-dev [linux-any] <!pkg.linux.notools !stage1>, libtracefs-dev (>= 1.3) [amd64 arm64 armhf i386 x32] <!pkg.linux.notools !stage1>, libtraceevent-dev (>= 1:1.5) [amd64 arm64 armhf i386 x32] <!pkg.linux.notools !stage1>, python3-docutils [amd64 arm64 armhf i386 x32] <!pkg.linux.notools !stage1>
+ Build-Depends-Indep: graphviz <!nodoc !pkg.linux.quick !stage1>, python3-sphinx <!nodoc !pkg.linux.quick !stage1>, python3-sphinx-rtd-theme <!nodoc !pkg.linux.quick !stage1>, texlive-latex-base <!nodoc !pkg.linux.quick !stage1>, texlive-latex-extra <!nodoc !pkg.linux.quick !stage1>, dvipng <!nodoc !pkg.linux.quick !stage1>, patchutils <!pkg.linux.nosource !pkg.linux.quick !stage1>
+ Rules-Requires-Root: no
+ Homepage: https://www.kernel.org/
+diff --git a/debian/rules.d/tools/power/x86/Makefile b/debian/rules.d/tools/power/x86/Makefile
+index 2b9d773..fb17bf7 100644
+--- a/debian/rules.d/tools/power/x86/Makefile
++++ b/debian/rules.d/tools/power/x86/Makefile
+@@ -1,4 +1,5 @@
+ SUBDIRS = \
++	intel-speed-select \
+ 	turbostat \
+ 	x86_energy_perf_policy
+ 
+diff --git a/debian/rules.d/tools/power/x86/intel-speed-select/Makefile b/debian/rules.d/tools/power/x86/intel-speed-select/Makefile
+new file mode 100644
+index 0000000..b507516
+--- /dev/null
++++ b/debian/rules.d/tools/power/x86/intel-speed-select/Makefile
+@@ -0,0 +1,15 @@
++include $(top_rulesdir)/Makefile.inc
++
++# Intel Speed Select Tool (ISST)
++MAKE_ISST := CFLAGS='$(CFLAGS) $(CPPFLAGS)' LDFLAGS='$(LDFLAGS)' $(MAKE) O=$(CURDIR)
++
++MAKE_ISST += bindir=/usr/sbin V=1
++
++all:
++	$(MAKE_ISST) -C $(top_srcdir)/tools/power/x86/intel-speed-select
++
++install:
++	$(MAKE_ISST) -C $(top_srcdir)/tools/power/x86/intel-speed-select install DESTDIR=$(DESTDIR)
++
++clean:
++	$(MAKE_ISST) -C $(top_srcdir)/tools/power/x86/intel-speed-select clean
+diff --git a/debian/rules.real b/debian/rules.real
+index 07b468c..e04a08b 100644
+--- a/debian/rules.real
++++ b/debian/rules.real
+@@ -629,7 +629,12 @@ ifneq ($(filter i386 amd64 x32,$(DEB_HOST_ARCH)),)
+ '$${Newline}'\
+ 'The x86_energy_perf_policy command sets a general policy on some Intel$${Newline}'\
+ 'CPU models for the relative importance of performance versus energy$${Newline}'\
+-'savings.'
++'savings.$${Newline}'\
++'$${Newline}'\
++'The intel-speed-select command enumerates and controls Intel SST features.$${Newline}'\
++'It can change the power and performance profile of the system in a $${Newline}'\
++'variety of diverse workload requirements.'
++
+ endif
+ 	dh_install --sourcedir=$(DIR)
+ 	dh_installchangelogs
+diff --git a/debian/templates/tools-unversioned.control.in b/debian/templates/tools-unversioned.control.in
+index 5424d4e..f79aa86 100644
+--- a/debian/templates/tools-unversioned.control.in
++++ b/debian/templates/tools-unversioned.control.in
+@@ -20,6 +20,8 @@ Architecture: linux-any
+ Build-Depends:
+   libcap-dev,
+   libpci-dev,
++  libnl-3-dev,
++  libnl-genl-3-dev,
+ Depends: ${shlibs:Depends}, ${misc:Depends}
+ Description: CPU power management tools for Linux
+  The cpupower command allows inspection and control of cpufreq and
+-- 
+2.34.1
+

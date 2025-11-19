@@ -1,0 +1,26 @@
+From cefab4ea0b88f7fd09881ba5f297fa51f75fb812 Mon Sep 17 00:00:00 2001
+From: Ben Hutchings <benh@debian.org>
+Date: Mon, 7 Oct 2024 16:45:27 +0200
+Subject: [PATCH 18/20] d/rules.d/certs: Add newly required include directory
+ to CPPFLAGS
+
+(cherry picked from commit 3a17dcbfe0be6bf2b8f5e79692decb8fe26153b3)
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ debian/rules.d/certs/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/debian/rules.d/certs/Makefile b/debian/rules.d/certs/Makefile
+index 7ff7bae..12f01ef 100644
+--- a/debian/rules.d/certs/Makefile
++++ b/debian/rules.d/certs/Makefile
+@@ -3,5 +3,5 @@ PROGS = \
+ 
+ include $(top_rulesdir)/Makefile.inc
+ 
+-CPPFLAGS += -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
++CPPFLAGS += -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -I$(top_srcdir)/scripts
+ extract-cert: LDLIBS += -lcrypto
+-- 
+2.47.1
+
