@@ -2,3 +2,5 @@
 0002-rename-the-ddp-file-to-avoid-conflict.patch
 0003-ice-Remove-deprecated-ice_lag_move_new_vf_nodes-call.patch
 0004-ice-fix-DPLL-pin-handling-for-SMA-UFL-pin-types.patch
+0005-Fix-ptp4l-sync-issues.patch
+

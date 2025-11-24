@@ -1,0 +1,36 @@
+From ffaca385f6ec1dceeba5c32120659f28aef84655 Mon Sep 17 00:00:00 2001
+From: Alyson Deives Pereira <alyson.deivespereira@windriver.com>
+Date: Mon, 24 Nov 2025 09:29:38 -0300
+Subject: [PATCH] Fix ptp4l sync issues
+
+PTP4l was not able to sync on Granite Rapids D server while in BC
+scenario and syncE signal enabled.
+This change fix this issue by calling ice_ptp_port_phy_restart() during
+ice_ptp_link_change() only if link status is up.
+This fix is also present on source code version 2.3.15 available to
+download at Intel download center [1].
+
+[1] https://www.intel.com/content/www/us/en/download/19630/intel-network-adapter-driver-for-e810-series-devices-under-linux.html
+
+Signed-off-by: Alyson Deives Pereira <alyson.deivespereira@windriver.com>
+---
+ src/ice_ptp.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/src/ice_ptp.c b/src/ice_ptp.c
+index a0ec958..d636005 100644
+--- a/src/ice_ptp.c
++++ b/src/ice_ptp.c
+@@ -3410,7 +3410,8 @@ void ice_ptp_link_change(struct ice_pf *pf, bool linkup)
+ 		return;
+ 	case ICE_MAC_GENERIC:
+ 	case ICE_MAC_GENERIC_3K_E825:
+-		ice_ptp_port_phy_restart(ptp_port);
++	    if (linkup)
++		    ice_ptp_port_phy_restart(ptp_port);
+ 		return;
+ 	default:
+ 		dev_warn(ice_pf_to_dev(pf), "%s: Unknown PHY type\n", __func__);
+-- 
+2.34.1
+
