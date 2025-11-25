@@ -1,0 +1,39 @@
+From 5dc6ea46e5d2ccb4511a95ece6a0f3fb82ef8fe3 Mon Sep 17 00:00:00 2001
+From: Scott Little <scott.little@windriver.com>
+Date: Wed, 25 Sep 2024 12:05:07 -0400
+Subject: [PATCH] add Build-Size advisory
+
+Add 'XS-Build-Size: 18GB' to the debian control file.
+This will advise 'stx build-pkgs' of the minimum required
+size of the build environment.
+
+Signed-off-by: Scott Little <scott.little@windriver.com>
+---
+ debian/control                     | 1 +
+ debian/templates/source.control.in | 1 +
+ 2 files changed, 2 insertions(+)
+
+diff --git a/debian/control b/debian/control
+index aaa9f8d..4e8fadc 100644
+--- a/debian/control
++++ b/debian/control
+@@ -11,6 +11,7 @@ Rules-Requires-Root: no
+ Homepage: https://www.kernel.org/
+ Vcs-Browser: https://salsa.debian.org/kernel-team/linux
+ Vcs-Git: https://salsa.debian.org/kernel-team/linux.git
++XS-Build-Size: 18GB
+ 
+ Package: linux-rt-support-6.6.0-1-rt
+ Architecture: all
+diff --git a/debian/templates/source.control.in b/debian/templates/source.control.in
+index fd3d879..265c156 100644
+--- a/debian/templates/source.control.in
++++ b/debian/templates/source.control.in
+@@ -42,3 +42,4 @@ Rules-Requires-Root: no
+ Vcs-Git: https://salsa.debian.org/kernel-team/linux.git
+ Vcs-Browser: https://salsa.debian.org/kernel-team/linux
+ Homepage: https://www.kernel.org/
++XS-Build-Size: 18GB
+-- 
+2.25.1
+

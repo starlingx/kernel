@@ -1,0 +1,43 @@
+From 265d0c44b1799126009a42a0df3f1a2211eddbf6 Mon Sep 17 00:00:00 2001
+From: Caio Felipe Cruz <caio.soaresdacruz@windriver.com>
+Date: Tue, 17 Jun 2025 22:08:52 -0400
+Subject: [PATCH] zl3073x: Export clock_id via module parameter
+
+Export the clock_id assigned during probe as a read-only module
+parameter to allow user space tools or scripts to retrieve it for
+diagnostics or configuration purposes.
+
+Signed-off-by: Caio Felipe Cruz <caio.soaresdacruz@windriver.com>
+---
+ drivers/dpll/zl3073x/core.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/drivers/dpll/zl3073x/core.c b/drivers/dpll/zl3073x/core.c
+index f5245225f..e1f11b977 100644
+--- a/drivers/dpll/zl3073x/core.c
++++ b/drivers/dpll/zl3073x/core.c
+@@ -95,6 +95,12 @@ const struct zl3073x_chip_info zl30735_chip_info = {
+ };
+ EXPORT_SYMBOL_NS_GPL(zl30735_chip_info, "ZL3073X");
+ 
++static u64 clock_id;
++
++/* Use module_param to export clock_id */
++module_param(clock_id, ullong, 0444);  // Read-only from user space
++MODULE_PARM_DESC(clock_id, "Clock ID exported to user space");
++
+ #define ZL_RANGE_OFFSET		0x80
+ #define ZL_PAGE_SIZE		0x80
+ #define ZL_NUM_PAGES		15
+@@ -1012,6 +1018,8 @@ int zl3073x_dev_probe(struct zl3073x_dev *zldev,
+ 
+ 	/* Initialize clock ID */
+ 	zl3073x_dev_clock_id_init(zldev);
++    /* Export the clock_id as a module parameter */
++    clock_id = zldev->clock_id;
+ 
+ 	/* Initialize mutex for operations where multiple reads, writes
+ 	 * and/or polls are required to be done atomically.
+-- 
+2.34.1
+

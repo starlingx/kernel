@@ -1,0 +1,129 @@
+From ad7c0d790d7c937a1e63f569ad2bdc0691107335 Mon Sep 17 00:00:00 2001
+From: Matt Peters <matt.peters@windriver.com>
+Date: Mon, 30 May 2016 10:51:02 -0400
+Subject: [PATCH 04/14] intel-iommu: allow ignoring Ethernet device RMRR with
+ IOMMU passthrough
+
+Some BIOS's are reporting DMAR RMRR entries for Ethernet devices
+which is causing problems when PCI passthrough is enabled.  These
+devices should be able to use the static identity map since the
+host should not be enforcing specific address ranges when IOMMU
+passthrough is enabled.
+
+Originally-by: Matt Peters <matt.peters@windriver.com>
+[PG: Added bootarg wrapper and documentation entries.]
+Signed-off-by: Paul Gortmaker <paul.gortmaker@windriver.com>
+Signed-off-by: Nam Ninh <nam.ninh@windriver.com>
+Signed-off-by: Jim Somerville <Jim.Somerville@windriver.com>
+Signed-off-by: Zhang Zhiguo <zhangzhg@neusoft.com>
+Signed-off-by: Dongqi Chen <chen.dq@neusoft.com>
+[lz: Adapted the patch for context changes.]
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+[jp: fix warning: this 'else' clause does not guard]
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+[lz: Adapted the patch for upgrading kernel from 5.10 to 6.6.]
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+[jm: Adapted the patch for upgrading kernel from 6.6 to 6.12.]
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ .../admin-guide/kernel-parameters.txt         |  5 +++++
+ Documentation/arch/x86/iommu.rst              | 18 +++++++++++++++
+ drivers/iommu/intel/iommu.c                   | 22 ++++++++++++++++++-
+ 3 files changed, 44 insertions(+), 1 deletion(-)
+
+diff --git a/Documentation/admin-guide/kernel-parameters.txt b/Documentation/admin-guide/kernel-parameters.txt
+index b6d995d47ea1..c182de48eabb 100644
+--- a/Documentation/admin-guide/kernel-parameters.txt
++++ b/Documentation/admin-guide/kernel-parameters.txt
+@@ -2218,6 +2218,11 @@
+ 			bypassed by not enabling DMAR with this option. In
+ 			this case, gfx device will use physical address for
+ 			DMA.
++		eth_no_rmrr [Default Off]
++			With this option provided, the kernel will ignore
++			any specified RMRR regions specified by the BIOS
++			for PCI ethernet devices.  Confirm with your hardware
++			vendor the RMRR regions are indeed invalid first.
+ 		strict [Default Off]
+ 			Deprecated, equivalent to iommu.strict=1.
+ 		sp_off [Default Off]
+diff --git a/Documentation/arch/x86/iommu.rst b/Documentation/arch/x86/iommu.rst
+index 41fbadfe2221..5a02c241774d 100644
+--- a/Documentation/arch/x86/iommu.rst
++++ b/Documentation/arch/x86/iommu.rst
+@@ -35,6 +35,24 @@ regions will fail. Hence BIOS uses RMRR to specify these regions along with
+ devices that need to access these regions. OS is expected to setup
+ unity mappings for these regions for these devices to access these regions.
+ 
++RMRR for other devices?
++-----------------------
++
++There are reports of BIOS out there that indicate RMRR regions for things
++like ethernet devices.  As per mainline commit c875d2c1b8083 ("iommu/vt-d:
++Exclude devices using RMRRs from IOMMU API domains") such a device is
++"fundamentally incompatible" with the IOMMU API and "we must prevent such
++devices from being used by the IOMMU API."  However, in the event that
++the RMRR indicated by the BIOS is assumed to be just a reporting error,
++there is an additional iommu boot arg that can be used to ignore RMRR
++settings for ethernet, i.e. "intel_iommu=on,eth_no_rmrr iommu=pt".
++Note that iommu=pt is required in order to eth_no_rmrr to have effect.
++
++If you use this setting, you should consult with your hardware vendor to
++confirm that it is just a reporting error, and that it truly is not
++actively using any DMA to/from RMRR, as otherwise system instability
++may result.
++
+ What is AMD IVRS?
+ ^^^^^^^^^^^^^^^^^
+ 
+diff --git a/drivers/iommu/intel/iommu.c b/drivers/iommu/intel/iommu.c
+index 9c46a4cd3848..ea0ffcf82d7e 100644
+--- a/drivers/iommu/intel/iommu.c
++++ b/drivers/iommu/intel/iommu.c
+@@ -209,6 +209,7 @@ int intel_iommu_enabled = 0;
+ EXPORT_SYMBOL_GPL(intel_iommu_enabled);
+ 
+ static int intel_iommu_superpage = 1;
++static int intel_iommu_ethrmrr = 1;
+ static int iommu_identity_mapping;
+ static int iommu_skip_te_disable;
+ static int disable_igfx_iommu;
+@@ -256,6 +257,15 @@ static int __init intel_iommu_setup(char *str)
+ 		} else if (!strncmp(str, "forcedac", 8)) {
+ 			pr_warn("intel_iommu=forcedac deprecated; use iommu.forcedac instead\n");
+ 			iommu_dma_forcedac = true;
++		} else if (!strncmp(str, "eth_no_rmrr", 11)) {
++			if (!iommu_default_passthrough()) {
++				printk(KERN_WARNING
++					"Intel-IOMMU: error - eth_no_rmrr requires iommu=pt\n");
++			} else {
++				printk(KERN_INFO
++					"Intel-IOMMU: ignoring ethernet RMRR values\n");
++				intel_iommu_ethrmrr = 0;
++			}
+ 		} else if (!strncmp(str, "strict", 6)) {
+ 			pr_warn("intel_iommu=strict deprecated; use iommu.strict=1 instead\n");
+ 			iommu_set_dma_strict();
+@@ -2025,8 +2035,18 @@ static bool device_rmrr_is_relaxable(struct device *dev)
+ 	pdev = to_pci_dev(dev);
+ 	if (IS_USB_DEVICE(pdev) || IS_GFX_DEVICE(pdev))
+ 		return true;
+-	else
++	else {
++		/* As a temporary workaround for issues seen on ProLiant DL380p,
++		 * allow the operator to ignore the RMRR settings for ethernet
++		 * devices.  Ideally the end user should contact their vendor
++		 * regarding why there are RMRR, as per mainline c875d2c1b8083
++		 * ("iommu/vt-d: Exclude devices using RMRRs from IOMMU API domains")
++		 * it seems that these make no sense at all.
++		 */
++		if ((pdev->class >> 8) == PCI_CLASS_NETWORK_ETHERNET && !intel_iommu_ethrmrr)
++			return true;
+ 		return false;
++	}
+ }
+ 
+ static int device_def_domain_type(struct device *dev)
+-- 
+2.49.0
+
