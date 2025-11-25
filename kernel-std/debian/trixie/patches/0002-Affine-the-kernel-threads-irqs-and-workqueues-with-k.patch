@@ -1,0 +1,235 @@
+From 04650d78902365b332e3c7e6885a3cc46a20ed15 Mon Sep 17 00:00:00 2001
+From: Chris Friesen <chris.friesen@windriver.com>
+Date: Tue, 24 Nov 2015 16:27:28 -0500
+Subject: [PATCH 02/13] Affine the kernel threads, irqs and workqueues with
+ kthread_cpus
+
+We combine patch 3,4 and 10 to this patch.
+
+This is a kernel enhancement to configure the cpu affinity of kernel
+threads via kernel boot option kthread_cpus=<cpulist>. The compute
+kickstart file and compute-huge.sh scripts will update grub with the
+new option.
+
+With kthread_cpus specified, the cpumask is immediately applied upon
+thread launch. This does not affect kernel threads that specify cpu
+and node.
+
+We extend the meaning of that boot arg to also apply to the CPU
+affinity of unbound and ordered workqueues.
+
+We also use the kthread_cpus value to determine the default irq
+affinity.  Specifically, as long as the previously-calculated
+irq affinity intersects with the kthread_cpus affinity then we'll
+use the intersection of the two as the default irq affinity.
+
+Note: this is based off of Christoph Lameter's patch at
+https://lwn.net/Articles/565932/ with the only difference being
+the kernel parameter changed from kthread to kthread_cpus.
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ .../admin-guide/kernel-parameters.txt         | 10 ++++++++
+ include/linux/cpumask.h                       |  3 +++
+ init/main.c                                   |  2 ++
+ kernel/cpu.c                                  | 23 +++++++++++++++++++
+ kernel/irq/manage.c                           |  7 ++++++
+ kernel/kthread.c                              |  4 ++--
+ kernel/umh.c                                  |  3 +++
+ kernel/workqueue.c                            | 10 ++++----
+ 8 files changed, 56 insertions(+), 6 deletions(-)
+
+diff --git a/Documentation/admin-guide/kernel-parameters.txt b/Documentation/admin-guide/kernel-parameters.txt
+index bf3aacb1ceb7..b6d995d47ea1 100644
+--- a/Documentation/admin-guide/kernel-parameters.txt
++++ b/Documentation/admin-guide/kernel-parameters.txt
+@@ -2637,6 +2637,16 @@
+ 			See also Documentation/trace/kprobetrace.rst "Kernel
+ 			Boot Parameter" section.
+ 
++	kthread_cpus=   [KNL, SMP] Only run kernel threads on the specified
++			list of processors. The kernel will start threads
++			on the indicated processors only (unless there
++			are specific reasons to run a thread with
++			different affinities). This can be used to make
++			init start on certain processors and also to
++			control where kmod and other user space threads
++			are being spawned. Allows to keep kernel threads
++			away from certain cores unless absoluteluy necessary.
++
+ 	kpti=		[ARM64,EARLY] Control page table isolation of
+ 			user and kernel address spaces.
+ 			Default: enabled on cores which need mitigation.
+diff --git a/include/linux/cpumask.h b/include/linux/cpumask.h
+index 9278a50d514f..2b91ee73365b 100644
+--- a/include/linux/cpumask.h
++++ b/include/linux/cpumask.h
+@@ -84,6 +84,7 @@ static __always_inline void set_nr_cpu_ids(unsigned int nr)
+  *     cpu_enabled_mask  - has bit 'cpu' set iff cpu can be brought online
+  *     cpu_online_mask  - has bit 'cpu' set iff cpu available to scheduler
+  *     cpu_active_mask  - has bit 'cpu' set iff cpu available to migration
++ *     cpu_kthread_mask - has bit 'cpu' set iff general kernel threads allowed
+  *
+  *  If !CONFIG_HOTPLUG_CPU, present == possible, and active == online.
+  *
+@@ -117,12 +118,14 @@ extern struct cpumask __cpu_online_mask;
+ extern struct cpumask __cpu_enabled_mask;
+ extern struct cpumask __cpu_present_mask;
+ extern struct cpumask __cpu_active_mask;
++extern struct cpumask __cpu_kthread_mask;
+ extern struct cpumask __cpu_dying_mask;
+ #define cpu_possible_mask ((const struct cpumask *)&__cpu_possible_mask)
+ #define cpu_online_mask   ((const struct cpumask *)&__cpu_online_mask)
+ #define cpu_enabled_mask   ((const struct cpumask *)&__cpu_enabled_mask)
+ #define cpu_present_mask  ((const struct cpumask *)&__cpu_present_mask)
+ #define cpu_active_mask   ((const struct cpumask *)&__cpu_active_mask)
++#define cpu_kthread_mask  ((const struct cpumask *)&__cpu_kthread_mask)
+ #define cpu_dying_mask    ((const struct cpumask *)&__cpu_dying_mask)
+ 
+ extern atomic_t __num_online_cpus;
+diff --git a/init/main.c b/init/main.c
+index a7aaae73743e..569c18d1622c 100644
+--- a/init/main.c
++++ b/init/main.c
+@@ -1593,6 +1593,8 @@ static noinline void __init kernel_init_freeable(void)
+ 
+ 	do_basic_setup();
+ 
++	set_cpus_allowed_ptr(current, cpu_kthread_mask);
++
+ 	kunit_run_all_tests();
+ 
+ 	wait_for_initramfs();
+diff --git a/kernel/cpu.c b/kernel/cpu.c
+index 9ee6c9145b1d..7ab2274c0b8b 100644
+--- a/kernel/cpu.c
++++ b/kernel/cpu.c
+@@ -3121,6 +3121,29 @@ EXPORT_SYMBOL(__cpu_dying_mask);
+ atomic_t __num_online_cpus __read_mostly;
+ EXPORT_SYMBOL(__num_online_cpus);
+ 
++struct cpumask __cpu_kthread_mask __read_mostly
++	= {CPU_BITS_ALL};
++EXPORT_SYMBOL(__cpu_kthread_mask);
++
++static int __init kthread_setup(char *str)
++{
++	cpumask_var_t tmp_mask;
++	int err;
++
++	alloc_bootmem_cpumask_var(&tmp_mask);
++
++	err = cpulist_parse(str, tmp_mask);
++	if (!err)
++		cpumask_copy(&__cpu_kthread_mask, tmp_mask);
++	else
++		pr_err("Cannot parse 'kthread_cpus=%s'; error %d\n", str, err);
++
++	free_bootmem_cpumask_var(tmp_mask);
++
++	return 1;
++}
++__setup("kthread_cpus=", kthread_setup);
++
+ void init_cpu_present(const struct cpumask *src)
+ {
+ 	cpumask_copy(&__cpu_present_mask, src);
+diff --git a/kernel/irq/manage.c b/kernel/irq/manage.c
+index f0803d6bd296..bd041867bc77 100644
+--- a/kernel/irq/manage.c
++++ b/kernel/irq/manage.c
+@@ -628,6 +628,13 @@ int irq_setup_affinity(struct irq_desc *desc)
+ 		if (cpumask_intersects(&mask, nodemask))
+ 			cpumask_and(&mask, &mask, nodemask);
+ 	}
++
++	/* This will narrow down the affinity further if we've specified
++	 * a reduced cpu_kthread_mask in the boot args.
++	 */
++	if (cpumask_intersects(&mask, cpu_kthread_mask))
++		cpumask_and(&mask, &mask, cpu_kthread_mask);
++
+ 	ret = irq_do_set_affinity(&desc->irq_data, &mask, false);
+ 	raw_spin_unlock(&mask_lock);
+ 	return ret;
+diff --git a/kernel/kthread.c b/kernel/kthread.c
+index 9bb36897b6c6..77d2b3f577f4 100644
+--- a/kernel/kthread.c
++++ b/kernel/kthread.c
+@@ -368,7 +368,7 @@ static int kthread(void *_create)
+ 	 * back to default in case they have been changed.
+ 	 */
+ 	sched_setscheduler_nocheck(current, SCHED_NORMAL, &param);
+-	set_cpus_allowed_ptr(current, housekeeping_cpumask(HK_TYPE_KTHREAD));
++	set_cpus_allowed_ptr(current, cpu_kthread_mask);
+ 
+ 	/* OK, tell user we're spawned, wait for stop or wakeup */
+ 	__set_current_state(TASK_UNINTERRUPTIBLE);
+@@ -743,7 +743,7 @@ int kthreadd(void *unused)
+ 	/* Setup a clean context for our children to inherit. */
+ 	set_task_comm(tsk, "kthreadd");
+ 	ignore_signals(tsk);
+-	set_cpus_allowed_ptr(tsk, housekeeping_cpumask(HK_TYPE_KTHREAD));
++	set_cpus_allowed_ptr(tsk, cpu_kthread_mask);
+ 	set_mems_allowed(node_states[N_MEMORY]);
+ 
+ 	current->flags |= PF_NOFREEZE;
+diff --git a/kernel/umh.c b/kernel/umh.c
+index ff1f13a27d29..0dec76b539a7 100644
+--- a/kernel/umh.c
++++ b/kernel/umh.c
+@@ -79,6 +79,9 @@ static int call_usermodehelper_exec_async(void *data)
+ 	 */
+ 	current->fs->umask = 0022;
+ 
++	/* We can run only where init is allowed to run. */
++	set_cpus_allowed_ptr(current, cpu_kthread_mask);
++
+ 	/*
+ 	 * Our parent (unbound workqueue) runs with elevated scheduling
+ 	 * priority. Avoid propagating that into the userspace child.
+diff --git a/kernel/workqueue.c b/kernel/workqueue.c
+index a9d64e08dffc..d39a4db6bb65 100644
+--- a/kernel/workqueue.c
++++ b/kernel/workqueue.c
+@@ -5559,10 +5559,7 @@ static int init_rescuer(struct workqueue_struct *wq)
+ 	}
+ 
+ 	wq->rescuer = rescuer;
+-	if (wq->flags & WQ_UNBOUND)
+-		kthread_bind_mask(rescuer->task, unbound_effective_cpumask(wq));
+-	else
+-		kthread_bind_mask(rescuer->task, cpu_possible_mask);
++	kthread_bind_mask(rescuer->task, cpu_kthread_mask);
+ 	wake_up_process(rescuer->task);
+ 
+ 	return 0;
+@@ -7727,6 +7724,7 @@ void __init workqueue_init_early(void)
+ 	cpumask_copy(wq_unbound_cpumask, cpu_possible_mask);
+ 	restrict_unbound_cpumask("HK_TYPE_WQ", housekeeping_cpumask(HK_TYPE_WQ));
+ 	restrict_unbound_cpumask("HK_TYPE_DOMAIN", housekeeping_cpumask(HK_TYPE_DOMAIN));
++	restrict_unbound_cpumask("kthread_cpus", cpu_kthread_mask);
+ 	if (!cpumask_empty(&wq_cmdline_cpumask))
+ 		restrict_unbound_cpumask("workqueue.unbound_cpus", &wq_cmdline_cpumask);
+ 
+@@ -7780,6 +7778,8 @@ void __init workqueue_init_early(void)
+ 
+ 		BUG_ON(!(attrs = alloc_workqueue_attrs()));
+ 		attrs->nice = std_nice[i];
++		/* If we've specified a kthread mask apply it here too. */
++		cpumask_copy(attrs->cpumask, cpu_kthread_mask);
+ 		unbound_std_wq_attrs[i] = attrs;
+ 
+ 		/*
+@@ -7789,6 +7789,8 @@ void __init workqueue_init_early(void)
+ 		BUG_ON(!(attrs = alloc_workqueue_attrs()));
+ 		attrs->nice = std_nice[i];
+ 		attrs->ordered = true;
++		/* If we've specified a kthread mask apply it here too. */
++		cpumask_copy(attrs->cpumask, cpu_kthread_mask);
+ 		ordered_wq_attrs[i] = attrs;
+ 	}
+ 
+-- 
+2.49.0
+
