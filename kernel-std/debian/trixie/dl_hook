@@ -25,9 +25,9 @@ then
 fi
 cd debian
 cp "${MY_REPO_ROOT_DIR}"/cgcs-root/stx/kernel/kernel-std/\
-/debian/bullseye/source/changelog ./
+/debian/trixie/source/changelog ./
 cp "${MY_REPO_ROOT_DIR}"/cgcs-root/stx/kernel/kernel-std/\
-/debian/bullseye/source/config ./config/amd64/none
+/debian/trixie/source/config ./config/amd64/none
 cd -
 
 # The abiname is changed from "0.deb11.9" to "1", so replace

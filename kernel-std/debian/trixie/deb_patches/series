@@ -20,3 +20,4 @@
 0020-Drop-all-ia64-configs-due-to-upstream-dropping-IA64-.patch
 0021-linux-kbuild-Add-scripts-module-common.c-Closes-1087.patch
 0022-linux-cpupower-Add-intel-speed-select-command.patch
+0023-Adapt-kernel-to-use-gcc-14-compiler-for-trixie.patch

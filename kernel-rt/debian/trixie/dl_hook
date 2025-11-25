@@ -44,9 +44,9 @@ then
 fi
 cd debian
 cp "${MY_REPO_ROOT_DIR}"/cgcs-root/stx/kernel/kernel-rt/\
-/debian/bullseye/source/changelog ./
+/debian/trixie/source/changelog ./
 cp "${MY_REPO_ROOT_DIR}"/cgcs-root/stx/kernel/kernel-rt/\
-/debian//bullseye/source/config ./config/amd64/none
+/debian/trixie/source/config ./config/amd64/none
 cd -
  
 # The debian folder is written to build "linux". If use this folder
