@@ -1,0 +1,34 @@
+From f2ba48fc0e28bdba0f80473f960763a4cdac1708 Mon Sep 17 00:00:00 2001
+From: Ben Hutchings <benh@debian.org>
+Date: Sat, 16 Nov 2024 23:50:11 +0100
+Subject: [PATCH] linux-kbuild: Add scripts/module-common.c (Closes: #1087495)
+
+Since upstream commit fdf94e4403ec "kbuild: compile constant module
+information only once", some module information is compiled from
+scripts/module-common.c and this needs to be available to out-of-tree
+module builds.
+
+This was previously not noticed due to the accidentally disabled
+headers-kbuild tests.
+
+(cherry picked from commit b93faa99519d9788617b7d73f8334190e53442a3)
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ debian/rules.d/scripts/Makefile | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/debian/rules.d/scripts/Makefile b/debian/rules.d/scripts/Makefile
+index c913e25e9c..a858eeb17e 100644
+--- a/debian/rules.d/scripts/Makefile
++++ b/debian/rules.d/scripts/Makefile
+@@ -8,6 +8,7 @@ DATA = \
+ 	Kbuild.include \
+ 	Makefile.* \
+ 	mkversion \
++	module-common.c \
+ 	module-common.lds \
+ 	subarch.include
+ 
+-- 
+2.47.1
+

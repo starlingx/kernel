@@ -1,0 +1,44 @@
+From 4bb01f5ca1350668504075f6ab65a31d8599e05e Mon Sep 17 00:00:00 2001
+From: Alyson Deives Pereira <alyson.deivespereira@windriver.com>
+Date: Wed, 28 Aug 2024 17:26:03 -0300
+Subject: [PATCH] qat: Override default sample corpus file path
+
+Somehow the env var SAMPLE_CORPUS_FILE_PATH is not being passed as
+variable during compilation. Override the default path to
+/usr/local/share/qat.
+
+Signed-off-by: Alyson Deives Pereira <alyson.deivespereira@windriver.com>
+---
+ quickassist/lookaside/access_layer/src/sample_code/Makefile     | 2 +-
+ .../performance/framework/cpa_sample_code_utils_common.h        | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/quickassist/lookaside/access_layer/src/sample_code/Makefile b/quickassist/lookaside/access_layer/src/sample_code/Makefile
+index 5b46df4..69b637e 100644
+--- a/quickassist/lookaside/access_layer/src/sample_code/Makefile
++++ b/quickassist/lookaside/access_layer/src/sample_code/Makefile
+@@ -161,7 +161,7 @@ include $(ICP_BUILDSYSTEM_PATH)/build_files/common.mk
+ 
+ 
+ ifeq ($(SAMPLE_CODE_CORPUS_PATH),)
+-SAMPLE_CODE_CORPUS_PATH=/lib/firmware
++SAMPLE_CODE_CORPUS_PATH=/usr/local/share/qat/
+ endif
+ 
+ EXTRA_CFLAGS += -DSAMPLE_CODE_CORPUS_PATH="\"$(SAMPLE_CODE_CORPUS_PATH)\""
+diff --git a/quickassist/lookaside/access_layer/src/sample_code/performance/framework/cpa_sample_code_utils_common.h b/quickassist/lookaside/access_layer/src/sample_code/performance/framework/cpa_sample_code_utils_common.h
+index a7b2a02..a186502 100644
+--- a/quickassist/lookaside/access_layer/src/sample_code/performance/framework/cpa_sample_code_utils_common.h
++++ b/quickassist/lookaside/access_layer/src/sample_code/performance/framework/cpa_sample_code_utils_common.h
+@@ -58,7 +58,7 @@
+ #define SC_WITH_GEN4
+ 
+ #ifndef SAMPLE_CODE_CORPUS_PATH
+-#define SAMPLE_CODE_CORPUS_PATH "/lib/firmware/"
++#define SAMPLE_CODE_CORPUS_PATH "/usr/local/share/qat/"
+ #endif
+ 
+ #ifndef CACHE_LINE_SIZE
+-- 
+2.34.1
+

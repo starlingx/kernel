@@ -1,0 +1,61 @@
+ice (2.3.10-1) unstable; urgency=medium
+
+  * Update ICE driver to 2.3.10
+
+  * The following changes were made in this release:
+    * add disable link on boot support
+    * add disable VF RDMA capability when SR-IOV LAG is enabled
+    * fix crash on GLOBR with VFs
+    * fix TSPLL initialization
+    * fix tx_clk map initialization for E825
+    * fix reversed logic on VSI Config Prune
+    * fix set_bit() on misaligned memory in LAG init
+    * fix allocating excessive memory in ice_create_lag_recipe()
+    * fix uninitialized netdev_head in ice_lag_rebuild()
+    * fix vf-source-pruning flag
+
+ -- Caio Felipe Cruz <caio.soaresdacruz@windriver.com>  Wed, 1 Sep  2025 07:50:49 +0800
+
+ice (2.2.8-1) unstable; urgency=medium
+
+  * Update ICE driver to 2.2.8.
+
+ -- Caio Felipe Cruz <caio.soaresdacruz@windriver.com>  Wed, 2 Jul 2025 15:23:19 +0800
+
+ice (1.17.2-1) unstable; urgency=medium
+
+  * Update ICE driver to 1.17.2.
+
+ -- Caio Felipe Cruz <caio.soaresdacruz@windriver.com>  Wed, 7 May 2025 09:44:15 +0800
+
+ice (1.14.9.2-1) unstable; urgency=medium
+
+  * Update ICE driver to 1.14.9.2.
+
+ -- Jiping Ma <jiping.ma2@windriver.com>  Mon, 11 Jun 2024 11:24:23 +0800
+
+ice (1.9.11-1) unstable; urgency=medium
+
+  * Update ICE driver to 1.9.11 to support the Intel Logan Beach NIC
+    (E810-CQDA2T), which comes from bundle 27.5.
+
+ -- Jiping Ma <jiping.ma2@windriver.com>  Thu, 01 Sep 2022 11:32:03 +0800
+
+ice (1.8.3-1) unstable; urgency=medium
+
+  * Update ICE driver to 1.8.3-1 to support the Intel Logan Beach NIC
+    (E810-CQDA2T), which comes from bundle 27.1.
+
+ -- Jiping Ma <jiping.ma2@windriver.com>  Thu, 12 Apr 2022 9:42:39 +0800
+
+ice (1.7.16-1) unstable; urgency=medium
+
+  * Initial release
+
+ -- Jim Somerville <jim.somerville@windriver.com>  Fri, 25 Feb 2022 16:01:39 -0500
+
+ice (1.6.7-1) unstable; urgency=medium
+
+  * Initial release
+
+ -- Li Zhou <li.zhou@windriver.com>  Thu, 01 Jul 2021 11:05:16 +0800

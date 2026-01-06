@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# The only parameter is the name of the folder where the source code
+# is extracted to. Pay attention to that the extracted package should
+# be put at the same path where this script is located.
+# Tools needed: tar
+
+KERNEL_HEAD_COMMIT=95efd6fa4403e21402aeb96b4b54be01e076016e
+DEBIAN_FILE=linux_6.1.27-1~bpo11%2B1.debian.tar.xz
+
+tar xvf linux-yocto-${KERNEL_HEAD_COMMIT}.tar.gz
+if [ $? -ne 0 ]
+then
+    echo "tar failed: linux-yocto source!"
+    exit 1
+fi
+mv linux-yocto-${KERNEL_HEAD_COMMIT} $1
+
+cd $1
+tar xvf ../${DEBIAN_FILE}
+if [ $? -ne 0 ]
+then
+    echo "tar failed: debian folder for kernel!"
+    exit 1
+fi
+cd debian
+cp "${MY_REPO_ROOT_DIR}"/cgcs-root/stx/kernel/kernel-std/\
+/debian/bullseye/source/changelog ./
+cp "${MY_REPO_ROOT_DIR}"/cgcs-root/stx/kernel/kernel-std/\
+/debian/bullseye/source/config ./config/amd64/none
+cd -
+
+# The abiname is changed from "0.deb11.9" to "1", so replace
+# "6.1.0-0.deb11.9" with "6.6.0-1" in init control file.
+sed -i "s/6\.1\.0-0\.deb11\.9/6.6.0-1/g" ./debian/control

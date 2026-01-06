@@ -1,0 +1,39 @@
+From 687dd627b80f0f98ad5aa2e1fc9f94530bc63950 Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Thu, 11 Jul 2024 13:55:30 +0000
+Subject: [PATCH 2/2] mod: fix the undefined errors
+
+Add symsearch.real-$(TYPE).o to fix the following errors when building
+mod.
+/usr/bin/ld: modpost.real-lsb-32.o: in function `find_fromsym':
+scripts/mod/modpost.c:1050: undefined reference to `symsearch_find_nearest'
+/usr/bin/ld: modpost.real-lsb-32.o: in function `find_tosym':
+scripts/mod/modpost.c:1065: undefined reference to `symsearch_find_nearest'
+/usr/bin/ld: modpost.real-lsb-32.o: in function `find_fromsym':
+scripts/mod/modpost.c:1050: undefined reference to `symsearch_find_nearest'
+/usr/bin/ld: modpost.real-lsb-32.o: in function `parse_elf':
+scripts/mod/modpost.c:579: undefined reference to `symsearch_init'
+/usr/bin/ld: modpost.real-lsb-32.o: in function `parse_elf_finish':
+scripts/mod/modpost.c:586: undefined reference to `symsearch_finish'
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ debian/rules.d/scripts/mod/Makefile.real | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/debian/rules.d/scripts/mod/Makefile.real b/debian/rules.d/scripts/mod/Makefile.real
+index 6d56ff6..40e3ca2 100644
+--- a/debian/rules.d/scripts/mod/Makefile.real
++++ b/debian/rules.d/scripts/mod/Makefile.real
+@@ -5,7 +5,7 @@ include $(top_rulesdir)/Makefile.inc
+ wrapperdir = $(top_rulesdir)/$(OUTDIR)
+ CFLAGS += -I $(CURDIR)/real-$(TYPE) -I $(wrapperdir)/real-$(TYPE)
+ 
+-modpost.real-$(TYPE): file2alias.real-$(TYPE).o modpost.real-$(TYPE).o sumversion.real-$(TYPE).o
++modpost.real-$(TYPE): file2alias.real-$(TYPE).o modpost.real-$(TYPE).o sumversion.real-$(TYPE).o symsearch.real-$(TYPE).o
+ 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
+ 
+ %.real-$(TYPE).o: $(SOURCEDIR)/%.c real-$(TYPE)/devicetable-offsets.h
+-- 
+2.43.0
+

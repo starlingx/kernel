@@ -1,0 +1,69 @@
+From 73c9773ca2e91b1785673ce0867683dc4e767d30 Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Thu, 20 Mar 2025 09:20:12 +0000
+Subject: [PATCH 4/4] Remove second parameter of __assign_str()
+
+This commit accommodates commit 2c92ca849fcc("tracing/treewide: Remove 
+second parameter of __assign_str()") which removes second parameter of
+ __assign_str(). This commit was merged in the v6.10 development cycle
+and causes compilation failures with the v6.12 kernel, which are listed 
+below.
+
+References:
+* https://git.yoctoproject.org/linux-yocto/commit/?h=2c92ca849fcc
+
+Resolved compilation errors:
+
+/src/./iavf_trace.h:104:1: error: macro "__assign_str" passed 2 arguments, \
+ but takes just 1
+  104 | );
+      | ^~
+In file included from /usr/src/linux-rt-headers-6.12.0-1-rt-common/include/ \
+   trace/trace_events.h:378,
+                 from /usr/src/linux-rt-headers-6.12.0-1-rt-common/include/ \
+   trace/define_trace.h:102,
+                 from /<<PKGBUILDDIR>>/src/iavf_trace.h:220,
+                 from /<<PKGBUILDDIR>>/src/iavf_main.c:12:
+/usr/src/linux-rt-headers-6.12.0-1-rt-common/include/trace/stages/ \
+ stage6_event_callback.h:34: note: macro "__assign_str" defined here
+   34 | #define __assign_str(dst)      \
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ src/iavf_trace.h | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/src/iavf_trace.h b/src/iavf_trace.h
+index 84762f3..600531c 100644
+--- a/src/iavf_trace.h
++++ b/src/iavf_trace.h
+@@ -94,7 +94,7 @@ DECLARE_EVENT_CLASS(
+ 		__entry->ring = ring;
+ 		__entry->desc = desc;
+ 		__entry->buf = buf;
+-		__assign_str(devname, ring->netdev->name);
++		__assign_str(devname);
+ 	),
+ 
+ 	TP_printk(
+@@ -139,7 +139,7 @@ DECLARE_EVENT_CLASS(
+ 		__entry->ring = ring;
+ 		__entry->desc = desc;
+ 		__entry->skb = skb;
+-		__assign_str(devname, ring->netdev->name);
++		__assign_str(devname);
+ 	),
+ 
+ 	TP_printk(
+@@ -181,7 +181,7 @@ DECLARE_EVENT_CLASS(
+ 	TP_fast_assign(
+ 		__entry->skb = skb;
+ 		__entry->ring = ring;
+-		__assign_str(devname, ring->netdev->name);
++		__assign_str(devname);
+ 	),
+ 
+ 	TP_printk(
+-- 
+2.47.1
+

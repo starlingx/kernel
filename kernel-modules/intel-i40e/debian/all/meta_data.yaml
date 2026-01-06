@@ -1,0 +1,13 @@
+---
+debver: 2.28.9
+debname: i40e
+dl_path:
+  name: i40e-2.28.9.tar.gz
+  url: "https://github.com/intel/ethernet-linux-i40e/releases/download/\
+    v2.28.9/i40e-2.28.9.tar.gz"
+  sha256sum: bb2efe270bcd68aa2d875eaf9d5f85b86637b8c227462d3a272df03a0417a20f
+revision:
+  dist: $STX_DIST
+  GITREVCOUNT:
+    BASE_SRCREV: e7d9eb420228a86dcecd578de13d5a7c4e236b79
+    SRC_DIR: ${MY_REPO}/stx/kernel/kernel-modules/intel-i40e

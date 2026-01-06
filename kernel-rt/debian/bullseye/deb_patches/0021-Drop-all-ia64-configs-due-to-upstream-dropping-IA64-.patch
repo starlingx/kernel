@@ -1,0 +1,32 @@
+From ebfc1ceafd46d2d1e96e95cfd89078ba1812ce54 Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Tue, 18 Mar 2025 05:48:02 +0000
+Subject: [PATCH 20/20] Drop all ia64 configs due to upstream dropping IA64
+ arch
+
+In upstream commit cf8e8658100d4eae80ce9b21f7a81cb024dd5057 the whole
+IA64 architecture was dropped, so remove Debian's configuration files
+wrt IA64 as well.
+
+(cherry picked from commit b4b93560d441770b1bfe2429d17ac5bbde17f237)
+[jm: Remove ia64 in debian/config/defines.]
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ debian/config/defines | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/debian/config/defines b/debian/config/defines
+index f1ca81b..ef01dc9 100644
+--- a/debian/config/defines
++++ b/debian/config/defines
+@@ -117,7 +117,6 @@ arches:
+  armhf
+  hppa
+  i386
+- ia64
+  m68k
+  mips
+  mips64
+-- 
+2.47.1
+

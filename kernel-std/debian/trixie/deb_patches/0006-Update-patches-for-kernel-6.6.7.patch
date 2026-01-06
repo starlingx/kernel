@@ -1,0 +1,105 @@
+From b729436165b02b5db543e12b4f5fe5c96c662b10 Mon Sep 17 00:00:00 2001
+From: Li Zhou <li.zhou@windriver.com>
+Date: Fri, 22 Dec 2023 14:33:45 +0800
+Subject: [PATCH 6/9] Update patches for kernel 6.6.7
+
+Kernel 6.6.7 is ported to our bullseye platform now.
+Need build kernel 6.6.7 with 6.1.27-bpo11 "debian" folder.
+Update the patches involved in "debian" folder for context changes.
+
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+---
+ ...ok-for-module.lds-under-arch-directory-too.patch |  6 +++---
+ ...event-support-asciidoctor-for-documentatio.patch | 13 -------------
+ debian/patches/debian/version.patch                 |  2 +-
+ ...-efi_secure_boot-flag-to-indicate-secure-b.patch |  2 +-
+ ...own-the-kernel-if-booted-in-secure-boot-mo.patch |  2 +-
+ 5 files changed, 6 insertions(+), 19 deletions(-)
+
+diff --git a/debian/patches/debian/kbuild-look-for-module.lds-under-arch-directory-too.patch b/debian/patches/debian/kbuild-look-for-module.lds-under-arch-directory-too.patch
+index f9a22d8..eea69e4 100644
+--- a/debian/patches/debian/kbuild-look-for-module.lds-under-arch-directory-too.patch
++++ b/debian/patches/debian/kbuild-look-for-module.lds-under-arch-directory-too.patch
+@@ -42,11 +42,11 @@ Index: linux/scripts/Makefile.modfinal
+  
+  quiet_cmd_btf_ko = BTF [M] $@
+ @@ -57,7 +58,7 @@ if_changed_except = $(if $(call newer_pr
+- 	printf '%s\n' 'cmd_$@ := $(make-cmd)' > $(dot-target).cmd, @:)
++ 	printf '%s\n' 'savedcmd_$@ := $(make-cmd)' > $(dot-target).cmd, @:)
+  
+  # Re-generate module BTFs if either module's .ko or vmlinux changed
+--$(modules): %.ko: %.o %.mod.o scripts/module.lds $(and $(CONFIG_DEBUG_INFO_BTF_MODULES),$(KBUILD_BUILTIN),vmlinux) FORCE
+-+$(modules): %.ko: %.o %.mod.o $(ARCH_MODULE_LDS) $(and $(CONFIG_DEBUG_INFO_BTF_MODULES),$(KBUILD_BUILTIN),vmlinux) FORCE
++-%.ko: %.o %.mod.o scripts/module.lds $(and $(CONFIG_DEBUG_INFO_BTF_MODULES),$(KBUILD_BUILTIN),vmlinux) FORCE
+++%.ko: %.o %.mod.o $(ARCH_MODULE_LDS) $(and $(CONFIG_DEBUG_INFO_BTF_MODULES),$(KBUILD_BUILTIN),vmlinux) FORCE
+  	+$(call if_changed_except,ld_ko_o,vmlinux)
+  ifdef CONFIG_DEBUG_INFO_BTF_MODULES
+  	+$(if $(newer-prereqs),$(call cmd,btf_ko))
+diff --git a/debian/patches/debian/perf-traceevent-support-asciidoctor-for-documentatio.patch b/debian/patches/debian/perf-traceevent-support-asciidoctor-for-documentatio.patch
+index 89df33a..3971218 100644
+--- a/debian/patches/debian/perf-traceevent-support-asciidoctor-for-documentatio.patch
++++ b/debian/patches/debian/perf-traceevent-support-asciidoctor-for-documentatio.patch
+@@ -23,19 +23,6 @@ index 972754082a85..272d06173a3e 100644
+  ASCIIDOC_HTML   = xhtml11
+  MANPAGE_XSL     = manpage-normal.xsl
+  XMLTO_EXTRA     =
+-diff --git a/tools/lib/traceevent/Documentation/Makefile b/tools/lib/traceevent/Documentation/Makefile
+-index aa72ab96c3c1..f3a4ff3b8b0e 100644
+---- a/tools/lib/traceevent/Documentation/Makefile
+-+++ b/tools/lib/traceevent/Documentation/Makefile
+-@@ -28,7 +28,7 @@ mandir?=$(prefix)/share/man
+- man3dir=$(mandir)/man3
+- 
+- ASCIIDOC=asciidoc
+--ASCIIDOC_EXTRA = --unsafe -f asciidoc.conf
+-+ASCIIDOC_EXTRA =
+- ASCIIDOC_HTML = xhtml11
+- MANPAGE_XSL = manpage-normal.xsl
+- XMLTO_EXTRA =
+ diff --git a/tools/perf/Documentation/Makefile b/tools/perf/Documentation/Makefile
+ index 6e54979c2124..7bfa6ae971ab 100644
+ --- a/tools/perf/Documentation/Makefile
+diff --git a/debian/patches/debian/version.patch b/debian/patches/debian/version.patch
+index 1425f55..47fc6c0 100644
+--- a/debian/patches/debian/version.patch
++++ b/debian/patches/debian/version.patch
+@@ -22,7 +22,7 @@ Index: linux/Makefile
+ @@ -1263,7 +1263,8 @@ PHONY += prepare archprepare
+  
+  archprepare: outputmakefile archheaders archscripts scripts include/config/kernel.release \
+- 	asm-generic $(version_h) $(autoksyms_h) include/generated/utsrelease.h \
++ 	asm-generic $(version_h) include/generated/utsrelease.h \
+ -	include/generated/compile.h include/generated/autoconf.h remove-stale-files
+ +	include/generated/compile.h include/generated/autoconf.h \
+ +	include/generated/package.h remove-stale-files
+diff --git a/debian/patches/features/all/lockdown/efi-add-an-efi_secure_boot-flag-to-indicate-secure-b.patch b/debian/patches/features/all/lockdown/efi-add-an-efi_secure_boot-flag-to-indicate-secure-b.patch
+index b466987..6a8940d 100644
+--- a/debian/patches/features/all/lockdown/efi-add-an-efi_secure_boot-flag-to-indicate-secure-b.patch
++++ b/debian/patches/features/all/lockdown/efi-add-an-efi_secure_boot-flag-to-indicate-secure-b.patch
+@@ -138,7 +138,7 @@ cc: linux-efi@vger.kernel.org
+  
+  extern int efi_status_to_err(efi_status_t status);
+ @@ -1107,13 +1117,6 @@ static inline bool efi_runtime_disabled(
+- extern void efi_call_virt_check_flags(unsigned long flags, const char *call);
++ extern void efi_call_virt_check_flags(unsigned long flags, const void *caller);
+  extern unsigned long efi_call_virt_save_flags(void);
+  
+ -enum efi_secureboot_mode {
+diff --git a/debian/patches/features/all/lockdown/efi-lock-down-the-kernel-if-booted-in-secure-boot-mo.patch b/debian/patches/features/all/lockdown/efi-lock-down-the-kernel-if-booted-in-secure-boot-mo.patch
+index 9ec4258..9687fa9 100644
+--- a/debian/patches/features/all/lockdown/efi-lock-down-the-kernel-if-booted-in-secure-boot-mo.patch
++++ b/debian/patches/features/all/lockdown/efi-lock-down-the-kernel-if-booted-in-secure-boot-mo.patch
+@@ -34,9 +34,9 @@ Index: debian-kernel/arch/x86/kernel/setup.c
+  
+ +	efi_set_secure_boot(boot_params.secure_boot);
+ +
++ 	reserve_ibft_region();
+  	dmi_setup();
+  
+- 	/*
+ @@ -1130,8 +1132,6 @@ void __init setup_arch(char **cmdline_p)
+  	/* Allocate bigger log buffer */
+  	setup_log_buf(1);
+-- 
+2.17.1
+

@@ -1,0 +1,126 @@
+From 79124f81b65342329ca230fcbbfe79384b92c3c0 Mon Sep 17 00:00:00 2001
+From: Li Zhou <li.zhou@windriver.com>
+Date: Thu, 14 Sep 2023 14:56:32 +0800
+Subject: [PATCH] kernel-rt: Add pkgs without abiname for image/headers
+
+Add 2 packages linux-rt-image-stx-amd64/linux-rt-headers-stx-amd64
+which don't have abiname in their names. They depend on packages with
+abiname in names. Then we can use these 2 packages in anywhere
+that involves image/headers packages (e.g. Build-Depends/yaml config
+and so on). When the abiname is changed later in any kernel upgrading
+we don't need change above places involved any more.
+
+We don't use the linux-image-amd64/linux-headers-amd64 as Debian does
+because they are built by linux-signed-amd64, and coupled with signed
+kernel. We don't follow Debian's signing process so we create 2 new
+packages which are coupled with unsigned image.
+
+BTW, rename package "linux-rt-keys-@version@" to "linux-rt-keys"
+because the "@version@" isn't necessary for this package. Then the
+version numbers can be completely removed from the Build-Depends of
+OOT kernel modules' codes.
+
+Add the 2 new packages in init control file of "debian" folder, or else
+a wrong build sequence ( OOT kernel modules are ahead of kernel ) will
+be determined because it is deduced from init control files of
+packages. The build error for kernel modules is like:
+"unsat-dependency: linux-rt-headers-stx-amd64:amd64"
+
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+[lz: Adapted the patch for upgrading kernel from 5.10 to 6.6.]
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+---
+ debian/control                              | 16 ++++++++++++++++
+ debian/rules.real                           |  2 +-
+ debian/templates/extra.control.in           | 18 ++++++++++++++++++
+ debian/templates/tools-versioned.control.in |  6 +++---
+ 4 files changed, 38 insertions(+), 4 deletions(-)
+
+diff --git a/debian/control b/debian/control
+index 51ae8c9..8d77e70 100644
+--- a/debian/control
++++ b/debian/control
+@@ -18525,3 +18525,19 @@ Depends: linux-rt-image-parisc, ${misc:Depends}
+ Description: Linux for multiprocessor 32-bit PA-RISC (dummy package)
+  This is a dummy transitional package.  It can be safely removed.
+ 
++Package: linux-rt-image-stx-amd64
++Architecture: amd64
++Depends: linux-rt-image-6.6.0-1-rt-amd64-unsigned (= ${binary:Version}), ${misc:Depends}
++Description: RT Linux for 64-bit PCs (meta-package)
++ This package depends on the latest unsigned Linux kernel and modules for
++ use on PCs with AMD64, Intel 64 or VIA Nano processors.
++Build-Profiles: <!stage1 !pkg.linux.nokernel>
++
++Package: linux-rt-headers-stx-amd64
++Architecture: amd64
++Depends: linux-rt-headers-6.6.0-1-rt-amd64 (= ${binary:Version}), ${misc:Depends}
++Description: Header files for RT Linux amd64 configuration (meta-package)
++ This package depends on the architecture-specific header files for the
++ latest Linux kernel amd64 configuration.
++Build-Profiles: <!stage1 !pkg.linux.nokernel>
++
+diff --git a/debian/rules.real b/debian/rules.real
+index 90cf7b3..baed3f7 100644
+--- a/debian/rules.real
++++ b/debian/rules.real
+@@ -588,7 +588,7 @@ endif
+ 
+ build_keys:
+ 
+-binary_keys: PACKAGE_NAME = linux-rt-keys-$(VERSION)
++binary_keys: PACKAGE_NAME = linux-rt-keys
+ binary_keys: DH_OPTIONS = -p$(PACKAGE_NAME)
+ binary_keys: DIR = $(CURDIR)/debian/$(PACKAGE_NAME)
+ binary_keys: build_keys
+diff --git a/debian/templates/extra.control.in b/debian/templates/extra.control.in
+index 41f5d51..9b25d5b 100644
+--- a/debian/templates/extra.control.in
++++ b/debian/templates/extra.control.in
+@@ -47,3 +47,21 @@ Priority: extra
+ Depends: linux-rt-image-parisc, ${misc:Depends}
+ Description: Linux for multiprocessor 32-bit PA-RISC (dummy package)
+  This is a dummy transitional package.  It can be safely removed.
++
++Package: linux-rt-image-stx-amd64
++Meta-Rules-Target: meta
++Build-Profiles: <!stage1 !pkg.linux.nokernel>
++Depends: linux-rt-image-@abiname@-amd64-unsigned (= ${binary:Version}), ${misc:Depends}
++Architecture: amd64
++Description: RT Linux for 64-bit PCs (meta-package)
++ This package depends on the latest unsigned Linux kernel and modules
++ for use on PCs with AMD64, Intel 64 or VIA Nano processors.
++
++Package: linux-rt-headers-stx-amd64
++Meta-Rules-Target: meta
++Build-Profiles: <!stage1 !pkg.linux.nokernel>
++Depends: linux-rt-headers-@abiname@-amd64 (= ${binary:Version}), ${misc:Depends}
++Architecture: amd64
++Description: Header files for RT Linux amd64 configuration (meta-package)
++ This package depends on the architecture-specific header files for the latest
++ Linux kernel amd64 configuration.
+diff --git a/debian/templates/tools-versioned.control.in b/debian/templates/tools-versioned.control.in
+index 2859890..030e5f7 100644
+--- a/debian/templates/tools-versioned.control.in
++++ b/debian/templates/tools-versioned.control.in
+@@ -7,14 +7,14 @@ Multi-Arch: foreign
+ Description: Kbuild infrastructure for Linux @version@
+  This package provides the kbuild infrastructure for the headers packages for Linux kernel version @version@.
+ 
+-Package: linux-rt-keys-@version@
++Package: linux-rt-keys
+ Meta-Rules-Target: keys
+ Build-Profiles: <!stage1 !pkg.linux.notools>
+ Architecture: linux-any
+ Depends: ${shlibs:Depends}, ${misc:Depends}
+ Multi-Arch: foreign
+-Description: Key infrastructure for Linux @version@
+- This package provides the kernel module signing keys for Linux kernel version @version@.
++Description: Key infrastructure for RT Linux @version@
++ This package provides the kernel module signing keys for RT Linux kernel version @version@.
+ 
+ Package: linux-bootwrapper-@abiname@
+ Meta-Rules-Target: bootwrapper
+-- 
+2.17.1
+

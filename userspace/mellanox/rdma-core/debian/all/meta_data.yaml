@@ -1,0 +1,13 @@
+---
+debver: 2410mlnx54
+debname: rdma-core
+dl_path:
+  name: rdma-core-2410mlnx54.tar.gz
+  url: "https://linux.mellanox.com/public/repo/mlnx_ofed/\
+    24.10-1.1.4.0/SRPMS/rdma-core-2410mlnx54.tar.gz"
+  sha256sum: 69076f46ee48a76adb5aa946a18a2a2d09911ea5c8f453bf97858af19b436a21
+revision:
+  dist: $STX_DIST
+  GITREVCOUNT:
+    BASE_SRCREV: 966d2f51b1229f3269febbd4bee0d54f1755be73
+    SRC_DIR: ${MY_REPO}/stx/kernel/userspace/mellanox/rdma-core

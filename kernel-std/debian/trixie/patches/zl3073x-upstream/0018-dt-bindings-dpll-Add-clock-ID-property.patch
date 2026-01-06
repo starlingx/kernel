@@ -1,0 +1,38 @@
+From 32587a78b8d0207103ab2423032de3915fe2e1c4 Mon Sep 17 00:00:00 2001
+From: Ivan Vecera <ivecera@redhat.com>
+Date: Thu, 17 Jul 2025 19:10:59 +0200
+Subject: [PATCH] dt-bindings: dpll: Add clock ID property
+
+Add property to specify the ID of the clock that the DPLL device
+drives. The ID value represents Unique Clock Identified (EUI-64)
+defined by IEEE 1588 standard.
+
+The property is not mandatory because some DPLL devices can have
+an ability to read this from HW. The situation is very similar
+to network controllers without assigned MAC address.
+
+Signed-off-by: Ivan Vecera <ivecera@redhat.com>
+Signed-off-by: Caio Felipe Cruz <caio.soaresdacruz@windriver.com>
+---
+ Documentation/devicetree/bindings/dpll/dpll-device.yaml | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/dpll/dpll-device.yaml b/Documentation/devicetree/bindings/dpll/dpll-device.yaml
+index fb8d7a9a3..c57db1a98 100644
+--- a/Documentation/devicetree/bindings/dpll/dpll-device.yaml
++++ b/Documentation/devicetree/bindings/dpll/dpll-device.yaml
+@@ -27,6 +27,11 @@ properties:
+   "#size-cells":
+     const: 0
+ 
++  clock-id:
++    description: Specifies ID of the clock that the DPLL device drives
++    $ref: /schemas/types.yaml#/definitions/uint64
++    minimum: 1
++
+   dpll-types:
+     description: List of DPLL channel types, one per DPLL instance.
+     $ref: /schemas/types.yaml#/definitions/non-unique-string-array
+-- 
+2.34.1
+

@@ -1,0 +1,55 @@
+From 8158acbc7b23f4b4ce6fa302504fa4c6590a794d Mon Sep 17 00:00:00 2001
+From: Ben Hutchings <benh@debian.org>
+Date: Mon, 3 Oct 2022 03:06:12 +0200
+Subject: [PATCH 19/20] Disable building rtla, since bullseye's libtraceevent
+ and libtracefs are too old
+
+The build-dependencies for rtla aren't currently versioned, but the
+upstream Makefile checks for libtraceevent >= 1.5 and libtracefs >=
+1.3 which are not satisfiable in bullseye.  For now, disable building
+rtla.  This can be reverted if newer versions of those libraries are
+added to bullseye-backports.
+
+See discussion at merge request kernel-team/linux!539.
+
+(cherry picked from commit 15b6859742d404abdcd68bcb589f8a8e2dfb6ce4)
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ debian/templates/tools-unversioned.control.in | 24 +++++++++----------
+ 1 file changed, 12 insertions(+), 12 deletions(-)
+
+diff --git a/debian/templates/tools-unversioned.control.in b/debian/templates/tools-unversioned.control.in
+index b4ff16f..72cac03 100644
+--- a/debian/templates/tools-unversioned.control.in
++++ b/debian/templates/tools-unversioned.control.in
+@@ -133,15 +133,15 @@ Description: Support daemons for Linux running on Hyper-V
+  hv_vss_daemon provides the volume shadow copy service (VSS), allowing
+  the host to freeze the guest filesystems while taking a snapshot.
+ 
+-Package: rtla
+-Meta-Rules-Target: rtla
+-Build-Profiles: <!stage1 !pkg.linux.notools>
+-Architecture: amd64 arm64 armhf i386 x32
+-Build-Depends: libtracefs-dev (>= 1.3), libtraceevent-dev (>= 1:1.5), python3-docutils
+-Depends: ${shlibs:Depends}
+-Section: devel
+-Description: Real-Time Linux Analysis tools
+- rtla provides a set of commands for analysing the real-time
+- properties of Linux.  rtla uses kernel tracing capabilities to
+- provide precise information about the properties and root causes of
+- unexpected results.
++#Package: rtla
++#Meta-Rules-Target: rtla
++#Build-Profiles: <!stage1 !pkg.linux.notools>
++#Architecture: amd64 arm64 armhf i386 x32
++#Build-Depends: libtracefs-dev (>= 1.3), libtraceevent-dev (>= 1:1.5), python3-docutils
++#Depends: ${shlibs:Depends}
++#Section: devel
++#Description: Real-Time Linux Analysis tools
++# rtla provides a set of commands for analysing the real-time
++# properties of Linux.  rtla uses kernel tracing capabilities to
++# provide precise information about the properties and root causes of
++# unexpected results.
+-- 
+2.47.1
+

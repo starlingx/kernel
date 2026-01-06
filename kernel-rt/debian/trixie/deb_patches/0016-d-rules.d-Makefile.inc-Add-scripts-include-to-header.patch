@@ -1,0 +1,31 @@
+From b0947b6fad8cd0774a3709c721a6cfc7c71fb957 Mon Sep 17 00:00:00 2001
+From: Ben Hutchings <benh@debian.org>
+Date: Mon, 5 Aug 2024 04:40:27 +0200
+Subject: [PATCH 15/20] d/rules.d/Makefile.inc: Add scripts/include to header
+ include path
+
+In 6.11 some headers used by user-space tools have been moved under
+scripts/include, and the upstream Makefile now adds scripts/include to
+the header include path for these tools.  We need to do the same.
+
+(cherry picked from commit 0d0d62b7d1cc23f87e921629ca51d2989392d8fb)
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ debian/rules.d/Makefile.inc | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/debian/rules.d/Makefile.inc b/debian/rules.d/Makefile.inc
+index 55eae14..386217b 100644
+--- a/debian/rules.d/Makefile.inc
++++ b/debian/rules.d/Makefile.inc
+@@ -12,6 +12,7 @@ CFLAGS := $(shell dpkg-buildflags --get CFLAGS) -Wall
+ CPPFLAGS := $(shell dpkg-buildflags --get CPPFLAGS) \
+ 	-I$(top_srcdir)/$(OUTDIR) \
+ 	-I$(top_srcdir)/debian/build/build-tools/$(OUTDIR) \
++	-I$(top_srcdir)/scripts/include \
+ 	-isystem $(top_srcdir)/debian/build/build-tools/include
+ CXXFLAGS := $(shell dpkg-buildflags --get CXXFLAGS) -Wall
+ LDFLAGS := $(shell dpkg-buildflags --get LDFLAGS)
+-- 
+2.47.1
+

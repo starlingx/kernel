@@ -1,0 +1,41 @@
+From 33d2d1d57426eac81e53347c8da5b38a2a4ec5c9 Mon Sep 17 00:00:00 2001
+From: Li Zhou <li.zhou@windriver.com>
+Date: Wed, 2 Nov 2022 14:48:33 +0800
+Subject: [PATCH] kernel: std: unset LOCK_DOWN_IN_EFI_SECURE_BOOT
+
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+[lz: Adapted the patch for context changes.]
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+---
+ debian/bin/gencontrol_signed.py | 1 -
+ debian/config/config            | 2 +-
+ 2 files changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/debian/bin/gencontrol_signed.py b/debian/bin/gencontrol_signed.py
+index 5a5d7f2..9b6ca87 100755
+--- a/debian/bin/gencontrol_signed.py
++++ b/debian/bin/gencontrol_signed.py
+@@ -198,7 +198,6 @@ class Gencontrol(Base):
+                   (image_package_name, image_suffix)) as f:
+             kconfig = f.readlines()
+         assert 'CONFIG_EFI_STUB=y\n' in kconfig
+-        assert 'CONFIG_LOCK_DOWN_IN_EFI_SECURE_BOOT=y\n' in kconfig
+         cert_file_name = config_build['trusted-certs']
+         self.image_packages.append((image_suffix, image_package_name,
+                                     cert_file_name))
+diff --git a/debian/config/config b/debian/config/config
+index 521caee..ca34823 100644
+--- a/debian/config/config
++++ b/debian/config/config
+@@ -7826,7 +7826,7 @@ CONFIG_SECURITY_LANDLOCK=y
+ ## choice: Kernel default lockdown mode
+ CONFIG_LOCK_DOWN_KERNEL_FORCE_NONE=y
+ ## end choice
+-CONFIG_LOCK_DOWN_IN_EFI_SECURE_BOOT=y
++# CONFIG_LOCK_DOWN_IN_EFI_SECURE_BOOT is not set
+ 
+ ##
+ ## file: security/selinux/Kconfig
+-- 
+2.17.1
+

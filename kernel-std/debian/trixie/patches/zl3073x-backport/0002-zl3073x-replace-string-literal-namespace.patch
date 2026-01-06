@@ -1,0 +1,124 @@
+From ca21481cfe83ad764a7a8b0623047b3ea24de6d7 Mon Sep 17 00:00:00 2001
+From: Caio Felipe Cruz <caio.soaresdacruz@windriver.com>
+Date: Tue, 17 Jun 2025 21:20:23 -0400
+Subject: [PATCH] zl3073x: replace string literal namespace
+
+Replace the hardcoded "ZL3073X" namespace string with the ZL3073X in
+EXPORT_SYMBOL_NS_GPL declarations throughout core.c.  This change is
+required to compile the driver against kernel 6.12.32,
+which enforces stricter macro expansion rules in EXPORT_SYMBOL_NS_GPL()
+and related infrastructure.
+
+Signed-off-by: Caio Felipe Cruz <caio.soaresdacruz@windriver.com>
+---
+ drivers/dpll/zl3073x/core.c    | 14 +++++++-------
+ drivers/dpll/zl3073x/devlink.c |  2 +-
+ drivers/dpll/zl3073x/i2c.c     |  2 +-
+ drivers/dpll/zl3073x/spi.c     |  2 +-
+ 4 files changed, 10 insertions(+), 10 deletions(-)
+
+diff --git a/drivers/dpll/zl3073x/core.c b/drivers/dpll/zl3073x/core.c
+index ba4c66e86..25d0fb1f2 100644
+--- a/drivers/dpll/zl3073x/core.c
++++ b/drivers/dpll/zl3073x/core.c
+@@ -34,7 +34,7 @@ const struct zl3073x_chip_info zl30731_chip_info = {
+ 	.num_ids = ARRAY_SIZE(zl30731_ids),
+ 	.num_channels = 1,
+ };
+-EXPORT_SYMBOL_NS_GPL(zl30731_chip_info, "ZL3073X");
++EXPORT_SYMBOL_NS_GPL(zl30731_chip_info, ZL3073X);
+ 
+ /* Chip IDs for zl30732 */
+ static const u16 zl30732_ids[] = {
+@@ -51,7 +51,7 @@ const struct zl3073x_chip_info zl30732_chip_info = {
+ 	.num_ids = ARRAY_SIZE(zl30732_ids),
+ 	.num_channels = 2,
+ };
+-EXPORT_SYMBOL_NS_GPL(zl30732_chip_info, "ZL3073X");
++EXPORT_SYMBOL_NS_GPL(zl30732_chip_info, ZL3073X);
+ 
+ /* Chip IDs for zl30733 */
+ static const u16 zl30733_ids[] = {
+@@ -65,7 +65,7 @@ const struct zl3073x_chip_info zl30733_chip_info = {
+ 	.num_ids = ARRAY_SIZE(zl30733_ids),
+ 	.num_channels = 3,
+ };
+-EXPORT_SYMBOL_NS_GPL(zl30733_chip_info, "ZL3073X");
++EXPORT_SYMBOL_NS_GPL(zl30733_chip_info, ZL3073X);
+ 
+ /* Chip IDs for zl30734 */
+ static const u16 zl30734_ids[] = {
+@@ -79,7 +79,7 @@ const struct zl3073x_chip_info zl30734_chip_info = {
+ 	.num_ids = ARRAY_SIZE(zl30734_ids),
+ 	.num_channels = 4,
+ };
+-EXPORT_SYMBOL_NS_GPL(zl30734_chip_info, "ZL3073X");
++EXPORT_SYMBOL_NS_GPL(zl30734_chip_info, ZL3073X);
+ 
+ /* Chip IDs for zl30735 */
+ static const u16 zl30735_ids[] = {
+@@ -93,7 +93,7 @@ const struct zl3073x_chip_info zl30735_chip_info = {
+ 	.num_ids = ARRAY_SIZE(zl30735_ids),
+ 	.num_channels = 5,
+ };
+-EXPORT_SYMBOL_NS_GPL(zl30735_chip_info, "ZL3073X");
++EXPORT_SYMBOL_NS_GPL(zl30735_chip_info, ZL3073X);
+ 
+ static u64 clock_id;
+ 
+@@ -135,7 +135,7 @@ const struct regmap_config zl3073x_regmap_config = {
+ 	.cache_type	= REGCACHE_MAPLE,
+ 	.volatile_reg	= zl3073x_is_volatile_reg,
+ };
+-EXPORT_SYMBOL_NS_GPL(zl3073x_regmap_config, "ZL3073X");
++EXPORT_SYMBOL_NS_GPL(zl3073x_regmap_config, ZL3073X);
+ 
+ /**
+  * zl3073x_ref_freq_factorize - factorize given frequency
+@@ -1053,7 +1053,7 @@ int zl3073x_dev_probe(struct zl3073x_dev *zldev,
+ 
+ 	return 0;
+ }
+-EXPORT_SYMBOL_NS_GPL(zl3073x_dev_probe, "ZL3073X");
++EXPORT_SYMBOL_NS_GPL(zl3073x_dev_probe, ZL3073X);
+ 
+ MODULE_AUTHOR("Ivan Vecera <ivecera@redhat.com>");
+ MODULE_DESCRIPTION("Microchip ZL3073x core driver");
+diff --git a/drivers/dpll/zl3073x/devlink.c b/drivers/dpll/zl3073x/devlink.c
+index 7e7fe726e..070bdf2e3 100644
+--- a/drivers/dpll/zl3073x/devlink.c
++++ b/drivers/dpll/zl3073x/devlink.c
+@@ -180,7 +180,7 @@ struct zl3073x_dev *zl3073x_devm_alloc(struct device *dev)
+ 
+ 	return zldev;
+ }
+-EXPORT_SYMBOL_NS_GPL(zl3073x_devm_alloc, "ZL3073X");
++EXPORT_SYMBOL_NS_GPL(zl3073x_devm_alloc, ZL3073X);
+ 
+ static int
+ zl3073x_devlink_param_clock_id_validate(struct devlink *devlink, u32 id,
+diff --git a/drivers/dpll/zl3073x/i2c.c b/drivers/dpll/zl3073x/i2c.c
+index 7bbfdd4ed..136700c4d 100644
+--- a/drivers/dpll/zl3073x/i2c.c
++++ b/drivers/dpll/zl3073x/i2c.c
+@@ -72,5 +72,5 @@ module_i2c_driver(zl3073x_i2c_driver);
+ 
+ MODULE_AUTHOR("Ivan Vecera <ivecera@redhat.com>");
+ MODULE_DESCRIPTION("Microchip ZL3073x I2C driver");
+-MODULE_IMPORT_NS("ZL3073X");
++MODULE_IMPORT_NS(ZL3073X);
+ MODULE_LICENSE("GPL");
+diff --git a/drivers/dpll/zl3073x/spi.c b/drivers/dpll/zl3073x/spi.c
+index af901b4d6..00c5e3804 100644
+--- a/drivers/dpll/zl3073x/spi.c
++++ b/drivers/dpll/zl3073x/spi.c
+@@ -72,5 +72,5 @@ module_spi_driver(zl3073x_spi_driver);
+ 
+ MODULE_AUTHOR("Ivan Vecera <ivecera@redhat.com>");
+ MODULE_DESCRIPTION("Microchip ZL3073x SPI driver");
+-MODULE_IMPORT_NS("ZL3073X");
++MODULE_IMPORT_NS(ZL3073X);
+ MODULE_LICENSE("GPL");
+-- 
+2.34.1
+

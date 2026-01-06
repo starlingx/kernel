@@ -1,0 +1,78 @@
+From d566b4b433ed27a1ca42c04911a6918d4e456f4e Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Tue, 18 Mar 2025 07:24:15 +0000
+Subject: [PATCH 08/14] tools: Fix the build errors
+
+Add "{ }" in the code block of case to fix the following build error.
+
+tools/power/x86/turbostat/turbostat.c:2811:4: error: a label can
+only be part of a statement and a declaration is not a statement
+ 2811 |    const unsigned long value_raw = t->pmt_counter[i];
+      |    ^~~~~
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ tools/power/x86/turbostat/turbostat.c | 30 ++++++++++++++++-----------
+ 1 file changed, 18 insertions(+), 12 deletions(-)
+
+diff --git a/tools/power/x86/turbostat/turbostat.c b/tools/power/x86/turbostat/turbostat.c
+index 235e82fe7d0a..9a3d38259042 100644
+--- a/tools/power/x86/turbostat/turbostat.c
++++ b/tools/power/x86/turbostat/turbostat.c
+@@ -2808,11 +2808,13 @@ int format_counters(struct thread_data *t, struct core_data *c, struct pkg_data
+ 			break;
+ 
+ 		case PMT_TYPE_XTAL_TIME:
+-			const unsigned long value_raw = t->pmt_counter[i];
+-			const double value_converted = 100.0 * value_raw / crystal_hz / interval_float;
++			{
++				const unsigned long value_raw = t->pmt_counter[i];
++				const double value_converted = 100.0 * value_raw / crystal_hz / interval_float;
+ 
+-			outp += sprintf(outp, "%s%.2f", (printed++ ? delim : ""), value_converted);
+-			break;
++				outp += sprintf(outp, "%s%.2f", (printed++ ? delim : ""), value_converted);
++				break;
++			}
+ 		}
+ 	}
+ 
+@@ -2889,11 +2891,13 @@ int format_counters(struct thread_data *t, struct core_data *c, struct pkg_data
+ 			break;
+ 
+ 		case PMT_TYPE_XTAL_TIME:
+-			const unsigned long value_raw = c->pmt_counter[i];
+-			const double value_converted = 100.0 * value_raw / crystal_hz / interval_float;
++			{
++				const unsigned long value_raw = c->pmt_counter[i];
++				const double value_converted = 100.0 * value_raw / crystal_hz / interval_float;
+ 
+-			outp += sprintf(outp, "%s%.2f", (printed++ ? delim : ""), value_converted);
+-			break;
++				outp += sprintf(outp, "%s%.2f", (printed++ ? delim : ""), value_converted);
++				break;
++			}
+ 		}
+ 	}
+ 
+@@ -3088,11 +3092,13 @@ int format_counters(struct thread_data *t, struct core_data *c, struct pkg_data
+ 			break;
+ 
+ 		case PMT_TYPE_XTAL_TIME:
+-			const unsigned long value_raw = p->pmt_counter[i];
+-			const double value_converted = 100.0 * value_raw / crystal_hz / interval_float;
++			{
++				const unsigned long value_raw = p->pmt_counter[i];
++				const double value_converted = 100.0 * value_raw / crystal_hz / interval_float;
+ 
+-			outp += sprintf(outp, "%s%.2f", (printed++ ? delim : ""), value_converted);
+-			break;
++				outp += sprintf(outp, "%s%.2f", (printed++ ? delim : ""), value_converted);
++				break;
++			}
+ 		}
+ 	}
+ 
+-- 
+2.49.0
+

@@ -1,0 +1,479 @@
+From bc68f1325d88d333af7953908536957ac1851601 Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Sun, 16 Mar 2025 10:41:37 +0000
+Subject: [PATCH 13/19] Correct the patches for the linux kernel 6.12.x
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ ...-module.lds-under-arch-directory-too.patch | 29 +++---
+ debian/patches/debian/kernelvariables.patch   |  4 +-
+ ...support-asciidoctor-for-documentatio.patch |  3 +-
+ debian/patches/debian/version.patch           | 95 ++++++-------------
+ ...ecure_boot-flag-to-indicate-secure-b.patch | 12 +--
+ ...e-kernel-if-booted-in-secure-boot-mo.patch | 71 ++++++--------
+ 6 files changed, 84 insertions(+), 130 deletions(-)
+
+diff --git a/debian/patches/debian/kbuild-look-for-module.lds-under-arch-directory-too.patch b/debian/patches/debian/kbuild-look-for-module.lds-under-arch-directory-too.patch
+index eea69e4558..9f550a1cfa 100644
+--- a/debian/patches/debian/kbuild-look-for-module.lds-under-arch-directory-too.patch
++++ b/debian/patches/debian/kbuild-look-for-module.lds-under-arch-directory-too.patch
+@@ -22,31 +22,32 @@ Therefore, we move module.lds under the arch build directory in
+ rules.real and change Makefile.modfinal to look for it in both places.
+ 
+ ---
+-Index: linux/scripts/Makefile.modfinal
+-===================================================================
+---- linux.orig/scripts/Makefile.modfinal
+-+++ linux/scripts/Makefile.modfinal
+-@@ -29,12 +29,13 @@ quiet_cmd_cc_o_c = CC [M]  $@
++ scripts/Makefile.modfinal | 6 ++++--
++ 1 file changed, 4 insertions(+), 2 deletions(-)
++
++--- a/scripts/Makefile.modfinal
+++++ b/scripts/Makefile.modfinal
++@@ -33,11 +33,13 @@ quiet_cmd_cc_o_c = CC [M]  $@
++ $(extmod_prefix).module-common.o: $(srctree)/scripts/module-common.c FORCE
+  	$(call if_changed_dep,cc_o_c)
+  
+- ARCH_POSTLINK := $(wildcard $(srctree)/arch/$(SRCARCH)/Makefile.postlink)
+ +ARCH_MODULE_LDS := $(word 1,$(wildcard scripts/module.lds arch/$(SRCARCH)/module.lds))
+- 
+++
+  quiet_cmd_ld_ko_o = LD [M]  $@
+-       cmd_ld_ko_o +=							\
++       cmd_ld_ko_o =							\
+  	$(LD) -r $(KBUILD_LDFLAGS)					\
+  		$(KBUILD_LDFLAGS_MODULE) $(LDFLAGS_MODULE)		\
+--		-T scripts/module.lds -o $@ $(filter %.o, $^);		\
+-+		-T $(ARCH_MODULE_LDS) -o $@ $(filter %.o, $^);		\
+- 	$(if $(ARCH_POSTLINK), $(MAKE) -f $(ARCH_POSTLINK) $@, true)
++-		-T scripts/module.lds -o $@ $(filter %.o, $^)
+++		-T $(ARCH_MODULE_LDS) -o $@ $(filter %.o, $^)
+  
+  quiet_cmd_btf_ko = BTF [M] $@
+-@@ -57,7 +58,7 @@ if_changed_except = $(if $(call newer_pr
++       cmd_btf_ko = 							\
++@@ -57,7 +59,7 @@ if_changed_except = $(if $(call newer_pr
+  	printf '%s\n' 'savedcmd_$@ := $(make-cmd)' > $(dot-target).cmd, @:)
+  
+  # Re-generate module BTFs if either module's .ko or vmlinux changed
+--%.ko: %.o %.mod.o scripts/module.lds $(and $(CONFIG_DEBUG_INFO_BTF_MODULES),$(KBUILD_BUILTIN),vmlinux) FORCE
+-+%.ko: %.o %.mod.o $(ARCH_MODULE_LDS) $(and $(CONFIG_DEBUG_INFO_BTF_MODULES),$(KBUILD_BUILTIN),vmlinux) FORCE
++-%.ko: %.o %.mod.o $(extmod_prefix).module-common.o scripts/module.lds $(and $(CONFIG_DEBUG_INFO_BTF_MODULES),$(KBUILD_BUILTIN),vmlinux) FORCE
+++%.ko: %.o %.mod.o $(extmod_prefix).module-common.o $(ARCH_MODULE_LDS) $(and $(CONFIG_DEBUG_INFO_BTF_MODULES),$(KBUILD_BUILTIN),vmlinux) FORCE
+  	+$(call if_changed_except,ld_ko_o,vmlinux)
+  ifdef CONFIG_DEBUG_INFO_BTF_MODULES
+  	+$(if $(newer-prereqs),$(call cmd,btf_ko))
+diff --git a/debian/patches/debian/kernelvariables.patch b/debian/patches/debian/kernelvariables.patch
+index 2196c8a435..ef427ab195 100644
+--- a/debian/patches/debian/kernelvariables.patch
++++ b/debian/patches/debian/kernelvariables.patch
+@@ -17,7 +17,7 @@ use of $(ARCH) needs to be moved after this.
+ ---
+ --- a/Makefile
+ +++ b/Makefile
+-@@ -395,36 +395,6 @@ include $(srctree)/scripts/subarch.inclu
++@@ -406,36 +406,6 @@ include $(srctree)/scripts/subarch.inclu
+  # Note: Some architectures assign CROSS_COMPILE in their arch/*/Makefile
+  ARCH		?= $(SUBARCH)
+  
+@@ -54,7 +54,7 @@ use of $(ARCH) needs to be moved after this.
+  KCONFIG_CONFIG	?= .config
+  export KCONFIG_CONFIG
+  
+-@@ -540,6 +510,35 @@ RUSTFLAGS_KERNEL =
++@@ -551,6 +521,35 @@ RUSTFLAGS_KERNEL =
+  AFLAGS_KERNEL	=
+  LDFLAGS_vmlinux =
+  
+diff --git a/debian/patches/debian/perf-traceevent-support-asciidoctor-for-documentatio.patch b/debian/patches/debian/perf-traceevent-support-asciidoctor-for-documentatio.patch
+index 3971218b68..a1cbb2c0bd 100644
+--- a/debian/patches/debian/perf-traceevent-support-asciidoctor-for-documentatio.patch
++++ b/debian/patches/debian/perf-traceevent-support-asciidoctor-for-documentatio.patch
+@@ -6,9 +6,8 @@ Forwarded: not-needed
+ 
+ ---
+  tools/lib/perf/Documentation/Makefile       | 2 +-
+- tools/lib/traceevent/Documentation/Makefile | 2 +-
+  tools/perf/Documentation/Makefile           | 2 +-
+- 3 files changed, 3 insertions(+), 3 deletions(-)
++ 2 files changed, 2 insertions(+), 2 deletions(-)
+ 
+ diff --git a/tools/lib/perf/Documentation/Makefile b/tools/lib/perf/Documentation/Makefile
+ index 972754082a85..272d06173a3e 100644
+diff --git a/debian/patches/debian/version.patch b/debian/patches/debian/version.patch
+index 47fc6c0dce..7093df77ae 100644
+--- a/debian/patches/debian/version.patch
++++ b/debian/patches/debian/version.patch
+@@ -7,19 +7,16 @@ For distribution binary packages we assume
+ $DISTRIBUTION_OFFICIAL_BUILD, $DISTRIBUTOR and $DISTRIBUTION_VERSION
+ are set.
+ ---
+- Makefile                      | 15 ++++++++++++++-
+- arch/ia64/kernel/process.c    |  5 +++--
++ Makefile                      | 16 +++++++++++++++-
+  arch/powerpc/kernel/process.c |  6 ++++--
+  arch/x86/um/sysrq_64.c        |  6 ++++--
+  kernel/hung_task.c            |  6 ++++--
+- lib/dump_stack.c              |  6 ++++--
+- 6 files changed, 33 insertions(+), 11 deletions(-)
++ lib/dump_stack.c              |  7 +++++--
++ 5 files changed, 32 insertions(+), 9 deletions(-)
+ 
+-Index: linux/Makefile
+-===================================================================
+---- linux.orig/Makefile
+-+++ linux/Makefile
+-@@ -1263,7 +1263,8 @@ PHONY += prepare archprepare
++--- a/Makefile
+++++ b/Makefile
++@@ -1196,7 +1196,8 @@ PHONY += prepare archprepare
+  
+  archprepare: outputmakefile archheaders archscripts scripts include/config/kernel.release \
+  	asm-generic $(version_h) include/generated/utsrelease.h \
+@@ -29,7 +26,7 @@ Index: linux/Makefile
+  
+  prepare0: archprepare
+  	$(Q)$(MAKE) $(build)=scripts/mod
+-@@ -1321,6 +1322,16 @@ define filechk_version.h
++@@ -1254,6 +1255,16 @@ define filechk_version.h
+  	echo \#define LINUX_VERSION_SUBLEVEL $(SUBLEVEL)
+  endef
+  
+@@ -43,10 +40,10 @@ Index: linux/Makefile
+ +endef
+ +endif
+ +
+- $(version_h): PATCHLEVEL := $(or $(PATCHLEVEL), 0)
+- $(version_h): SUBLEVEL := $(or $(SUBLEVEL), 0)
++ $(version_h): private PATCHLEVEL := $(or $(PATCHLEVEL), 0)
++ $(version_h): private SUBLEVEL := $(or $(SUBLEVEL), 0)
+  $(version_h): FORCE
+-@@ -1335,6 +1346,9 @@ filechk_compile.h = $(srctree)/scripts/m
++@@ -1268,6 +1279,9 @@ filechk_compile.h = $(srctree)/scripts/m
+  include/generated/compile.h: FORCE
+  	$(call filechk,compile.h)
+  
+@@ -56,34 +53,8 @@ Index: linux/Makefile
+  PHONY += headerdep
+  headerdep:
+  	$(Q)find $(srctree)/include/ -name '*.h' | xargs --max-args 1 \
+-Index: linux/arch/ia64/kernel/process.c
+-===================================================================
+---- linux.orig/arch/ia64/kernel/process.c
+-+++ linux/arch/ia64/kernel/process.c
+-@@ -35,6 +35,7 @@
+- #include <linux/utsname.h>
+- #include <linux/resume_user_mode.h>
+- #include <linux/rcupdate.h>
+-+#include <generated/package.h>
+- 
+- #include <asm/cpu.h>
+- #include <asm/delay.h>
+-@@ -102,9 +103,9 @@ show_regs (struct pt_regs *regs)
+- 	print_modules();
+- 	printk("\n");
+- 	show_regs_print_info(KERN_DEFAULT);
+--	printk("psr : %016lx ifs : %016lx ip  : [<%016lx>]    %s (%s)\n",
+-+	printk("psr : %016lx ifs : %016lx ip  : [<%016lx>]    %s (%s%s)\n",
+- 	       regs->cr_ipsr, regs->cr_ifs, ip, print_tainted(),
+--	       init_utsname()->release);
+-+	       init_utsname()->release, LINUX_PACKAGE_ID);
+- 	printk("ip is at %pS\n", (void *)ip);
+- 	printk("unat: %016lx pfs : %016lx rsc : %016lx\n",
+- 	       regs->ar_unat, regs->ar_pfs, regs->ar_rsc);
+-Index: linux/arch/powerpc/kernel/process.c
+-===================================================================
+---- linux.orig/arch/powerpc/kernel/process.c
+-+++ linux/arch/powerpc/kernel/process.c
++--- a/arch/powerpc/kernel/process.c
+++++ b/arch/powerpc/kernel/process.c
+ @@ -38,6 +38,7 @@
+  #include <linux/uaccess.h>
+  #include <linux/pkeys.h>
+@@ -92,7 +63,7 @@ Index: linux/arch/powerpc/kernel/process.c
+  
+  #include <asm/interrupt.h>
+  #include <asm/io.h>
+-@@ -1520,8 +1521,9 @@ static void __show_regs(struct pt_regs *
++@@ -1560,8 +1561,9 @@ static void __show_regs(struct pt_regs *
+  
+  	printk("NIP:  "REG" LR: "REG" CTR: "REG"\n",
+  	       regs->nip, regs->link, regs->ctr);
+@@ -104,18 +75,16 @@ Index: linux/arch/powerpc/kernel/process.c
+  	printk("MSR:  "REG" ", regs->msr);
+  	print_msr_bits(regs->msr);
+  	pr_cont("  CR: %08lx  XER: %08lx\n", regs->ccr, regs->xer);
+-Index: linux/arch/x86/um/sysrq_64.c
+-===================================================================
+---- linux.orig/arch/x86/um/sysrq_64.c
+-+++ linux/arch/x86/um/sysrq_64.c
+-@@ -9,6 +9,7 @@
++--- a/arch/x86/um/sysrq_64.c
+++++ b/arch/x86/um/sysrq_64.c
++@@ -10,6 +10,7 @@
+  #include <linux/sched.h>
+  #include <linux/sched/debug.h>
+  #include <linux/utsname.h>
+ +#include <generated/package.h>
+  #include <asm/current.h>
+  #include <asm/ptrace.h>
+- #include <asm/sysrq.h>
++ 
+ @@ -17,8 +18,9 @@ void show_regs(struct pt_regs *regs)
+  {
+  	printk("\n");
+@@ -128,10 +97,8 @@ Index: linux/arch/x86/um/sysrq_64.c
+  	printk(KERN_INFO "RIP: %04lx:%pS\n", PT_REGS_CS(regs) & 0xffff,
+  	       (void *)PT_REGS_IP(regs));
+  	printk(KERN_INFO "RSP: %016lx  EFLAGS: %08lx\n", PT_REGS_SP(regs),
+-Index: linux/kernel/hung_task.c
+-===================================================================
+---- linux.orig/kernel/hung_task.c
+-+++ linux/kernel/hung_task.c
++--- a/kernel/hung_task.c
+++++ b/kernel/hung_task.c
+ @@ -24,6 +24,7 @@
+  #include <linux/sched/sysctl.h>
+  
+@@ -140,7 +107,7 @@ Index: linux/kernel/hung_task.c
+  
+  /*
+   * The number of tasks checked:
+-@@ -131,10 +132,11 @@ static void check_hung_task(struct task_
++@@ -132,10 +133,11 @@ static void check_hung_task(struct task_
+  			sysctl_hung_task_warnings--;
+  		pr_err("INFO: task %s:%d blocked for more than %ld seconds.\n",
+  		       t->comm, t->pid, (jiffies - t->last_switch_time) / HZ);
+@@ -154,10 +121,8 @@ Index: linux/kernel/hung_task.c
+  		pr_err("\"echo 0 > /proc/sys/kernel/hung_task_timeout_secs\""
+  			" disables this message.\n");
+  		sched_show_task(t);
+-Index: linux/lib/dump_stack.c
+-===================================================================
+---- linux.orig/lib/dump_stack.c
+-+++ linux/lib/dump_stack.c
++--- a/lib/dump_stack.c
+++++ b/lib/dump_stack.c
+ @@ -14,6 +14,7 @@
+  #include <linux/kexec.h>
+  #include <linux/utsname.h>
+@@ -166,14 +131,16 @@ Index: linux/lib/dump_stack.c
+  
+  static char dump_stack_arch_desc_str[128];
+  
+-@@ -54,13 +55,15 @@ void __init dump_stack_set_arch_desc(con
++@@ -54,7 +55,7 @@ void __init dump_stack_set_arch_desc(con
+   */
+  void dump_stack_print_info(const char *log_lvl)
+  {
+--	printk("%sCPU: %d PID: %d Comm: %.20s %s%s %s %.*s" BUILD_ID_FMT "\n",
+-+	printk("%sCPU: %d PID: %d Comm: %.20s %s%s %s %.*s %s" BUILD_ID_FMT "\n",
+- 	       log_lvl, raw_smp_processor_id(), current->pid, current->comm,
+- 	       kexec_crash_loaded() ? "Kdump: loaded " : "",
++-	printk("%sCPU: %d UID: %u PID: %d Comm: %.20s %s%s %s %.*s" BUILD_ID_FMT "\n",
+++	printk("%sCPU: %d UID: %u PID: %d Comm: %.20s %s%s %s %.*s %s" BUILD_ID_FMT "\n",
++ 	       log_lvl, raw_smp_processor_id(),
++ 	       __kuid_val(current_real_cred()->euid),
++ 	       current->pid, current->comm,
++@@ -62,7 +63,9 @@ void dump_stack_print_info(const char *l
+  	       print_tainted(),
+  	       init_utsname()->release,
+  	       (int)strcspn(init_utsname()->version, " "),
+@@ -182,5 +149,5 @@ Index: linux/lib/dump_stack.c
+ +	       LINUX_PACKAGE_ID,
+ +	       BUILD_ID_VAL);
+  
+- 	if (dump_stack_arch_desc_str[0] != '\0')
+- 		printk("%sHardware name: %s\n",
++ 	if (get_taint())
++ 		printk("%s%s\n", log_lvl, print_tainted_verbose());
+diff --git a/debian/patches/features/all/lockdown/efi-add-an-efi_secure_boot-flag-to-indicate-secure-b.patch b/debian/patches/features/all/lockdown/efi-add-an-efi_secure_boot-flag-to-indicate-secure-b.patch
+index 6a8940da52..822beab21c 100644
+--- a/debian/patches/features/all/lockdown/efi-add-an-efi_secure_boot-flag-to-indicate-secure-b.patch
++++ b/debian/patches/features/all/lockdown/efi-add-an-efi_secure_boot-flag-to-indicate-secure-b.patch
+@@ -31,7 +31,7 @@ cc: linux-efi@vger.kernel.org
+ 
+ --- a/arch/x86/kernel/setup.c
+ +++ b/arch/x86/kernel/setup.c
+-@@ -1205,19 +1205,7 @@ void __init setup_arch(char **cmdline_p)
++@@ -1193,19 +1193,7 @@ void __init setup_arch(char **cmdline_p)
+  	/* Allocate bigger log buffer */
+  	setup_log_buf(1);
+  
+@@ -54,7 +54,7 @@ cc: linux-efi@vger.kernel.org
+  
+ --- a/drivers/firmware/efi/Makefile
+ +++ b/drivers/firmware/efi/Makefile
+-@@ -27,6 +27,7 @@ obj-$(CONFIG_EFI_FAKE_MEMMAP)		+= fake_m
++@@ -25,6 +25,7 @@ obj-$(CONFIG_EFI_FAKE_MEMMAP)		+= fake_m
+  obj-$(CONFIG_EFI_BOOTLOADER_CONTROL)	+= efibc.o
+  obj-$(CONFIG_EFI_TEST)			+= test/
+  obj-$(CONFIG_EFI_DEV_PATH_PARSER)	+= dev-path-parser.o
+@@ -106,7 +106,7 @@ cc: linux-efi@vger.kernel.org
+ +}
+ --- a/include/linux/efi.h
+ +++ b/include/linux/efi.h
+-@@ -849,6 +849,14 @@ extern int __init efi_setup_pcdp_console
++@@ -871,6 +871,14 @@ extern int __init efi_setup_pcdp_console
+  #define EFI_MEM_ATTR		10	/* Did firmware publish an EFI_MEMORY_ATTRIBUTES table? */
+  #define EFI_MEM_NO_SOFT_RESERVE	11	/* Is the kernel configured to ignore soft reservations? */
+  #define EFI_PRESERVE_BS_REGIONS	12	/* Are EFI boot-services memory segments available? */
+@@ -121,7 +121,7 @@ cc: linux-efi@vger.kernel.org
+  
+  #ifdef CONFIG_EFI
+  /*
+-@@ -873,6 +881,7 @@ static inline bool efi_rt_services_suppo
++@@ -895,6 +903,7 @@ static inline bool efi_rt_services_suppo
+  	return (efi.runtime_supported_mask & mask) == mask;
+  }
+  extern void efi_find_mirror(void);
+@@ -129,7 +129,7 @@ cc: linux-efi@vger.kernel.org
+  #else
+  static inline bool efi_enabled(int feature)
+  {
+-@@ -892,6 +901,7 @@ static inline bool efi_rt_services_suppo
++@@ -914,6 +923,7 @@ static inline bool efi_rt_services_suppo
+  }
+  
+  static inline void efi_find_mirror(void) {}
+@@ -137,7 +137,7 @@ cc: linux-efi@vger.kernel.org
+  #endif
+  
+  extern int efi_status_to_err(efi_status_t status);
+-@@ -1107,13 +1117,6 @@ static inline bool efi_runtime_disabled(
++@@ -1133,13 +1143,6 @@ static inline bool efi_runtime_disabled(
+  extern void efi_call_virt_check_flags(unsigned long flags, const void *caller);
+  extern unsigned long efi_call_virt_save_flags(void);
+  
+diff --git a/debian/patches/features/all/lockdown/efi-lock-down-the-kernel-if-booted-in-secure-boot-mo.patch b/debian/patches/features/all/lockdown/efi-lock-down-the-kernel-if-booted-in-secure-boot-mo.patch
+index 0ab4db9957..6fff3f8967 100644
+--- a/debian/patches/features/all/lockdown/efi-lock-down-the-kernel-if-booted-in-secure-boot-mo.patch
++++ b/debian/patches/features/all/lockdown/efi-lock-down-the-kernel-if-booted-in-secure-boot-mo.patch
+@@ -13,22 +13,20 @@ description:
+ 
+ Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
+ [Salvatore Bonaccorso: After fixing https://bugs.debian.org/956197 the
+-help text for LOCK_DOWN_IN_EFI_SECURE_BOOT needs to be adjusted to
+-mention that lockdown is triggered in integrity mode]
++help text for LOCK_DOWN_IN_EFI_SECURE_BOOT was adjusted to mention that
++lockdown is triggered in integrity mode (https://bugs.debian.org/1025417)]
+ Signed-off-by: Salvatore Bonaccorso <carnil@debian.org>
+ ---
+- arch/x86/kernel/setup.c           |  4 ++--
+- drivers/firmware/efi/secureboot.c |  5 +++++
+- include/linux/security.h          |  6 ++++++
+- security/lockdown/Kconfig         | 15 +++++++++++++++
+- security/lockdown/lockdown.c      |  2 +-
+- 5 files changed, 29 insertions(+), 3 deletions(-)
++ arch/x86/kernel/setup.c           |    4 ++--
++ drivers/firmware/efi/secureboot.c |    3 +++
++ include/linux/security.h          |    6 ++++++
++ security/lockdown/Kconfig         |   15 +++++++++++++++
++ security/lockdown/lockdown.c      |    2 +-
++ 5 files changed, 27 insertions(+), 3 deletions(-)
+ 
+-Index: debian-kernel/arch/x86/kernel/setup.c
+-===================================================================
+---- debian-kernel.orig/arch/x86/kernel/setup.c
+-+++ debian-kernel/arch/x86/kernel/setup.c
+-@@ -1028,6 +1028,8 @@ void __init setup_arch(char **cmdline_p)
++--- a/arch/x86/kernel/setup.c
+++++ b/arch/x86/kernel/setup.c
++@@ -904,6 +904,8 @@ void __init setup_arch(char **cmdline_p)
+  	if (efi_enabled(EFI_BOOT))
+  		efi_init();
+  
+@@ -37,7 +35,7 @@ Index: debian-kernel/arch/x86/kernel/setup.c
+  	reserve_ibft_region();
+  	x86_init.resources.dmi_setup();
+  
+-@@ -1190,8 +1192,6 @@ void __init setup_arch(char **cmdline_p)
++@@ -1070,8 +1072,6 @@ void __init setup_arch(char **cmdline_p)
+  	/* Allocate bigger log buffer */
+  	setup_log_buf(1);
+  
+@@ -46,10 +44,8 @@ Index: debian-kernel/arch/x86/kernel/setup.c
+  	reserve_initrd();
+  
+  	acpi_table_upgrade();
+-Index: debian-kernel/drivers/firmware/efi/secureboot.c
+-===================================================================
+---- debian-kernel.orig/drivers/firmware/efi/secureboot.c
+-+++ debian-kernel/drivers/firmware/efi/secureboot.c
++--- a/drivers/firmware/efi/secureboot.c
+++++ b/drivers/firmware/efi/secureboot.c
+ @@ -15,6 +15,7 @@
+  #include <linux/efi.h>
+  #include <linux/kernel.h>
+@@ -69,19 +65,17 @@ Index: debian-kernel/drivers/firmware/efi/secureboot.c
+  			pr_info("Secure boot enabled\n");
+  			break;
+  		default:
+-Index: debian-kernel/include/linux/security.h
+-===================================================================
+---- debian-kernel.orig/include/linux/security.h
+-+++ debian-kernel/include/linux/security.h
+-@@ -486,6 +486,7 @@ int security_inode_notifysecctx(struct inode *inode, void *ctx, u32 ctxlen);
++--- a/include/linux/security.h
+++++ b/include/linux/security.h
++@@ -522,6 +522,7 @@ int security_inode_notifysecctx(struct i
+  int security_inode_setsecctx(struct dentry *dentry, void *ctx, u32 ctxlen);
+  int security_inode_getsecctx(struct inode *inode, void **ctx, u32 *ctxlen);
+  int security_locked_down(enum lockdown_reason what);
+ +int lock_kernel_down(const char *where, enum lockdown_reason level);
+- #else /* CONFIG_SECURITY */
+- 
+- static inline int call_blocking_lsm_notifier(enum lsm_event event, void *data)
+-@@ -1404,6 +1405,11 @@ static inline int security_locked_down(enum lockdown_reason what)
++ int lsm_fill_user_ctx(struct lsm_ctx __user *uctx, u32 *uctx_len,
++ 		      void *val, size_t val_len, u64 id, u64 flags);
++ int security_bdev_alloc(struct block_device *bdev);
++@@ -1504,6 +1505,11 @@ static inline int security_locked_down(e
+  {
+  	return 0;
+  }
+@@ -90,13 +84,11 @@ Index: debian-kernel/include/linux/security.h
+ +{
+ +	return -EOPNOTSUPP;
+ +}
+- #endif	/* CONFIG_SECURITY */
+- 
+- #if defined(CONFIG_SECURITY) && defined(CONFIG_WATCH_QUEUE)
+-Index: debian-kernel/security/lockdown/Kconfig
+-===================================================================
+---- debian-kernel.orig/security/lockdown/Kconfig
+-+++ debian-kernel/security/lockdown/Kconfig
++ static inline int lsm_fill_user_ctx(struct lsm_ctx __user *uctx,
++ 				    u32 *uctx_len, void *val, size_t val_len,
++ 				    u64 id, u64 flags)
++--- a/security/lockdown/Kconfig
+++++ b/security/lockdown/Kconfig
+ @@ -45,3 +45,18 @@ config LOCK_DOWN_KERNEL_FORCE_CONFIDENTI
+  	 disabled.
+  
+@@ -116,11 +108,9 @@ Index: debian-kernel/security/lockdown/Kconfig
+ +
+ +	  Enabling this option results in kernel lockdown being
+ +	  triggered in integrity mode if EFI Secure Boot is set.
+-Index: debian-kernel/security/lockdown/lockdown.c
+-===================================================================
+---- debian-kernel.orig/security/lockdown/lockdown.c
+-+++ debian-kernel/security/lockdown/lockdown.c
+-@@ -23,7 +23,7 @@ static const enum lockdown_reason lockdo
++--- a/security/lockdown/lockdown.c
+++++ b/security/lockdown/lockdown.c
++@@ -24,7 +24,7 @@ static const enum lockdown_reason lockdo
+  /*
+   * Put the kernel into lock-down mode.
+   */
+@@ -129,6 +119,3 @@ Index: debian-kernel/security/lockdown/lockdown.c
+  {
+  	if (kernel_locked_down >= level)
+  		return -EPERM;
+--- 
+-2.43.0
+-
+-- 
+2.47.1
+

@@ -1,0 +1,29 @@
+From 494225b3addd442fc21bcea6ba3e2900fb0acadd Mon Sep 17 00:00:00 2001
+From: Diederik de Haas <didi.debian@cknow.org>
+Date: Wed, 8 Mar 2023 10:39:42 +0100
+Subject: [PATCH 7/9] linux-kbuild: Stop building bin2c in 6.3
+
+In upstream commit ec61452aaad6bb0d4f3f4d4b78d27bed90eb2494 `bin2c` was
+removed, so stop trying to build it as it causes a FTBFS.
+
+[lz: Porting from https://salsa.debian.org/kernel-team/linux/-/commit/
+d4ee24ef3f7369b5fb9cdfbb0a549f393163c97a to fix build error:
+"No rule to make target 'bin2c'"]
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+---
+ debian/rules.d/scripts/Makefile | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/debian/rules.d/scripts/Makefile b/debian/rules.d/scripts/Makefile
+index bbfe9c0..c913e25 100644
+--- a/debian/rules.d/scripts/Makefile
++++ b/debian/rules.d/scripts/Makefile
+@@ -1,5 +1,4 @@
+ PROGS = \
+-	bin2c \
+ 	kallsyms \
+ 	recordmcount \
+ 	sign-file \
+-- 
+2.17.1
+

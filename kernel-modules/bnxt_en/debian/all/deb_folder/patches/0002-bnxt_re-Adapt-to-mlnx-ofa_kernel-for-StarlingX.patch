@@ -1,0 +1,96 @@
+From 1f9e5517b54fca5b25e93a030e6d091fc2c5adb3 Mon Sep 17 00:00:00 2001
+From: "M. Vefa Bicakci" <vefa.bicakci@windriver.com>
+Date: Fri, 4 Feb 2022 18:27:53 -0500
+Subject: [PATCH 2/4] bnxt_re: Adapt to mlnx-ofa_kernel for StarlingX
+
+This patch adapts the bnxt_re kernel module's Makefile to
+mlnx-ofa_kernel for Debian-based StarlingX. Also modify
+bnxt_re_reg_user_mr_dmabuf for the incompatible API.
+
+Here is a summary of the changes:
+
+- Unlike CentOS-based StarlingX, the KDIR variable is no longer needed
+  to be specified explicitly to make, because the symbolic links
+  /lib/modules/<kver>/{build,source} are sufficient to detect the
+  correct directories on Debian. However, this leaves the KDIR variable
+  undefined, which is problematic as this variable is used later in the
+  Makefile. Fix this by pointing KDIR to the "build" symbolic link
+  (i.e., "$(LINUX)").
+- Correct the kconfig_h path, it should be in source folder.
+- Modifiy bnxt_re_reg_user_mr_dmabuf to fix the build error:
+  bnxt_re-232.0.155.5/main.c:3000:28: error: initialization of 'struct ib_mr \
+  * (*)(struct ib_pd *, u64,  u64,  u64,  int,  int,  struct \
+  uverbs_attr_bundle *)' {aka 'struct ib_mr * (*)(struct ib_pd *, \
+  long long unsigned int,  long long unsigned int,  long long unsigned int,\
+  int,  int,  struct uverbs_attr_bundle *)'} from incompatible pointer type \
+  'struct ib_mr * (*)(struct ib_pd *, u64,  u64,  u64,  int,  int,  \
+  struct ib_udata *)' {aka 'struct ib_mr * (*)(struct ib_pd *, \
+  long long unsigned int,  long long unsigned int,  long long unsigned int, \
+  int,  int,  struct ib_udata *)'} [-Werror=incompatible-pointer-types] \
+  3000 |  .reg_user_mr_dmabuf     = bnxt_re_reg_user_mr_dmabuf,
+      |                            ^~~~~~~~~~~~~~~~~~~~~~~~~~
+  bnxt_re-232.0.155.5/main.c:3000:28: note: (near initialization for \
+  'bnxt_re_dev_ops.reg_user_mr_dmabuf')
+
+Signed-off-by: M. Vefa Bicakci <vefa.bicakci@windriver.com>
+[jm: Adapted the patch for context change]
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+[jm: Adapted the patch for context change]
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ bnxt_re-232.0.155.5/Makefile   | 4 +++-
+ bnxt_re-232.0.155.5/ib_verbs.c | 2 +-
+ bnxt_re-232.0.155.5/ib_verbs.h | 2 +-
+ 3 files changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/bnxt_re-232.0.155.5/Makefile b/bnxt_re-232.0.155.5/Makefile
+index 58fffe1..9f1531d 100644
+--- a/bnxt_re-232.0.155.5/Makefile
++++ b/bnxt_re-232.0.155.5/Makefile
+@@ -59,6 +59,8 @@ endif
+ ifneq ($(KDIR),)
+   LINUX=$(KDIR)
+   LINUXSRC=$(LINUX)
++else ifneq ($(LINUX),)
++  KDIR=$(LINUX)
+ endif
+ 
+ ifeq ($(shell ls $(LINUXSRC)/include/uapi > /dev/null 2>&1 && echo uapi),)
+@@ -106,7 +108,7 @@ EXTRA_CFLAGS += -D__OFED_BUILD__
+ EXTRA_CFLAGS += -include $(OFA_KERNEL_PATH)/include/linux/compat-2.6.h
+ 
+ autoconf_h = $(shell /bin/ls -1 $(LINUX)/include/*/autoconf.h 2> /dev/null | head -1)
+-kconfig_h=$(shell /bin/ls -1 $(LINUX)/include/*/kconfig.h 2> /dev/null | head -1)
++kconfig_h=$(shell /bin/ls -1 $(LINUXSRC)/include/*/kconfig.h 2> /dev/null | head -1)
+ 
+ ifneq ($(autoconf_h),)
+ AUTOCONF_H = -include $(autoconf_h)
+diff --git a/bnxt_re-232.0.155.5/ib_verbs.c b/bnxt_re-232.0.155.5/ib_verbs.c
+index 78a1fbb..3f4d52d 100644
+--- a/bnxt_re-232.0.155.5/ib_verbs.c
++++ b/bnxt_re-232.0.155.5/ib_verbs.c
+@@ -6979,7 +6979,7 @@ static int bnxt_re_get_num_pages(struct ib_umem *umem, u64 start, u64 length, in
+ #ifdef HAVE_IB_UMEM_DMABUF
+ struct ib_mr *bnxt_re_reg_user_mr_dmabuf(struct ib_pd *ib_pd, u64 start,
+ 					 u64 length, u64 virt_addr, int fd,
+-					 int mr_access_flags, struct ib_udata *udata)
++					 int mr_access_flags, struct uverbs_attr_bundle *attrs)
+ {
+ 	struct bnxt_re_pd *pd = to_bnxt_re(ib_pd, struct bnxt_re_pd, ib_pd);
+ 	u32 max_mr_count, max_mr_dmabuf_count;
+diff --git a/bnxt_re-232.0.155.5/ib_verbs.h b/bnxt_re-232.0.155.5/ib_verbs.h
+index f242f1d..53c5bda 100644
+--- a/bnxt_re-232.0.155.5/ib_verbs.h
++++ b/bnxt_re-232.0.155.5/ib_verbs.h
+@@ -471,7 +471,7 @@ struct ib_mr *bnxt_re_reg_user_mr(struct ib_pd *pd, u64 start, u64 length,
+ struct ib_mr *bnxt_re_reg_user_mr_dmabuf(struct ib_pd *ib_pd, u64 start,
+ 					 u64 length, u64 virt_addr,
+ 					 int fd, int mr_access_flags,
+-					 struct ib_udata *udata);
++					 struct uverbs_attr_bundle *attrs);
+ #endif
+ #ifdef HAVE_IB_REREG_USER_MR
+ REREG_USER_MR_RET
+-- 
+2.47.1
+

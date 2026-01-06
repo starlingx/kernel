@@ -1,0 +1,40 @@
+From 1315e37a6e62e990647bc1cb00ea45665cc37954 Mon Sep 17 00:00:00 2001
+From: Alyson Deives Pereira <alyson.deivespereira@windriver.com>
+Date: Tue, 30 Sep 2025 15:13:10 -0300
+Subject: [PATCH] ice: Remove deprecated ice_lag_move_new_vf_nodes() call
+
+This a hotfix to a kernel crash that occurs on ice driver,
+based on commit 34138ea02a608dc39f04e364f3249e12f6002bad
+from mainline linux kernel branch
+
+Moving the code to handle the LAG part of a VF reset to helper
+functions deprecated the function ice_lag_move_new_vf_nodes().
+The cleanup missed a call to this function in the error path of
+ice_vc_cfg_qs_msg().
+
+In the case that would end in the error path, a NULL pointer would
+be encountered due to the empty list of netdevs for members of the
+aggregate.
+
+Remove the unnecessary call to ice_lag_move_new_vf_nodes().
+
+Signed-off-by: Alyson Deives Pereira <alyson.deivespereira@windriver.com>
+---
+ src/ice_virtchnl.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/src/ice_virtchnl.c b/src/ice_virtchnl.c
+index c316bf4..fd16ffa 100644
+--- a/src/ice_virtchnl.c
++++ b/src/ice_virtchnl.c
+@@ -3973,7 +3973,6 @@ error_param:
+ 		ice_lag_move_vf_nodes_cfg(lag, pri_prt, act_prt);
+ 	mutex_unlock(&pf->lag_mutex);
+
+-	ice_lag_move_new_vf_nodes(vf);
+ #endif /* HAVE_NETDEV_UPPER_INFO */
+
+ 	/* send the response to the VF */
+--
+2.34.1
+

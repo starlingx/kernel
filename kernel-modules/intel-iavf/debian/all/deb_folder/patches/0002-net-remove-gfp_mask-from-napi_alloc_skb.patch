@@ -1,0 +1,46 @@
+From f42b30fb7b7febdf48e238f1bb2b06d465227392 Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Thu, 20 Mar 2025 09:07:54 +0000
+Subject: [PATCH 2/4] net: remove gfp_mask from napi_alloc_skb()
+
+This commit accommodates commit 6e9b01909a81("net: remove gfp_mask from 
+napi_alloc_skb()") which remove gfp_mask and change to napi_alloc_skb()
+from __napi_alloc_skb.. This commit was merged in the v6.10 development
+cycle and causes compilation failures with the v6.12 kernel, which are
+listed below.
+
+References:
+* https://git.yoctoproject.org/linux-yocto/commit/?h=6e9b01909a81
+
+Resolved compilation errors:
+
+src/iavf_txrx.c:1688:8: error: implicit declaration of function __napi_alloc_skb;
+ did you mean napi_alloc_skb? [-Werror=implicit-function-declaration]
+
+ 1688 |  skb = __napi_alloc_skb(&rx_ring->q_vector->napi,
+      |        ^~~~~~~~~~~~~~~~
+      |        napi_alloc_skb
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ src/iavf_txrx.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/src/iavf_txrx.c b/src/iavf_txrx.c
+index 79568cc..cca7629 100644
+--- a/src/iavf_txrx.c
++++ b/src/iavf_txrx.c
+@@ -1685,9 +1685,7 @@ static struct sk_buff *iavf_construct_skb(struct iavf_ring *rx_ring,
+ 	net_prefetch(va);
+ 
+ 	/* allocate a skb to store the frags */
+-	skb = __napi_alloc_skb(&rx_ring->q_vector->napi,
+-			       IAVF_RX_HDR_SIZE,
+-			       GFP_ATOMIC | __GFP_NOWARN);
++	skb = napi_alloc_skb(&rx_ring->q_vector->napi, IAVF_RX_HDR_SIZE);
+ 	if (unlikely(!skb))
+ 		return NULL;
+ 
+-- 
+2.47.1
+

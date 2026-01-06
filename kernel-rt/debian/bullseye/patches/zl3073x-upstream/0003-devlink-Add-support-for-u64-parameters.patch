@@ -1,0 +1,72 @@
+From f7940252e1430c0791ab542e909863a59cd3e374 Mon Sep 17 00:00:00 2001
+From: Ivan Vecera <ivecera@redhat.com>
+Date: Fri, 4 Jul 2025 20:21:53 +0200
+Subject: [PATCH 03/12] devlink: Add support for u64 parameters
+
+Only 8, 16 and 32-bit integers are supported for numeric devlink
+parameters. The subsequent patch adds support for DPLL clock ID
+that is defined as 64-bit number. Add support for u64 parameter
+type.
+
+Signed-off-by: Ivan Vecera <ivecera@redhat.com>
+Reviewed-by: Jiri Pirko <jiri@nvidia.com>
+Link: https://patch.msgid.link/20250704182202.1641943-4-ivecera@redhat.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+(cherry picked from commit c0ef1446959101d23fdf1b1bdefc6613a83dba03)
+Signed-off-by: Caio Felipe Cruz <caio.soaresdacruz@windriver.com>
+---
+ include/net/devlink.h |  2 ++
+ net/devlink/param.c   | 10 ++++++++++
+ 2 files changed, 12 insertions(+)
+
+diff --git a/include/net/devlink.h b/include/net/devlink.h
+index 29fd1b4ee..17413264b 100644
+--- a/include/net/devlink.h
++++ b/include/net/devlink.h
+@@ -421,6 +421,7 @@ enum devlink_param_type {
+ 	DEVLINK_PARAM_TYPE_U8,
+ 	DEVLINK_PARAM_TYPE_U16,
+ 	DEVLINK_PARAM_TYPE_U32,
++    DEVLINK_PARAM_TYPE_U64,
+ 	DEVLINK_PARAM_TYPE_STRING,
+ 	DEVLINK_PARAM_TYPE_BOOL,
+ };
+@@ -429,6 +430,7 @@ union devlink_param_value {
+ 	u8 vu8;
+ 	u16 vu16;
+ 	u32 vu32;
++	u64 vu64;
+ 	char vstr[__DEVLINK_PARAM_MAX_STRING_VALUE];
+ 	bool vbool;
+ };
+diff --git a/net/devlink/param.c b/net/devlink/param.c
+index 31275f9d4..6f1dd6d09 100644
+--- a/net/devlink/param.c
++++ b/net/devlink/param.c
+@@ -213,6 +213,11 @@ devlink_nl_param_value_fill_one(struct sk_buff *msg,
+ 		if (nla_put_u32(msg, DEVLINK_ATTR_PARAM_VALUE_DATA, val.vu32))
+ 			goto value_nest_cancel;
+ 		break;
++	case DEVLINK_PARAM_TYPE_U64:
++		if (devlink_nl_put_u64(msg, DEVLINK_ATTR_PARAM_VALUE_DATA,
++				       val.vu64))
++			goto value_nest_cancel;
++		break;
+ 	case DEVLINK_PARAM_TYPE_STRING:
+ 		if (nla_put_string(msg, DEVLINK_ATTR_PARAM_VALUE_DATA,
+ 				   val.vstr))
+@@ -471,6 +476,11 @@ devlink_param_value_get_from_info(const struct devlink_param *param,
+ 			return -EINVAL;
+ 		value->vu32 = nla_get_u32(param_data);
+ 		break;
++	case DEVLINK_PARAM_TYPE_U64:
++		if (nla_len(param_data) != sizeof(u64))
++			return -EINVAL;
++		value->vu64 = nla_get_u64(param_data);
++		break;
+ 	case DEVLINK_PARAM_TYPE_STRING:
+ 		len = strnlen(nla_data(param_data), nla_len(param_data));
+ 		if (len == nla_len(param_data) ||
+-- 
+2.34.1
+

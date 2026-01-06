@@ -1,0 +1,12 @@
+---
+debver: 1.0.0-00001
+debname: qat2.2.l
+dl_path:
+  name: QAT22.L.1.0.0-00001.tar.gz
+  url: https://downloadmirror.intel.com/861195/QAT22.L.1.0.0-00001.tar.gz
+  sha256sum: a82e8e7963b870fb6305ba8fdbf61cdee6821086fb8213e89e676e850ffdfc79
+revision:
+  dist: $STX_DIST
+  GITREVCOUNT:
+    BASE_SRCREV: 3a55c2449120d1682351c4b9af671768ba3dae51
+    SRC_DIR: ${MY_REPO}/stx/kernel/kernel-modules/qat

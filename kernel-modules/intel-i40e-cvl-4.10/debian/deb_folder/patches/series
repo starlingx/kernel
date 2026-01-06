@@ -1,4 +1,0 @@
-i40e-Enable-getting-link-status-from-VF.patch
-i40e-add-more-debug-info-for-VFs-still-in-reset.patch
-i40e_main-Use-irq_update_affinity_hint.patch
-I40E-Add-the-condition-of-undef-NEED_ETH_HW_ADDR_SET.patch

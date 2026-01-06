@@ -1,0 +1,75 @@
+From 85c4a7ccd47f96b423c5606a796448f65e85b3e5 Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Mon, 26 Sep 2022 20:58:57 -0700
+Subject: [PATCH] Place module signing keys in a separate package
+
+Currently we package our module signing keys as part of
+the 'linux-kbuild' package.  This means that anyone obtaining
+our 'linux-kbuild' package, which we do publish, can produce
+signed modules.  This violates the intent of secure boot.
+
+Re-package our module signing keys into a separate package
+known as 'linux-keys'.
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+[lz: adapted the patch for porting kernel from 5.10 to 6.6]
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+---
+ debian/rules.real                           | 20 ++++++++++++++++++++
+ debian/templates/tools-versioned.control.in |  9 +++++++++
+ 2 files changed, 29 insertions(+)
+
+diff --git a/debian/rules.real b/debian/rules.real
+index 69474b8..d95c14c 100644
+--- a/debian/rules.real
++++ b/debian/rules.real
+@@ -586,6 +586,26 @@ endif
+ 	dh_md5sums
+ 	dh_builddeb -- $(BUILDDEB_ARGS)
+ 
++build_keys:
++
++binary_keys: PACKAGE_NAME = linux-keys-$(VERSION)
++binary_keys: DH_OPTIONS = -p$(PACKAGE_NAME)
++binary_keys: DIR = $(CURDIR)/debian/$(PACKAGE_NAME)
++binary_keys: build_keys
++	dh_testdir
++	dh_testroot
++	dh_prep
++	dh_installdirs
++	dh_install $(BUILD_DIR)/*/certs/signing_key.pem /usr/src/kernels/$(ABINAME)-$(ARCH)/
++	dh_install $(BUILD_DIR)/*/certs/signing_key.x509 /usr/src/kernels/$(ABINAME)-$(ARCH)/
++	dh_installchangelogs
++	dh_compress
++	dh_fixperms
++	dh_installdeb
++	dh_gencontrol
++	dh_md5sums
++	dh_builddeb
++
+ build_cpupower: $(STAMPS_DIR)/build-tools-headers
+ 	$(call make-tools,tools/power/cpupower)
+ ifneq ($(filter i386 amd64 x32,$(DEB_HOST_ARCH)),)
+diff --git a/debian/templates/tools-versioned.control.in b/debian/templates/tools-versioned.control.in
+index 84480de..8b313f6 100644
+--- a/debian/templates/tools-versioned.control.in
++++ b/debian/templates/tools-versioned.control.in
+@@ -7,6 +7,15 @@ Multi-Arch: foreign
+ Description: Kbuild infrastructure for Linux @version@
+  This package provides the kbuild infrastructure for the headers packages for Linux kernel version @version@.
+ 
++Package: linux-keys-@version@
++Meta-Rules-Target: keys
++Build-Profiles: <!stage1 !pkg.linux.notools>
++Architecture: linux-any
++Depends: ${shlibs:Depends}, ${misc:Depends}
++Multi-Arch: foreign
++Description: Key infrastructure for Linux @version@
++ This package provides the kernel module signing keys for Linux kernel version @version@.
++
+ Package: linux-bootwrapper-@abiname@
+ Meta-Rules-Target: bootwrapper
+ Build-Profiles: <!stage1 !pkg.linux.notools>
+-- 
+2.17.1
+

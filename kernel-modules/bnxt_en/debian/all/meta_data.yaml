@@ -1,0 +1,16 @@
+---
+debver: 1.10.3.232.0.155.5
+debname: bnxt-en
+dl_hook: dl_hook
+dl_files:
+  bcm_232.1.132.8c.tar.gz:
+    topdir: null
+    url: "https://docs.broadcom.com/docs-and-downloads/\
+          ethernet-network-adapters/NXE/BRCM_232.1.132.8/\
+          bcm_232.1.132.8c.tar.gz"
+    sha256sum: 01c64854af7359a9738e4509a993e51f48046e3f5d6736c933145583d0bcfdf0
+revision:
+  dist: $STX_DIST
+  GITREVCOUNT:
+    BASE_SRCREV: e8cb7ff3ee3cee16c15287fe91204a448786acfa
+    SRC_DIR: ${MY_REPO}/stx/kernel/kernel-modules/bnxt_en

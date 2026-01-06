@@ -1,0 +1,32 @@
+From d359553cf57e17cc34729eae4c1327f5fb5d2426 Mon Sep 17 00:00:00 2001
+From: Li Zhou <li.zhou@windriver.com>
+Date: Mon, 25 Dec 2023 10:51:17 +0800
+Subject: [PATCH 9/9] rtla: fix error for undefined reference
+
+Add '-pthread' to EXTRA_LDFLAGS to fix this error when building rtla:
+/usr/bin/ld: /tmp/rtla.2STv8j.ltrans0.ltrans.o:
+  undefined reference to symbol 'pthread_create@@GLIBC_2.2.5'
+/usr/bin/ld: /lib/x86_64-linux-gnu/libpthread.so.0:
+  error adding symbols: DSO missing from command line
+
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+---
+ debian/rules.d/tools/tracing/rtla/Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/debian/rules.d/tools/tracing/rtla/Makefile b/debian/rules.d/tools/tracing/rtla/Makefile
+index 9dd1cfd..6cba478 100644
+--- a/debian/rules.d/tools/tracing/rtla/Makefile
++++ b/debian/rules.d/tools/tracing/rtla/Makefile
+@@ -5,7 +5,7 @@ all:
+ 	echo '$(UPSTREAMVERSION)' >VERSION
+ 	rsync -a $(top_srcdir)/tools/tracing/rtla/ .
+ 	rsync -a $(top_srcdir)/Documentation/tools/rtla/ Documentation/
+-	$(MAKE) EXTRA_CFLAGS='$(CFLAGS) $(CPPFLAGS)' EXTRA_LDFLAGS='$(LDFLAGS)' PKG_CONFIG='$(PKG_CONFIG)'
++	$(MAKE) EXTRA_CFLAGS='$(CFLAGS) $(CPPFLAGS)' EXTRA_LDFLAGS='$(LDFLAGS) -pthread' PKG_CONFIG='$(PKG_CONFIG)'
+ 
+ install:
+ 	$(MAKE) install
+-- 
+2.17.1
+

@@ -1,0 +1,73 @@
+From 64e65f554aefd0f27d83374247b1dbd84ab11d93 Mon Sep 17 00:00:00 2001
+From: Ivan Vecera <ivecera@redhat.com>
+Date: Fri, 4 Jul 2025 20:21:54 +0200
+Subject: [PATCH 04/12] devlink: Add new "clock_id" generic device param
+
+Add a new device generic parameter to specify clock ID that should
+be used by the device for registering DPLL devices and pins.
+
+Signed-off-by: Ivan Vecera <ivecera@redhat.com>
+Reviewed-by: Jiri Pirko <jiri@nvidia.com>
+Link: https://patch.msgid.link/20250704182202.1641943-5-ivecera@redhat.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+(cherry picked from commit de9ccf2296ac323a571e442b5730ca9cc259fbf0)
+Signed-off-by: Caio Felipe Cruz <caio.soaresdacruz@windriver.com>
+---
+ Documentation/networking/devlink/devlink-params.rst | 3 +++
+ include/net/devlink.h                               | 5 ++++-
+ net/devlink/param.c                                 | 5 +++++
+ 3 files changed, 12 insertions(+), 1 deletion(-)
+
+diff --git a/Documentation/networking/devlink/devlink-params.rst b/Documentation/networking/devlink/devlink-params.rst
+index 4e01dc32b..ab5461173 100644
+--- a/Documentation/networking/devlink/devlink-params.rst
++++ b/Documentation/networking/devlink/devlink-params.rst
+@@ -137,3 +137,6 @@ own name.
+    * - ``event_eq_size``
+      - u32
+      - Control the size of asynchronous control events EQ.
++   * - ``clock_id``
++     - u64
++     - Clock ID used by the device for registering DPLL devices and pins.
+diff --git a/include/net/devlink.h b/include/net/devlink.h
+index 17413264b..61e131e13 100644
+--- a/include/net/devlink.h
++++ b/include/net/devlink.h
+@@ -519,7 +519,7 @@ enum devlink_param_generic_id {
+ 	DEVLINK_PARAM_GENERIC_ID_ENABLE_IWARP,
+ 	DEVLINK_PARAM_GENERIC_ID_IO_EQ_SIZE,
+ 	DEVLINK_PARAM_GENERIC_ID_EVENT_EQ_SIZE,
+-
++    DEVLINK_PARAM_GENERIC_ID_CLOCK_ID,
+ 	/* add new param generic ids above here*/
+ 	__DEVLINK_PARAM_GENERIC_ID_MAX,
+ 	DEVLINK_PARAM_GENERIC_ID_MAX = __DEVLINK_PARAM_GENERIC_ID_MAX - 1,
+@@ -577,6 +577,9 @@ enum devlink_param_generic_id {
+ #define DEVLINK_PARAM_GENERIC_EVENT_EQ_SIZE_NAME "event_eq_size"
+ #define DEVLINK_PARAM_GENERIC_EVENT_EQ_SIZE_TYPE DEVLINK_PARAM_TYPE_U32
+ 
++#define DEVLINK_PARAM_GENERIC_CLOCK_ID_NAME "clock_id"
++#define DEVLINK_PARAM_GENERIC_CLOCK_ID_TYPE DEVLINK_PARAM_TYPE_U64
++
+ #define DEVLINK_PARAM_GENERIC(_id, _cmodes, _get, _set, _validate)	\
+ {									\
+ 	.id = DEVLINK_PARAM_GENERIC_ID_##_id,				\
+diff --git a/net/devlink/param.c b/net/devlink/param.c
+index 6f1dd6d09..81298ed68 100644
+--- a/net/devlink/param.c
++++ b/net/devlink/param.c
+@@ -92,6 +92,11 @@ static const struct devlink_param devlink_param_generic[] = {
+ 		.name = DEVLINK_PARAM_GENERIC_EVENT_EQ_SIZE_NAME,
+ 		.type = DEVLINK_PARAM_GENERIC_EVENT_EQ_SIZE_TYPE,
+ 	},
++	{
++		.id = DEVLINK_PARAM_GENERIC_ID_CLOCK_ID,
++		.name = DEVLINK_PARAM_GENERIC_CLOCK_ID_NAME,
++		.type = DEVLINK_PARAM_GENERIC_CLOCK_ID_TYPE,
++	},
+ };
+ 
+ static int devlink_param_generic_verify(const struct devlink_param *param)
+-- 
+2.34.1
+

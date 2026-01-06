@@ -1,0 +1,77 @@
+From dd7dd21144699b26e3ee7c7618a2bf84dc256af5 Mon Sep 17 00:00:00 2001
+From: Ben Hutchings <benh@debian.org>
+Date: Mon, 15 May 2023 01:05:54 +0200
+Subject: [PATCH 8/9] linux-perf: Update build rules and dependencies for
+ change to demangling
+
+- Upstream commit dd317df07207 "perf build: Make binutil libraries opt
+  in" disabled use of both libbfd's bfd_demangle() and libiberty's
+  cplus_demangle() by default, enabled only if the BUILD_NONDISTRO
+  variable is set.
+- Upstream commit 3b4e4efe88f6 "perf symbol: Add abi::__cxa_demangle
+  C++ demangling support" then added support for abi::__cxa_demangle()
+  as the preferred option.
+
+It doesn't make sense that cplus_demangle() is disabled by default,
+because libiberty is still under LGPLv2.1.  However, by accepting the
+new default we can remove the build-dependency on libiberty-dev.
+__abi::cxa_demangle() is implemented (for GCC) in libstdc++, which is
+included in build-essential.  Therefore:
+
+- Stop setting NO_LIBBFD=1 as this is no longer necessary.
+- Check for __cxa_demangle in the perf executable.
+- Drop libiberty-dev from Build-Depends.
+
+[lz: porting from https://salsa.debian.org/kernel-team/linux/-/commit/
+d08991fc66f353a2622a2e25595f71ccc58ead2d to fix build error:
+grep cplus_demangle /<<PKGBUILDDIR>>/debian/build/build-tools/tools/perf/perf
+make[3]: *** [/<<PKGBUILDDIR>>/debian/rules.d/tools/perf/Makefile:58: all] Error 1
+]
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+---
+ debian/rules.d/tools/perf/Makefile            | 9 ++-------
+ debian/templates/tools-unversioned.control.in | 1 -
+ 2 files changed, 2 insertions(+), 8 deletions(-)
+
+diff --git a/debian/rules.d/tools/perf/Makefile b/debian/rules.d/tools/perf/Makefile
+index 8b14e2a..1e7bca4 100644
+--- a/debian/rules.d/tools/perf/Makefile
++++ b/debian/rules.d/tools/perf/Makefile
+@@ -10,11 +10,6 @@ MAKE_PERF += feature-jvmti=0
+ 
+ MAKE_PERF += perfexecdir=lib/perf-core plugindir=/usr/lib/traceevent/plugins tipdir=share/doc/linux-perf perf_include_dir=include/perf perf_examples_dir=share/doc/linux-perf/examples
+ 
+-# perf can link against libbfd if available, but the result is
+-# undistributable as they are licenced under GPL v2 and v3+
+-# respectively.  Override detection of libbfd.
+-MAKE_PERF += NO_LIBBFD=1
+-
+ # perf can link against libdebuginfod if available, but the result is
+ # undistributable for the same reason.  Override detection of
+ # libdebuginfod.
+@@ -58,8 +53,8 @@ endif
+ # Check that perf didn't get linked against incompatibly-licensed libraries
+ 	type ldd
+ 	! ldd $(CURDIR)/perf | grep -E '\blib(bfd|crypto|debuginfod)'
+-# Check that it includes cplus_demangle from libiberty
+-	grep cplus_demangle $(CURDIR)/perf
++# Check that it links against abi::__cxa_demangle from libstdc++
++	grep __cxa_demangle $(CURDIR)/perf
+ 
+ install:
+ 	+$(MAKE_PERF) -C $(top_srcdir)/tools/perf -f Makefile.perf install install-python_ext
+diff --git a/debian/templates/tools-unversioned.control.in b/debian/templates/tools-unversioned.control.in
+index 65e7238..c71b7e9 100644
+--- a/debian/templates/tools-unversioned.control.in
++++ b/debian/templates/tools-unversioned.control.in
+@@ -66,7 +66,6 @@ Build-Depends:
+  libaudit-dev,
+  libbabeltrace-dev,
+  libdw-dev,
+- libiberty-dev,
+  libnewt-dev,
+  libnuma-dev,
+ # version in bullseye is too old
+-- 
+2.17.1
+

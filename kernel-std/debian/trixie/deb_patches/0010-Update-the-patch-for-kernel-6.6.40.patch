@@ -1,0 +1,84 @@
+From f898cef6d862223c6160d27218d3f13b5d67bf3d Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Fri, 12 Jul 2024 02:58:07 +0000
+Subject: [PATCH] Update the patch for kernel 6.6.40
+
+Upgrade kernel from 6.6.7 to 6.6.40. Need build kernel 6.6.40
+with 6.1.27-bpo11 "debian" folder. Update the patch
+efi-lock-down-the-kernel-if-booted-in-secure-boot-mo.patch
+for context changes.
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ ...e-kernel-if-booted-in-secure-boot-mo.patch | 25 +++++++++++--------
+ 1 file changed, 14 insertions(+), 11 deletions(-)
+
+diff --git a/debian/patches/features/all/lockdown/efi-lock-down-the-kernel-if-booted-in-secure-boot-mo.patch b/debian/patches/features/all/lockdown/efi-lock-down-the-kernel-if-booted-in-secure-boot-mo.patch
+index 9687fa9..0ab4db9 100644
+--- a/debian/patches/features/all/lockdown/efi-lock-down-the-kernel-if-booted-in-secure-boot-mo.patch
++++ b/debian/patches/features/all/lockdown/efi-lock-down-the-kernel-if-booted-in-secure-boot-mo.patch
+@@ -17,27 +17,27 @@ help text for LOCK_DOWN_IN_EFI_SECURE_BOOT needs to be adjusted to
+ mention that lockdown is triggered in integrity mode]
+ Signed-off-by: Salvatore Bonaccorso <carnil@debian.org>
+ ---
+- arch/x86/kernel/setup.c           |    4 ++--
+- drivers/firmware/efi/secureboot.c |    3 +++
+- include/linux/security.h          |    6 ++++++
+- security/lockdown/Kconfig         |   15 +++++++++++++++
+- security/lockdown/lockdown.c      |    2 +-
+- 5 files changed, 27 insertions(+), 3 deletions(-)
++ arch/x86/kernel/setup.c           |  4 ++--
++ drivers/firmware/efi/secureboot.c |  5 +++++
++ include/linux/security.h          |  6 ++++++
++ security/lockdown/Kconfig         | 15 +++++++++++++++
++ security/lockdown/lockdown.c      |  2 +-
++ 5 files changed, 29 insertions(+), 3 deletions(-)
+ 
+ Index: debian-kernel/arch/x86/kernel/setup.c
+ ===================================================================
+ --- debian-kernel.orig/arch/x86/kernel/setup.c
+ +++ debian-kernel/arch/x86/kernel/setup.c
+-@@ -979,6 +979,8 @@ void __init setup_arch(char **cmdline_p)
++@@ -1028,6 +1028,8 @@ void __init setup_arch(char **cmdline_p)
+  	if (efi_enabled(EFI_BOOT))
+  		efi_init();
+  
+ +	efi_set_secure_boot(boot_params.secure_boot);
+ +
+  	reserve_ibft_region();
+- 	dmi_setup();
++ 	x86_init.resources.dmi_setup();
+  
+-@@ -1130,8 +1132,6 @@ void __init setup_arch(char **cmdline_p)
++@@ -1190,8 +1192,6 @@ void __init setup_arch(char **cmdline_p)
+  	/* Allocate bigger log buffer */
+  	setup_log_buf(1);
+  
+@@ -73,7 +73,7 @@ Index: debian-kernel/include/linux/security.h
+ ===================================================================
+ --- debian-kernel.orig/include/linux/security.h
+ +++ debian-kernel/include/linux/security.h
+-@@ -451,6 +451,7 @@ int security_inode_notifysecctx(struct i
++@@ -486,6 +486,7 @@ int security_inode_notifysecctx(struct inode *inode, void *ctx, u32 ctxlen);
+  int security_inode_setsecctx(struct dentry *dentry, void *ctx, u32 ctxlen);
+  int security_inode_getsecctx(struct inode *inode, void **ctx, u32 *ctxlen);
+  int security_locked_down(enum lockdown_reason what);
+@@ -81,7 +81,7 @@ Index: debian-kernel/include/linux/security.h
+  #else /* CONFIG_SECURITY */
+  
+  static inline int call_blocking_lsm_notifier(enum lsm_event event, void *data)
+-@@ -1291,6 +1292,11 @@ static inline int security_locked_down(e
++@@ -1404,6 +1405,11 @@ static inline int security_locked_down(enum lockdown_reason what)
+  {
+  	return 0;
+  }
+@@ -129,3 +129,6 @@ Index: debian-kernel/security/lockdown/lockdown.c
+  {
+  	if (kernel_locked_down >= level)
+  		return -EPERM;
++-- 
++2.43.0
++
+-- 
+2.43.0
+

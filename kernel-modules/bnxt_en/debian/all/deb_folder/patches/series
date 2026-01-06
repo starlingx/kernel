@@ -1,0 +1,4 @@
+0001-bnxt_en-fix-the-build-issue.patch
+0002-bnxt_re-Adapt-to-mlnx-ofa_kernel-for-StarlingX.patch
+0003-bnxt_en-bnxt_re-Use-irq_update_affinity_hint.patch
+0004-bnxt_en-Makefile-Allow-parallelized-build.patch
