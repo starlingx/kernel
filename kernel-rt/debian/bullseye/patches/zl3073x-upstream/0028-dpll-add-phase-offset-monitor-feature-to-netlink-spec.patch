@@ -1,4 +1,4 @@
-From 0672cd1573ce00106a4a7c7176a6159b0ccf7f15 Mon Sep 17 00:00:00 2001
+From e5229dc99a5b43190d2c75ec4b9a9cfd5f264657 Mon Sep 17 00:00:00 2001
 From: Arkadiusz Kubalewski <arkadiusz.kubalewski@intel.com>
 Date: Thu, 12 Jun 2025 17:28:33 +0200
 Subject: [PATCH] dpll: add phase-offset-monitor feature to netlink spec
@@ -24,11 +24,11 @@ Signed-off-by: Caio Felipe Cruz <caio.soaresdacruz@windriver.com>
  Documentation/driver-api/dpll.rst     | 18 ++++++++++++++++++
  Documentation/netlink/specs/dpll.yaml | 24 ++++++++++++++++++++++++
  drivers/dpll/dpll_nl.c                |  5 +++--
- include/uapi/linux/dpll.h             | 13 ++++++++++++-
- 4 files changed, 57 insertions(+), 3 deletions(-)
+ include/uapi/linux/dpll.h             | 12 ++++++++++++
+ 4 files changed, 57 insertions(+), 2 deletions(-)
 
 diff --git a/Documentation/driver-api/dpll.rst b/Documentation/driver-api/dpll.rst
-index 767cf731b..4ccfc3bb6 100644
+index e6855cd37..195e1e5d9 100644
 --- a/Documentation/driver-api/dpll.rst
 +++ b/Documentation/driver-api/dpll.rst
 @@ -214,6 +214,24 @@ offset values are fractional with 3-digit decimal places and shell be
@@ -57,10 +57,10 @@ index 767cf731b..4ccfc3bb6 100644
  =============
  
 diff --git a/Documentation/netlink/specs/dpll.yaml b/Documentation/netlink/specs/dpll.yaml
-index 6f1e8ba88..06c162337 100644
+index 8feefeae5..e9774678b 100644
 --- a/Documentation/netlink/specs/dpll.yaml
 +++ b/Documentation/netlink/specs/dpll.yaml
-@@ -210,6 +210,20 @@ definitions:
+@@ -240,6 +240,20 @@ definitions:
        integer part of a measured phase offset value.
        Value of (DPLL_A_PHASE_OFFSET % DPLL_PHASE_OFFSET_DIVIDER) is a
        fractional part of a measured phase offset value.
@@ -81,10 +81,10 @@ index 6f1e8ba88..06c162337 100644
  
  attribute-sets:
    -
-@@ -364,6 +378,14 @@ attribute-sets:
-         doc: |
-           A ratio of high to low state of a SYNC signal pulse embedded
-           into base clock frequency. Value is in percents.
+@@ -293,6 +307,14 @@ attribute-sets:
+           be put to message multiple times to indicate possible parallel
+           quality levels (e.g. one specified by ITU option 1 and another
+           one specified by option 2).
 +      -
 +        name: phase-offset-monitor
 +        type: u32
@@ -94,9 +94,9 @@ index 6f1e8ba88..06c162337 100644
 +          available inputs for changes of their phase offset against the
 +          dpll device.
    -
-     name: pin-parent-device
-     subset-of: pin
-@@ -441,6 +463,7 @@ operations:
+     name: pin
+     enum-name: dpll_a_pin
+@@ -483,6 +505,7 @@ operations:
              - temp
              - clock-id
              - type
@@ -104,7 +104,7 @@ index 6f1e8ba88..06c162337 100644
  
        dump:
          reply: *dev-attrs
-@@ -457,6 +480,7 @@ operations:
+@@ -499,6 +522,7 @@ operations:
          request:
            attributes:
              - id
@@ -137,10 +137,10 @@ index fe9b6893d..8de90310c 100644
  	},
  	{
 diff --git a/include/uapi/linux/dpll.h b/include/uapi/linux/dpll.h
-index b0654ade7..9f999b685 100644
+index 2b7ec2da4..67ac1839a 100644
 --- a/include/uapi/linux/dpll.h
 +++ b/include/uapi/linux/dpll.h
-@@ -169,6 +169,17 @@ enum dpll_pin_capabilities {
+@@ -192,6 +192,17 @@ enum dpll_pin_capabilities {
  
  #define DPLL_PHASE_OFFSET_DIVIDER	1000
  
@@ -158,15 +158,14 @@ index b0654ade7..9f999b685 100644
  enum dpll_a {
  	DPLL_A_ID = 1,
  	DPLL_A_MODULE_NAME,
-@@ -180,7 +191,7 @@ enum dpll_a {
- 	DPLL_A_TEMP,
+@@ -204,6 +215,7 @@ enum dpll_a {
  	DPLL_A_TYPE,
  	DPLL_A_LOCK_STATUS_ERROR,
--
-+    DPLL_A_PHASE_OFFSET_MONITOR,
+ 	DPLL_A_CLOCK_QUALITY_LEVEL,
++	DPLL_A_PHASE_OFFSET_MONITOR,
+ 
  	__DPLL_A_MAX,
  	DPLL_A_MAX = (__DPLL_A_MAX - 1)
- };
 -- 
 2.34.1
 

@@ -1,4 +1,4 @@
-From ca21481cfe83ad764a7a8b0623047b3ea24de6d7 Mon Sep 17 00:00:00 2001
+From 55011e67756c2010dddf63d82ccba85544d86011 Mon Sep 17 00:00:00 2001
 From: Caio Felipe Cruz <caio.soaresdacruz@windriver.com>
 Date: Tue, 17 Jun 2025 21:20:23 -0400
 Subject: [PATCH] zl3073x: replace string literal namespace
@@ -18,7 +18,7 @@ Signed-off-by: Caio Felipe Cruz <caio.soaresdacruz@windriver.com>
  4 files changed, 10 insertions(+), 10 deletions(-)
 
 diff --git a/drivers/dpll/zl3073x/core.c b/drivers/dpll/zl3073x/core.c
-index ba4c66e86..25d0fb1f2 100644
+index 49f0ab91c..deabcc7f9 100644
 --- a/drivers/dpll/zl3073x/core.c
 +++ b/drivers/dpll/zl3073x/core.c
 @@ -34,7 +34,7 @@ const struct zl3073x_chip_info zl30731_chip_info = {
@@ -73,9 +73,9 @@ index ba4c66e86..25d0fb1f2 100644
 -EXPORT_SYMBOL_NS_GPL(zl3073x_regmap_config, "ZL3073X");
 +EXPORT_SYMBOL_NS_GPL(zl3073x_regmap_config, ZL3073X);
  
- /**
-  * zl3073x_ref_freq_factorize - factorize given frequency
-@@ -1053,7 +1053,7 @@ int zl3073x_dev_probe(struct zl3073x_dev *zldev,
+ static bool
+ zl3073x_check_reg(struct zl3073x_dev *zldev, unsigned int reg, size_t size)
+@@ -1104,7 +1104,7 @@ int zl3073x_dev_probe(struct zl3073x_dev *zldev,
  
  	return 0;
  }
@@ -85,10 +85,10 @@ index ba4c66e86..25d0fb1f2 100644
  MODULE_AUTHOR("Ivan Vecera <ivecera@redhat.com>");
  MODULE_DESCRIPTION("Microchip ZL3073x core driver");
 diff --git a/drivers/dpll/zl3073x/devlink.c b/drivers/dpll/zl3073x/devlink.c
-index 7e7fe726e..070bdf2e3 100644
+index f55d5309d..29018da6c 100644
 --- a/drivers/dpll/zl3073x/devlink.c
 +++ b/drivers/dpll/zl3073x/devlink.c
-@@ -180,7 +180,7 @@ struct zl3073x_dev *zl3073x_devm_alloc(struct device *dev)
+@@ -312,7 +312,7 @@ struct zl3073x_dev *zl3073x_devm_alloc(struct device *dev)
  
  	return zldev;
  }
