@@ -1,0 +1,56 @@
+From 3e1715179c45ea253f0e36fcfa5e5636139ea5e2 Mon Sep 17 00:00:00 2001
+From: "Rafael J. Wysocki" <rafael.j.wysocki@intel.com>
+Date: Wed, 13 Aug 2025 12:29:51 +0200
+Subject: [PATCH] cpuidle: governors: menu: Special-case nohz_full CPUs
+
+When the menu governor runs on a nohz_full CPU and there are no user
+space timers in the workload on that CPU, it ends up selecting idle
+states with target residency values above TICK_NSEC all the time due to
+a tick_nohz_tick_stopped() check designed for a different use case.
+Namely, on nohz_full CPUs the fact that the tick has been stopped does
+not actually mean anything in particular, whereas in the other case it
+indicates that previously the CPU was expected to be idle sufficiently
+long for the tick to be stopped, so it is not unreasonable to expect
+it to be idle beyond the tick period length again.
+
+In some cases, this behavior causes latency in the workload to grow
+undesirably.  It may also cause the workload to consume more energy
+than necessary if the CPU does not spend enough time in the selected
+deep idle states.
+
+Address this by amending the tick_nohz_tick_stopped() check in question
+with a tick_nohz_full_cpu() one to avoid using the time till the next
+timer event as the predicted_ns value all the time on nohz_full CPUs.
+
+Signed-off-by: Rafael J. Wysocki <rafael.j.wysocki@intel.com>
+---
+ drivers/cpuidle/governors/menu.c | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/cpuidle/governors/menu.c b/drivers/cpuidle/governors/menu.c
+index a87c08f7eb68..37067e4e8e26 100644
+--- a/drivers/cpuidle/governors/menu.c
++++ b/drivers/cpuidle/governors/menu.c
+@@ -296,8 +296,18 @@ static int menu_select(struct cpuidle_driver *drv, struct cpuidle_device *dev,
+ 	 * in a shallow idle state for a long time as a result of it.  In that
+ 	 * case, say we might mispredict and use the known time till the closest
+ 	 * timer event for the idle state selection.
++	 *
++	 * However, on nohz_full CPUs the tick does not run as a rule and the
++	 * time till the closest timer event may always be effectively infinite,
++	 * so using it as a replacement for the predicted idle duration would
++	 * effectively always cause the prediction results to be discarded and
++	 * deep idle states to be selected all the time.  That might introduce
++	 * unwanted latency into the workload and cause more energy than
++	 * necessary to be consumed if the discarded prediction results are
++	 * actually accurate, so skip nohz_full CPUs here.
+ 	 */
+-	if (tick_nohz_tick_stopped() && predicted_ns < TICK_NSEC)
++	if (tick_nohz_tick_stopped() && !tick_nohz_full_cpu(dev->cpu) &&
++	    predicted_ns < TICK_NSEC)
+ 		predicted_ns = data->next_timer_ns;
+ 
+ 	/*
+-- 
+2.47.3
+

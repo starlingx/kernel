@@ -60,3 +60,4 @@ zl3073x-backport/0001-dpll-zl3073x-Use-kthread_create_worker.patch
 zl3073x-backport/0002-zl3073x-replace-string-literal-namespace.patch
 zl3073x-backport/0003-devlink-introduce-devlink_nl_put_u64.patch
 zl3073x-backport/0004-dpll-zl3073x-Fix-missing-header-build-error-on-older.patch
+0014-cpuidle-governors-menu-Special-case-nohz_full-CPUs.patch
