@@ -1,1 +1,4 @@
 0001-intel-iavf-pass-linux-common-header-to-check_aux_bus.patch
+0002-net-remove-gfp_mask-from-napi_alloc_skb.patch
+0003-net-Add-struct-kernel_ethtool_ts_info.patch
+0004-Remove-second-parameter-of-__assign_str.patch

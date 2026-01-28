@@ -1,0 +1,43 @@
+From d207e2a475db79ccfdd801be39785b72c834c24e Mon Sep 17 00:00:00 2001
+From: Jiping Ma <jiping.ma2@windriver.com>
+Date: Thu, 20 Mar 2025 09:15:48 +0000
+Subject: [PATCH 3/4] net: Add struct kernel_ethtool_ts_info
+
+This commit accommodates commit 2111375b85ad("net: Add struct 
+kernel_ethtool_ts_info") which renames ethtool_ts_info to 
+kernel_ethtool_ts_info. This commit was merged in the v6.12 development
+cycle and causes compilation failures with the v6.12 kernel, which are
+listed below.
+
+References:
+* https://git.yoctoproject.org/linux-yocto/commit/?h=2111375b85ad
+
+Resolved compilation errors:
+
+src/iavf_ethtool.c:2668:18: error: initialization of int (*)(struct net_device *,\
+ struct kernel_ethtool_ts_info *) from incompatible pointer type int (*)(struct  \
+ net_device *, struct ethtool_ts_info *) [-Werror=incompatible-pointer-types]
+ 2668 |  .get_ts_info  = iavf_get_ts_info,
+      |                  ^~~~~~~~~~~~~~~~
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+---
+ src/iavf_ethtool.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/iavf_ethtool.c b/src/iavf_ethtool.c
+index 8c1d0b4..acd7a33 100644
+--- a/src/iavf_ethtool.c
++++ b/src/iavf_ethtool.c
+@@ -2571,7 +2571,7 @@ static int iavf_set_rxfh(struct net_device *netdev, const u32 *indir,
+  * Based on device features enabled, report the Tx and Rx timestamp
+  * capabilities, as well as the PTP hardware clock index to user space.
+  */
+-static int iavf_get_ts_info(struct net_device *netdev, struct ethtool_ts_info *info)
++static int iavf_get_ts_info(struct net_device *netdev, struct kernel_ethtool_ts_info *info)
+ {
+ 	struct iavf_adapter *adapter = netdev_priv(netdev);
+ 
+-- 
+2.47.1
+

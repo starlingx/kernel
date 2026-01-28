@@ -1,9 +1,3 @@
-iavf (4.13.19-1) unstable; urgency=medium
-
-  * Update iavf driver from v4.11.1 to v4.13.19
-
- -- Iulian Mocanu <iulian.mocanu@windriver.com>  Mon, 11 Jan 2026 12:30:32 +0800
-
 iavf (4.11.1-1) unstable; urgency=medium
 
   * Update iavf driver from v4.5.3.2 to v4.11.1
