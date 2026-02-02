@@ -1,4 +1,4 @@
-From ea91b36e7a95b7c810314a4d722960150725a07f Mon Sep 17 00:00:00 2001
+From fafda3368eb9efed46d947808a044d2b3fb8c37e Mon Sep 17 00:00:00 2001
 From: Arkadiusz Kubalewski <arkadiusz.kubalewski@intel.com>
 Date: Thu, 12 Jun 2025 17:28:34 +0200
 Subject: [PATCH] dpll: add phase_offset_monitor_get/set callback ops
@@ -27,10 +27,10 @@ Signed-off-by: Caio Felipe Cruz <caio.soaresdacruz@windriver.com>
  2 files changed, 75 insertions(+), 2 deletions(-)
 
 diff --git a/drivers/dpll/dpll_netlink.c b/drivers/dpll/dpll_netlink.c
-index 3d6da67d7..0d8b2a793 100644
+index 815de752b..5759cbf6b 100644
 --- a/drivers/dpll/dpll_netlink.c
 +++ b/drivers/dpll/dpll_netlink.c
-@@ -112,6 +112,26 @@ dpll_msg_add_mode_supported(struct sk_buff *msg, struct dpll_device *dpll,
+@@ -126,6 +126,26 @@ dpll_msg_add_mode_supported(struct sk_buff *msg, struct dpll_device *dpll,
  	return 0;
  }
  
@@ -57,7 +57,7 @@ index 3d6da67d7..0d8b2a793 100644
  static int
  dpll_msg_add_lock_status(struct sk_buff *msg, struct dpll_device *dpll,
  			 struct netlink_ext_ack *extack)
-@@ -553,6 +573,9 @@ dpll_device_get_one(struct dpll_device *dpll, struct sk_buff *msg,
+@@ -591,6 +611,9 @@ dpll_device_get_one(struct dpll_device *dpll, struct sk_buff *msg,
  		return ret;
  	if (nla_put_u32(msg, DPLL_A_TYPE, dpll->type))
  		return -EMSGSIZE;
@@ -67,7 +67,7 @@ index 3d6da67d7..0d8b2a793 100644
  
  	return 0;
  }
-@@ -708,6 +731,31 @@ int dpll_pin_change_ntf(struct dpll_pin *pin)
+@@ -746,6 +769,31 @@ int dpll_pin_change_ntf(struct dpll_pin *pin)
  }
  EXPORT_SYMBOL_GPL(dpll_pin_change_ntf);
  
@@ -99,7 +99,7 @@ index 3d6da67d7..0d8b2a793 100644
  static int
  dpll_pin_freq_set(struct dpll_pin *pin, struct nlattr *a,
  		  struct netlink_ext_ack *extack)
-@@ -1495,12 +1543,29 @@ int dpll_nl_device_get_doit(struct sk_buff *skb, struct genl_info *info)
+@@ -1533,12 +1581,29 @@ int dpll_nl_device_get_doit(struct sk_buff *skb, struct genl_info *info)
  	return genlmsg_reply(msg, info);
  }
  
@@ -132,13 +132,13 @@ index 3d6da67d7..0d8b2a793 100644
  {
  	struct dpll_dump_ctx *ctx = dpll_dump_context(cb);
 diff --git a/include/linux/dpll.h b/include/linux/dpll.h
-index 24521bbc7..08e5272b4 100644
+index 5e4f9ab1c..6ad6c2968 100644
 --- a/include/linux/dpll.h
 +++ b/include/linux/dpll.h
-@@ -27,6 +27,14 @@ struct dpll_device_ops {
- 			       struct netlink_ext_ack *extack);
- 	int (*temp_get)(const struct dpll_device *dpll, void *dpll_priv,
- 			s32 *temp, struct netlink_ext_ack *extack);
+@@ -30,6 +30,14 @@ struct dpll_device_ops {
+ 				       void *dpll_priv,
+ 				       unsigned long *qls,
+ 				       struct netlink_ext_ack *extack);
 +	int (*phase_offset_monitor_set)(const struct dpll_device *dpll,
 +					void *dpll_priv,
 +					enum dpll_feature_state state,
