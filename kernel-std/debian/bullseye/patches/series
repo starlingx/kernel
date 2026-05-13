@@ -63,3 +63,14 @@ zl3073x-backport/0004-dpll-zl3073x-Fix-missing-header-build-error-on-older.patch
 0014-cpuidle-governors-menu-Special-case-nohz_full-CPUs.patch
 0015-Revert-PCI-IOV-Add-PCI-rescan-remove-locking-when-en.patch
 0016-PCI-IOV-Fix-race-between-SR-IOV-enable-disable-and-h.patch
+serial/0001-serial-8250-use-serial_port_in-out-helpers.patch
+serial/0002-serial-8250_dw-Comment-possible-corner-cases-in-seri.patch
+serial/0003-serial-introduce-uart_port_lock-guard-s.patch
+serial/0004-serial-8250-convert-serial8250_do_shutdown-to-scoped.patch
+serial/0005-serial-8250-Protect-LCR-write-in-shutdown.patch
+serial/0006-serial-8250_dw-Avoid-unnecessary-LCR-writes.patch
+serial/0007-serial-8250-Add-serial8250_handle_irq_locked.patch
+serial/0008-serial-8250_dw-Rework-dw8250_handle_irq-locking-and-.patch
+serial/0009-serial-8250_dw-Rework-IIR_NO_INT-handling-to-stop-in.patch
+serial/0010-serial-8250_dw-Ensure-BUSY-is-deasserted.patch
+serial/0011-serial-8250-Add-late-synchronize_irq-to-shutdown-to-.patch

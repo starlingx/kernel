@@ -1,0 +1,91 @@
+From 20b4e5c1c8d9a99218a2f7fcd6cb60af9404da74 Mon Sep 17 00:00:00 2001
+Message-ID: <20b4e5c1c8d9a99218a2f7fcd6cb60af9404da74.1778656477.git.ionut.nechita@windriver.com>
+In-Reply-To: <cover.1778656477.git.ionut.nechita@windriver.com>
+References: <cover.1778656477.git.ionut.nechita@windriver.com>
+From: "Jiri Slaby (SUSE)" <jirislaby@kernel.org>
+Date: Wed, 13 May 2026 09:11:32 +0300
+Subject: [PATCH v3 6.12.y 04/10] serial: 8250: convert
+ serial8250_do_shutdown() to scoped_guard()
+
+This is a partial backport of upstream commit b339809edda1 ("serial:
+8250: use guard()s"). Only the serial8250_do_shutdown() hunks of
+drivers/tty/serial/8250/8250_port.c are taken; the rest of the
+upstream commit is not needed for the BUSY deassert series.
+
+This conversion is a textual prerequisite for applying
+commit 59a33d83bbe6 ("serial: 8250: Protect LCR write in shutdown")
+without conflicts, because that commit moves the LCR write into a
+scoped_guard(uart_port_lock_irqsave) block that does not yet exist
+in 6.12.y.
+
+This depends on commit 0fd60b689b0d ("serial: introduce
+uart_port_lock() guard()s") (also backported in this series) which
+introduces DEFINE_LOCK_GUARD_1(uart_port_lock_irqsave, ...).
+
+Signed-off-by: "Jiri Slaby (SUSE)" <jirislaby@kernel.org>
+Link: https://lore.kernel.org/r/20250814072456.182853-10-jirislaby@kernel.org
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+[Ionut: partial backport - only the serial8250_do_shutdown() hunks
+ from b339809edda1, per Ilpo's guidance to take "8250_port.c shutdown
+ hunks" from that commit; the remaining hunks are not required for
+ the BUSY deassert series.]
+Signed-off-by: Ionut Nechita <ionut.nechita@windriver.com>
+---
+ drivers/tty/serial/8250/8250_port.c | 27 +++++++++++++--------------
+ 1 file changed, 13 insertions(+), 14 deletions(-)
+
+diff --git a/drivers/tty/serial/8250/8250_port.c b/drivers/tty/serial/8250/8250_port.c
+index 050bbb68f9a7..5965581e4f50 100644
+--- a/drivers/tty/serial/8250/8250_port.c
++++ b/drivers/tty/serial/8250/8250_port.c
+@@ -2480,7 +2480,6 @@ static int serial8250_startup(struct uart_port *port)
+ void serial8250_do_shutdown(struct uart_port *port)
+ {
+ 	struct uart_8250_port *up = up_to_u8250p(port);
+-	unsigned long flags;
+ 
+ 	serial8250_rpm_get(up);
+ 	/*
+@@ -2488,26 +2487,26 @@ void serial8250_do_shutdown(struct uart_port *port)
+ 	 *
+ 	 * Synchronize UART_IER access against the console.
+ 	 */
+-	uart_port_lock_irqsave(port, &flags);
+-	up->ier = 0;
+-	serial_port_out(port, UART_IER, 0);
+-	uart_port_unlock_irqrestore(port, flags);
++	scoped_guard(uart_port_lock_irqsave, port) {
++		up->ier = 0;
++		serial_port_out(port, UART_IER, 0);
++	}
+ 
+ 	synchronize_irq(port->irq);
+ 
+ 	if (up->dma)
+ 		serial8250_release_dma(up);
+ 
+-	uart_port_lock_irqsave(port, &flags);
+-	if (port->flags & UPF_FOURPORT) {
+-		/* reset interrupts on the AST Fourport board */
+-		inb((port->iobase & 0xfe0) | 0x1f);
+-		port->mctrl |= TIOCM_OUT1;
+-	} else
+-		port->mctrl &= ~TIOCM_OUT2;
++	scoped_guard(uart_port_lock_irqsave, port) {
++		if (port->flags & UPF_FOURPORT) {
++			/* reset interrupts on the AST Fourport board */
++			inb((port->iobase & 0xfe0) | 0x1f);
++			port->mctrl |= TIOCM_OUT1;
++		} else
++			port->mctrl &= ~TIOCM_OUT2;
+ 
+-	serial8250_set_mctrl(port, port->mctrl);
+-	uart_port_unlock_irqrestore(port, flags);
++		serial8250_set_mctrl(port, port->mctrl);
++	}
+ 
+ 	/*
+ 	 * Disable break condition and FIFOs
+-- 
+2.54.0
+
