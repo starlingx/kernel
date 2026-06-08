@@ -1,1 +1,0 @@
-../../kernel-std/files/mod-sign.sh

@@ -1,1 +1,0 @@
-../../kernel-std/files/filter-x86_64.sh

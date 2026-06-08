@@ -1,1 +1,0 @@
-../../kernel-std/files/generate_all_configs.sh
