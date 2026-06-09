@@ -1,0 +1,143 @@
+From a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0 Mon Sep 17 00:00:00 2001
+From: Catalin Rapiteanu <viorel-catalin.rapiteanu@windriver.com>
+Date: Wed, 11 Jun 2026 00:00:00 +0300
+Subject: [PATCH] defines: Keep only x86/amd64 architecture
+
+Remove all non-x86 kernel architectures from debian/config/defines.toml.
+StarlingX only targets amd64, so building libc-dev-cross packages for
+alpha, arc, arm, arm64, mips, powerpc, riscv, s390, sh, sparc etc. is
+unnecessary and wastes build time.
+
+Also remove i386 and x32 from the x86 kernelarch since we only need
+amd64.
+
+Signed-off-by: Catalin Rapiteanu <viorel-catalin.rapiteanu@windriver.com>
+---
+ debian/config/defines.toml | 113 -------------------------------------
+ 1 file changed, 113 deletions(-)
+
+--- a/debian/config/defines.toml	2026-06-10 17:19:52.269400047 +0300
++++ b/debian/config/defines.toml	2026-06-10 17:38:23.709445768 +0300
+@@ -1,120 +1,7 @@
+ [[kernelarch]]
+-name = 'alpha'
+-  [[kernelarch.debianarch]]
+-  name = 'alpha'
+-
+-[[kernelarch]]
+-name = 'arc'
+-  [[kernelarch.debianarch]]
+-  name = 'arc'
+-    [kernelarch.debianarch.packages]
+-    libc_dev_cross_only = true
+-
+-[[kernelarch]]
+-name = 'arm'
+-  [[kernelarch.debianarch]]
+-  name = 'armel'
+-  [[kernelarch.debianarch]]
+-  name = 'armhf'
+-
+-[[kernelarch]]
+-name = 'arm64'
+-  [[kernelarch.debianarch]]
+-  name = 'arm64'
+-
+-[[kernelarch]]
+-name = 'parisc'
+-  [[kernelarch.debianarch]]
+-  name = 'hppa'
+-
+-[[kernelarch]]
+-name = 'loongarch'
+-  [[kernelarch.debianarch]]
+-  name = 'loong64'
+-
+-[[kernelarch]]
+-name = 'm68k'
+-  [[kernelarch.debianarch]]
+-  name = 'm68k'
+-
+-[[kernelarch]]
+-name = 'mips'
+-  [[kernelarch.debianarch]]
+-  name = 'mips'
+-  [[kernelarch.debianarch]]
+-  name = 'mips64'
+-  [[kernelarch.debianarch]]
+-  name = 'mips64r6'
+-    [kernelarch.debianarch.packages]
+-    libc_dev_cross_only = true
+-  [[kernelarch.debianarch]]
+-  name = 'mips64el'
+-  [[kernelarch.debianarch]]
+-  name = 'mips64r6el'
+-  [[kernelarch.debianarch]]
+-  name = 'mipsel'
+-  [[kernelarch.debianarch]]
+-  name = 'mipsn32'
+-    [kernelarch.debianarch.packages]
+-    libc_dev_cross_only = true
+-  [[kernelarch.debianarch]]
+-  name = 'mipsn32el'
+-    [kernelarch.debianarch.packages]
+-    libc_dev_cross_only = true
+-  [[kernelarch.debianarch]]
+-  name = 'mipsn32r6'
+-    [kernelarch.debianarch.packages]
+-    libc_dev_cross_only = true
+-  [[kernelarch.debianarch]]
+-  name = 'mipsn32r6el'
+-    [kernelarch.debianarch.packages]
+-    libc_dev_cross_only = true
+-  [[kernelarch.debianarch]]
+-  name = 'mipsr6'
+-    [kernelarch.debianarch.packages]
+-    libc_dev_cross_only = true
+-  [[kernelarch.debianarch]]
+-  name = 'mipsr6el'
+-    [kernelarch.debianarch.packages]
+-    libc_dev_cross_only = true
+-
+-[[kernelarch]]
+-name = 'powerpc'
+-  [[kernelarch.debianarch]]
+-  name = 'powerpc'
+-  [[kernelarch.debianarch]]
+-  name = 'ppc64'
+-  [[kernelarch.debianarch]]
+-  name = 'ppc64el'
+-
+-[[kernelarch]]
+-name = 'riscv'
+-  [[kernelarch.debianarch]]
+-  name = 'riscv64'
+-
+-[[kernelarch]]
+-name = 's390'
+-  [[kernelarch.debianarch]]
+-  name = 's390x'
+-
+-[[kernelarch]]
+-name = 'sh'
+-  [[kernelarch.debianarch]]
+-  name = 'sh4'
+-
+-[[kernelarch]]
+-name = 'sparc'
+-  [[kernelarch.debianarch]]
+-  name = 'sparc64'
+-
+-[[kernelarch]]
+ name = 'x86'
+   [[kernelarch.debianarch]]
+   name = 'amd64'
+-  [[kernelarch.debianarch]]
+-  name = 'i386'
+-  [[kernelarch.debianarch]]
+-  name = 'x32'
+ 
+ [[featureset]]
+ name = 'none'
+-- 
+2.47.3

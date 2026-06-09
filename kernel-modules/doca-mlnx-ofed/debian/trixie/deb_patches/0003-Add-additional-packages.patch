@@ -1,0 +1,45 @@
+From c3c9f6c3818770c4b0679fe53e382cf4339f6088 Mon Sep 17 00:00:00 2001
+From: Catalin Rapiteanu <viorel-catalin.rapiteanu@windriver.com>
+Date: Thu, 11 Jun 2026 20:27:54 +0300
+Subject: [PATCH 3/3] Add additional packages
+
+---
+ debian/control | 24 ++++++++++--------------
+ 1 file changed, 10 insertions(+), 14 deletions(-)
+
+diff --git a/debian/control b/debian/control
+index ce36656..0a93f91 100644
+--- a/debian/control
++++ b/debian/control
+@@ -12,18 +12,14 @@ Depends: ${misc:Depends}, coreutils, pciutils, grep, procps, module-init-tools |
+ Conflicts: mlnx-en-utils
+ Description: Userspace tools to restart and tune mlnx-ofed kernel modules
+ 
+-Package: mlnx-ofed-kernel-dkms
+-Section: kernel
+-Architecture: all
+-Depends: dkms, ${misc:Depends}, mlnx-ofed-kernel-utils, libc6-dev, gcc,
+-Recommends: linux-headers-arm64 | linux-headers-powerpc | linux-headers-ppc64 | linux-headers-ppc64le | linux-headers-amd64 | linux-headers-generic | linux-headers
+-Provides: mlnx-rdma-rxe-dkms, fwctl-dkms
+-Conflicts: mlnx-rdma-rxe-dkms, fwctl-dkms
+-Replaces: mlnx-rdma-rxe-dkms, fwctl-dkms
+-Description: DKMS support for mlnx-ofed kernel modules
+- This package provides integration with the DKMS infrastructure for
+- automatically building out of tree kernel modules.
+- .
++Package: mlnx-ofed-kernel-modules@KERNEL_TYPE@
++Architecture: any
++Depends: ${shlibs:Depends}, ${misc:Depends}, mlnx-ofed-kernel-utils
++Description: ofed kernel modules
++ This package provides the mlnx-ofed out of tree kernel modules.
++
++Package: mlnx-ofed-kernel-dev@KERNEL_TYPE@
++Architecture: any
++Depends: ${shlibs:Depends}, ${misc:Depends}
++Description: ofed kernel modules
+  This package provides the source code for the mlnx-ofed kernel modules.
+- .
+- This package contains the source to be built with dkms.
+-- 
+2.47.3
+

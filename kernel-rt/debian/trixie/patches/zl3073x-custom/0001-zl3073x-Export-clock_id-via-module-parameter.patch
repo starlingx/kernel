@@ -1,44 +1,50 @@
-From 13549944e92bd4ceff8b83255a26617850812e09 Mon Sep 17 00:00:00 2001
+From 4a689a146a5aed9012b542c55bf989b304ed2725 Mon Sep 17 00:00:00 2001
 From: Caio Felipe Cruz <caio.soaresdacruz@windriver.com>
-Date: Tue, 17 Jun 2025 22:08:52 -0400
+Date: Thu, 18 Jun 2026 16:50:46 +0300
 Subject: [PATCH] zl3073x: Export clock_id via module parameter
 
 Export the clock_id assigned during probe as a read-only module
 parameter to allow user space tools or scripts to retrieve it for
 diagnostics or configuration purposes.
 
+
 Signed-off-by: Caio Felipe Cruz <caio.soaresdacruz@windriver.com>
+[cr: Adapted the patch for kernel 6.18.15 on trixie.]
+Signed-off-by: Catalin Rapiteanu <viorel-catalin.rapiteanu@windriver.com>
+Signed-off-by: Ionut Nechita <ionut.nechita@windriver.com>
 ---
- drivers/dpll/zl3073x/core.c | 9 +++++++++
- 1 file changed, 9 insertions(+)
+ drivers/dpll/zl3073x/core.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
 diff --git a/drivers/dpll/zl3073x/core.c b/drivers/dpll/zl3073x/core.c
-index b8d51cf9e..7c1a07f7d 100644
+index 10e036ccf08f..99d4bb3138d5 100644
 --- a/drivers/dpll/zl3073x/core.c
 +++ b/drivers/dpll/zl3073x/core.c
-@@ -95,6 +95,12 @@ const struct zl3073x_chip_info zl30735_chip_info = {
+@@ -80,6 +80,14 @@ const struct regmap_config zl3073x_regmap_config = {
  };
- EXPORT_SYMBOL_NS_GPL(zl30735_chip_info, "ZL3073X");
+ EXPORT_SYMBOL_NS_GPL(zl3073x_regmap_config, "ZL3073X");
  
++/* Export the clock_id assigned during probe as a read-only module parameter
++ * so user space tools or scripts can retrieve it for diagnostics or
++ * configuration purposes.
++ */
 +static u64 clock_id;
-+
-+/* Use module_param to export clock_id */
-+module_param(clock_id, ullong, 0444);  // Read-only from user space
++module_param(clock_id, ullong, 0444);
 +MODULE_PARM_DESC(clock_id, "Clock ID exported to user space");
 +
- #define ZL_RANGE_OFFSET		0x80
- #define ZL_PAGE_SIZE		0x80
- #define ZL_NUM_PAGES		256
-@@ -1071,6 +1077,9 @@ int zl3073x_dev_probe(struct zl3073x_dev *zldev,
- 	/* Initialize clock ID */
- 	zl3073x_dev_clock_id_init(zldev);
+ static bool
+ zl3073x_check_reg(struct zl3073x_dev *zldev, unsigned int reg, size_t size)
+ {
+@@ -997,6 +1005,9 @@ int zl3073x_dev_probe(struct zl3073x_dev *zldev)
+ 	 */
+ 	zldev->clock_id = get_random_u64();
  
-+    /* Export the clock_id as a module parameter */
-+    clock_id = zldev->clock_id;
++	/* Export the clock_id as a read-only module parameter */
++	clock_id = zldev->clock_id;
 +
-     /* Default phase offset averaging factor */
+ 	/* Default phase offset averaging factor */
  	zldev->phase_avg_factor = 2;
  
 -- 
-2.34.1
+2.43.0
 

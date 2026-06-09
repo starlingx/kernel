@@ -1,0 +1,133 @@
+From 7b93291f8a6bd7696661313f8a7491702476e170 Mon Sep 17 00:00:00 2001
+From: Ivan Vecera <ivecera@redhat.com>
+Date: Mon, 26 Jan 2026 17:22:51 +0100
+Subject: [PATCH 09/27] dpll: expose fractional frequency offset in ppt
+
+Currently, the dpll subsystem exports the fractional frequency offset
+(FFO) in parts per million (ppm). This granularity is insufficient for
+high-precision synchronization scenarios which often require parts per
+trillion (ppt) resolution.
+
+Add a new netlink attribute DPLL_A_PIN_FRACTIONAL_FREQUENCY_OFFSET_PPT
+to expose the FFO in ppt.
+
+Update the dpll netlink core to expect the driver-provided FFO value
+to be in ppt. To maintain backward compatibility with existing userspace
+tools, populate the legacy DPLL_A_PIN_FRACTIONAL_FREQUENCY_OFFSET
+attribute by dividing the new ppt value by 1,000,000.
+
+Update the zl3073x and mlx5 drivers to provide the FFO value in ppt:
+- zl3073x: adjust the fixed-point calculation to produce ppt (10^12)
+  instead of ppm (10^6).
+- mlx5: scale the existing ppm value by 1,000,000.
+
+Signed-off-by: Ivan Vecera <ivecera@redhat.com>
+Reviewed-by: Arkadiusz Kubalewski <arkadiusz.kubalewski@intel.com>
+Reviewed-by: Jiri Pirko <jiri@nvidia.com>
+Link: https://patch.msgid.link/20260126162253.27890-1-ivecera@redhat.com
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+(cherry picked from commit bc443c253fcdd2636e2a29fde3f749d39d479cf0)
+---
+ Documentation/netlink/specs/dpll.yaml          | 11 +++++++++++
+ drivers/dpll/dpll_netlink.c                    | 10 +++++++++-
+ drivers/dpll/zl3073x/core.c                    |  7 +++++--
+ drivers/net/ethernet/mellanox/mlx5/core/dpll.c |  2 +-
+ include/uapi/linux/dpll.h                      |  1 +
+ 5 files changed, 27 insertions(+), 4 deletions(-)
+
+diff --git a/Documentation/netlink/specs/dpll.yaml b/Documentation/netlink/specs/dpll.yaml
+index b55afa77eac4..3dd48a32f783 100644
+--- a/Documentation/netlink/specs/dpll.yaml
++++ b/Documentation/netlink/specs/dpll.yaml
+@@ -446,6 +446,16 @@ attribute-sets:
+         doc: |
+           Granularity of phase adjustment, in picoseconds. The value of
+           phase adjustment must be a multiple of this granularity.
++      -
++        name: fractional-frequency-offset-ppt
++        type: sint
++        doc: |
++          The FFO (Fractional Frequency Offset) of the pin with respect to
++          the nominal frequency.
++          Value = (frequency_measured - frequency_nominal) / frequency_nominal
++          Value is in PPT (parts per trillion, 10^-12).
++          Note: This attribute provides higher resolution than the standard
++          fractional-frequency-offset (which is in PPM).
+ 
+   -
+     name: pin-parent-device
+@@ -628,6 +638,7 @@ operations:
+             - phase-adjust-max
+             - phase-adjust
+             - fractional-frequency-offset
++            - fractional-frequency-offset-ppt
+             - esync-frequency
+             - esync-frequency-supported
+             - esync-pulse
+diff --git a/drivers/dpll/dpll_netlink.c b/drivers/dpll/dpll_netlink.c
+index 499bca460b1e..904199ddd178 100644
+--- a/drivers/dpll/dpll_netlink.c
++++ b/drivers/dpll/dpll_netlink.c
+@@ -389,7 +389,15 @@ static int dpll_msg_add_ffo(struct sk_buff *msg, struct dpll_pin *pin,
+ 			return 0;
+ 		return ret;
+ 	}
+-	return nla_put_sint(msg, DPLL_A_PIN_FRACTIONAL_FREQUENCY_OFFSET, ffo);
++	/* Put the FFO value in PPM to preserve compatibility with older
++	 * programs.
++	 */
++	ret = nla_put_sint(msg, DPLL_A_PIN_FRACTIONAL_FREQUENCY_OFFSET,
++			   div_s64(ffo, 1000000));
++	if (ret)
++		return -EMSGSIZE;
++	return nla_put_sint(msg, DPLL_A_PIN_FRACTIONAL_FREQUENCY_OFFSET_PPT,
++			    ffo);
+ }
+ 
+ static int
+diff --git a/drivers/dpll/zl3073x/core.c b/drivers/dpll/zl3073x/core.c
+index 383e2397dd03..63bd97181b9e 100644
+--- a/drivers/dpll/zl3073x/core.c
++++ b/drivers/dpll/zl3073x/core.c
+@@ -710,8 +710,11 @@ zl3073x_ref_ffo_update(struct zl3073x_dev *zldev)
+ 		if (rc)
+ 			return rc;
+ 
+-		/* Convert to ppm -> ffo = (10^6 * value) / 2^32 */
+-		zldev->ref[i].ffo = mul_s64_u64_shr(value, 1000000, 32);
++		/* Convert to ppt
++		 * ffo = (10^12 * value) / 2^32
++		 * ffo = ( 5^12 * value) / 2^20
++		 */
++		zldev->ref[i].ffo = mul_s64_u64_shr(value, 244140625, 20);
+ 	}
+ 
+ 	return 0;
+diff --git a/drivers/net/ethernet/mellanox/mlx5/core/dpll.c b/drivers/net/ethernet/mellanox/mlx5/core/dpll.c
+index 1e5522a19483..3ea8a1766ae2 100644
+--- a/drivers/net/ethernet/mellanox/mlx5/core/dpll.c
++++ b/drivers/net/ethernet/mellanox/mlx5/core/dpll.c
+@@ -136,7 +136,7 @@ mlx5_dpll_pin_ffo_get(struct mlx5_dpll_synce_status *synce_status,
+ {
+ 	if (!synce_status->oper_freq_measure)
+ 		return -ENODATA;
+-	*ffo = synce_status->frequency_diff;
++	*ffo = 1000000LL * synce_status->frequency_diff;
+ 	return 0;
+ }
+ 
+diff --git a/include/uapi/linux/dpll.h b/include/uapi/linux/dpll.h
+index b7ff9c44f9aa..de0005f28e5c 100644
+--- a/include/uapi/linux/dpll.h
++++ b/include/uapi/linux/dpll.h
+@@ -253,6 +253,7 @@ enum dpll_a_pin {
+ 	DPLL_A_PIN_ESYNC_PULSE,
+ 	DPLL_A_PIN_REFERENCE_SYNC,
+ 	DPLL_A_PIN_PHASE_ADJUST_GRAN,
++	DPLL_A_PIN_FRACTIONAL_FREQUENCY_OFFSET_PPT,
+ 
+ 	__DPLL_A_PIN_MAX,
+ 	DPLL_A_PIN_MAX = (__DPLL_A_PIN_MAX - 1)
+-- 
+2.43.0
+

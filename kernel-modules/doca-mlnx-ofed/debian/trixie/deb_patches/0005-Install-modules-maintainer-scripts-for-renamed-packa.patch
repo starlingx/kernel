@@ -1,0 +1,44 @@
+From a1b2c3d4e5f60718293a4b5c6d7e8f9012345678 Mon Sep 17 00:00:00 2001
+From: Catalin Rapiteanu <viorel-catalin.rapiteanu@windriver.com>
+Date: Fri, 12 Jun 2026 03:25:00 +0300
+Subject: [PATCH 5/5] Install modules maintainer scripts for renamed package
+
+Patch 0003 renamed the modules binary package to
+mlnx-ofed-kernel-modules@KERNEL_TYPE@ (e.g. mlnx-ofed-kernel-modules-rt),
+but the maintainer-script source files are still named after the
+original package (mlnx-ofed-kernel-modules.postinst / .prerm /
+.triggers). debhelper matches maintainer scripts by exact package name,
+so dh_installdeb no longer stages them into the renamed package's
+DEBIAN/ directory.
+
+As a result override_dh_installdeb fails:
+
+  sed: can't read debian/mlnx-ofed-kernel-modules-rt/DEBIAN/prerm:
+       No such file or directory
+
+Explicitly copy the modules postinst/prerm/triggers into the renamed
+package's DEBIAN/ directory in the non-DKMS branch before templating
+@KVER@/@ARCH@, so the update-alternatives logic ships in the package.
+
+Signed-off-by: Catalin Rapiteanu <viorel-catalin.rapiteanu@windriver.com>
+---
+ debian/rules | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/debian/rules b/debian/rules
+index b3e4f12..c5d6e7f 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -225,6 +225,10 @@ ifeq ($(DKMS3),1)
+ 	echo "activate-await update-initramfs" >debian/$(pdkms)/DEBIAN/triggers
+ endif
+ else
++	install -d debian/$(pdkms)/DEBIAN
++	install -m 0755 debian/$(pname)-modules.postinst debian/$(pdkms)/DEBIAN/postinst
++	install -m 0755 debian/$(pname)-modules.prerm    debian/$(pdkms)/DEBIAN/prerm
++	install -m 0644 debian/$(pname)-modules.triggers debian/$(pdkms)/DEBIAN/triggers
+ 	sed -i \
+ 		-e 's/@KVER@/$(kernelver)/' \
+ 		-e 's/@ARCH@/$(deb_arch)/' \
+-- 
+2.47.3

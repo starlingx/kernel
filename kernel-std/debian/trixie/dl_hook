@@ -5,16 +5,16 @@
 # be put at the same path where this script is located.
 # Tools needed: tar
 
-KERNEL_HEAD_COMMIT=95efd6fa4403e21402aeb96b4b54be01e076016e
-DEBIAN_FILE=linux_6.1.27-1~bpo11%2B1.debian.tar.xz
+KERNEL_DIR=linux-6.18.15
+DEBIAN_FILE=linux_6.18.15-1~bpo13%2B1.debian.tar.xz
 
-tar xvf linux-yocto-${KERNEL_HEAD_COMMIT}.tar.gz
+tar xvf linux_6.18.15.orig.tar.xz
 if [ $? -ne 0 ]
 then
-    echo "tar failed: linux-yocto source!"
+    echo "tar failed: linux kernel source!"
     exit 1
 fi
-mv linux-yocto-${KERNEL_HEAD_COMMIT} $1
+mv ${KERNEL_DIR} $1
 
 cd $1
 tar xvf ../${DEBIAN_FILE}
@@ -23,13 +23,24 @@ then
     echo "tar failed: debian folder for kernel!"
     exit 1
 fi
+
 cd debian
 cp "${MY_REPO_ROOT_DIR}"/cgcs-root/stx/kernel/kernel-std/\
 /debian/trixie/source/changelog ./
 cp "${MY_REPO_ROOT_DIR}"/cgcs-root/stx/kernel/kernel-std/\
-/debian/trixie/source/config ./config/amd64/none
-cd -
+/debian/trixie/source/config ./config/amd64/config.amd64
+cd ..
 
-# The abiname is changed from "0.deb11.9" to "1", so replace
-# "6.1.0-0.deb11.9" with "6.6.0-1" in init control file.
-sed -i "s/6\.1\.0-0\.deb11\.9/6.6.0-1/g" ./debian/control
+# Replace gcc-14-for-host with gcc-14 since we don't have that in our initramfs
+sed -i "s/gcc-14-for-host /gcc-14 /g" ./debian/control
+
+# Add linux-keys to debian/control so it appears in the .dsc Binary field
+# and the build scheduler can resolve dependency ordering
+cat >> ./debian/control << 'EOF'
+
+Package: linux-keys
+Architecture: linux-any
+Depends: ${misc:Depends}
+Multi-Arch: foreign
+Description: Module signing keys for Linux kernel
+EOF

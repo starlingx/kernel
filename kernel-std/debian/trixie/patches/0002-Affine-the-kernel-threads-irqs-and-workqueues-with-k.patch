@@ -1,7 +1,7 @@
 From 04650d78902365b332e3c7e6885a3cc46a20ed15 Mon Sep 17 00:00:00 2001
 From: Chris Friesen <chris.friesen@windriver.com>
 Date: Tue, 24 Nov 2015 16:27:28 -0500
-Subject: [PATCH 02/13] Affine the kernel threads, irqs and workqueues with
+Subject: [PATCH] Affine the kernel threads, irqs and workqueues with
  kthread_cpus
 
 We combine patch 3,4 and 10 to this patch.
@@ -28,16 +28,18 @@ https://lwn.net/Articles/565932/ with the only difference being
 the kernel parameter changed from kthread to kthread_cpus.
 
 Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+[cr: Adapted the patch for kernel 6.18.15 on trixie.]
+Signed-off-by: Catalin Rapiteanu <viorel-catalin.rapiteanu@windriver.com>
 ---
  .../admin-guide/kernel-parameters.txt         | 10 ++++++++
  include/linux/cpumask.h                       |  3 +++
  init/main.c                                   |  2 ++
  kernel/cpu.c                                  | 23 +++++++++++++++++++
  kernel/irq/manage.c                           |  7 ++++++
- kernel/kthread.c                              |  4 ++--
+ kernel/kthread.c                              |  6 +++---
  kernel/umh.c                                  |  3 +++
  kernel/workqueue.c                            | 10 ++++----
- 8 files changed, 56 insertions(+), 6 deletions(-)
+ 8 files changed, 56 insertions(+), 8 deletions(-)
 
 diff --git a/Documentation/admin-guide/kernel-parameters.txt b/Documentation/admin-guide/kernel-parameters.txt
 index bf3aacb1ceb7..b6d995d47ea1 100644
@@ -64,14 +66,14 @@ diff --git a/include/linux/cpumask.h b/include/linux/cpumask.h
 index 9278a50d514f..2b91ee73365b 100644
 --- a/include/linux/cpumask.h
 +++ b/include/linux/cpumask.h
-@@ -84,6 +84,7 @@ static __always_inline void set_nr_cpu_ids(unsigned int nr)
-  *     cpu_enabled_mask  - has bit 'cpu' set iff cpu can be brought online
+@@ -86,6 +86,7 @@
   *     cpu_online_mask  - has bit 'cpu' set iff cpu available to scheduler
   *     cpu_active_mask  - has bit 'cpu' set iff cpu available to migration
-+ *     cpu_kthread_mask - has bit 'cpu' set iff general kernel threads allowed
   *
++ *     cpu_kthread_mask - has bit 'cpu' set iff general kernel threads allowed
   *  If !CONFIG_HOTPLUG_CPU, present == possible, and active == online.
   *
+  *  The cpu_possible_mask is fixed at boot time, as the set of CPU IDs
 @@ -117,12 +118,14 @@ extern struct cpumask __cpu_online_mask;
  extern struct cpumask __cpu_enabled_mask;
  extern struct cpumask __cpu_present_mask;
@@ -138,7 +140,7 @@ diff --git a/kernel/irq/manage.c b/kernel/irq/manage.c
 index f0803d6bd296..bd041867bc77 100644
 --- a/kernel/irq/manage.c
 +++ b/kernel/irq/manage.c
-@@ -628,6 +628,13 @@ int irq_setup_affinity(struct irq_desc *desc)
+@@ -606,6 +606,13 @@ int irq_setup_affinity(struct irq_desc *desc)
  		if (cpumask_intersects(&mask, nodemask))
  			cpumask_and(&mask, &mask, nodemask);
  	}
@@ -149,25 +151,27 @@ index f0803d6bd296..bd041867bc77 100644
 +	if (cpumask_intersects(&mask, cpu_kthread_mask))
 +		cpumask_and(&mask, &mask, cpu_kthread_mask);
 +
- 	ret = irq_do_set_affinity(&desc->irq_data, &mask, false);
- 	raw_spin_unlock(&mask_lock);
- 	return ret;
+ 	return irq_do_set_affinity(&desc->irq_data, &mask, false);
+ }
+ #else
 diff --git a/kernel/kthread.c b/kernel/kthread.c
 index 9bb36897b6c6..77d2b3f577f4 100644
 --- a/kernel/kthread.c
 +++ b/kernel/kthread.c
-@@ -368,7 +368,7 @@ static int kthread(void *_create)
- 	 * back to default in case they have been changed.
- 	 */
- 	sched_setscheduler_nocheck(current, SCHED_NORMAL, &param);
--	set_cpus_allowed_ptr(current, housekeeping_cpumask(HK_TYPE_KTHREAD));
-+	set_cpus_allowed_ptr(current, cpu_kthread_mask);
+@@ -371,8 +371,8 @@ static void kthread_fetch_affinity(struct kthread *kthread, struct cpumask *cpuma
+ 	}
  
- 	/* OK, tell user we're spawned, wait for stop or wakeup */
- 	__set_current_state(TASK_UNINTERRUPTIBLE);
-@@ -743,7 +743,7 @@ int kthreadd(void *unused)
+-	cpumask_and(cpumask, pref, housekeeping_cpumask(HK_TYPE_KTHREAD));
++	cpumask_and(cpumask, pref, cpu_kthread_mask);
+ 	if (cpumask_empty(cpumask))
+-		cpumask_copy(cpumask, housekeeping_cpumask(HK_TYPE_KTHREAD));
++		cpumask_copy(cpumask, cpu_kthread_mask);
+ }
+ 
+ static void kthread_affine_node(void)
+@@ -825,7 +825,7 @@ int kthreadd(void *unused)
  	/* Setup a clean context for our children to inherit. */
- 	set_task_comm(tsk, "kthreadd");
+ 	set_task_comm(tsk, comm);
  	ignore_signals(tsk);
 -	set_cpus_allowed_ptr(tsk, housekeeping_cpumask(HK_TYPE_KTHREAD));
 +	set_cpus_allowed_ptr(tsk, cpu_kthread_mask);

@@ -1,0 +1,39 @@
+From 55ec9518be35cdeac59efcf3bbf77b714efc0c82 Mon Sep 17 00:00:00 2001
+From: Ivan Vecera <ivecera@redhat.com>
+Date: Tue, 3 Feb 2026 18:39:58 +0100
+Subject: [PATCH 14/27] dpll: zl3073x: Add support for mux pin type
+
+Add parsing for the "mux" string in the 'connection-type' pin property
+mapping it to DPLL_PIN_TYPE_MUX.
+
+Recognizing this type in the driver allows these pins to be taken as
+parent pins for pin-on-pin pins coming from different modules (e.g.
+network drivers).
+
+Reviewed-by: Aleksandr Loktionov <aleksandr.loktionov@intel.com>
+Signed-off-by: Ivan Vecera <ivecera@redhat.com>
+Reviewed-by: Arkadiusz Kubalewski <arkadiusz.kubalewski@intel.com>
+Link: https://patch.msgid.link/20260203174002.705176-6-ivecera@redhat.com
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+
+(cherry picked from commit fdad05ed4ec23b8de23c0037cea9aedbdc9cd24b)
+---
+ drivers/dpll/zl3073x/prop.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/dpll/zl3073x/prop.c b/drivers/dpll/zl3073x/prop.c
+index 4ed153087570..ad1f099cbe2b 100644
+--- a/drivers/dpll/zl3073x/prop.c
++++ b/drivers/dpll/zl3073x/prop.c
+@@ -249,6 +249,8 @@ struct zl3073x_pin_props *zl3073x_pin_props_get(struct zl3073x_dev *zldev,
+ 			props->dpll_props.type = DPLL_PIN_TYPE_INT_OSCILLATOR;
+ 		else if (!strcmp(type, "synce"))
+ 			props->dpll_props.type = DPLL_PIN_TYPE_SYNCE_ETH_PORT;
++		else if (!strcmp(type, "mux"))
++			props->dpll_props.type = DPLL_PIN_TYPE_MUX;
+ 		else
+ 			dev_warn(zldev->dev,
+ 				 "Unknown or unsupported pin type '%s'\n",
+-- 
+2.43.0
+

@@ -1,0 +1,38 @@
+From 9096b1e38d14d6a4129ba245beaba578e1090fa5 Mon Sep 17 00:00:00 2001
+From: Catalin Rapiteanu <viorel-catalin.rapiteanu@windriver.com>
+Date: Tue, 9 Jun 2026 20:29:05 +0300
+Subject: [PATCH] kernel: Allow debian/control regeneration during build
+
+The debian/rules control-real-fail target intentionally exits with
+error after regenerating debian/control as a safeguard against
+accidental automated regeneration. In STX, the build system changes
+the version and distribution in debian/changelog, making
+regeneration necessary. Replace the intentional failure with a
+success message to allow the build to proceed.
+
+Signed-off-by: Catalin Rapiteanu <viorel-catalin.rapiteanu@windriver.com>
+---
+ debian/rules | 7 ++-----
+ 1 file changed, 2 insertions(+), 5 deletions(-)
+
+diff --git a/debian/rules b/debian/rules
+index 1f421dcad1..cbac0bc77a 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -152,11 +152,8 @@ debian/control-real: debian/bin/gencontrol.py $(CONTROL_FILES)
+ debian/control-real-fail:
+ 	@$(MAKE) -f debian/rules debian/control-real
+ 	@echo
+-	@echo This target is made to fail intentionally, to make sure
+-	@echo that it is NEVER run during the automated build. Please
+-	@echo ignore the following error, the debian/control file has
+-	@echo been generated SUCCESSFULLY.
++	@echo The debian/control file has been generated SUCCESSFULLY.
++	@echo Go on with the building!
+ 	@echo
+-	exit 1
+ 
+ .PHONY: binary binary-% build build-% clean debian/control-real orig setup source clean-generated
+-- 
+2.47.3
+

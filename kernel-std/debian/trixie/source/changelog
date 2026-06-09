@@ -1,3 +1,8 @@
+linux (6.18.15-1) unstable; urgency=medium
+  * New upstream version 6.18.15 from:
+    https://snapshot.debian.org/archive/debian/20260314T022719Z/pool/main/l/linux/linux_6.18.15.orig.tar.xz
+ -- Viorel-Catalin Rapiteanu <viorel-catalin.rapiteanu@windriver.com>  Mon, 09 Jun 2026 11:11:00 +0300
+
 linux (6.12.57-1) unstable; urgency=medium
   * New upstream update:
     https://git.yoctoproject.org/linux-yocto/commit/?h=v6.12/standard/base&id=95efd6fa4403e21402aeb96b4b54be01e076016e

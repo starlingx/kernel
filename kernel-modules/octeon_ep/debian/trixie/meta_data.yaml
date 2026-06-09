@@ -1,0 +1,14 @@
+---
+debver: 2605
+debname: octeon-ep
+dl_path:
+  name: v26.05.tar.gz
+  topdir: pcie_ep_octeon_host-26.05
+  url: "https://github.com/MarvellEmbeddedProcessors/pcie_ep_octeon_host/\
+        archive/refs/tags/v26.05.tar.gz"
+  sha256sum: 314d0e0862bce833c3438ac3ac03666bd2edc4c3161b4d0ca9b4b0721d48e20f
+revision:
+  dist: $STX_DIST
+  GITREVCOUNT:
+    BASE_SRCREV: eefb43bbb666140f289cff526ef86bf7ca777445
+    SRC_DIR: ${MY_REPO}/stx/kernel/kernel-modules/octeon_ep

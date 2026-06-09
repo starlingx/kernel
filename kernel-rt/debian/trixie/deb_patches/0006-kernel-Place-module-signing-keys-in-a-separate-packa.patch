@@ -1,0 +1,94 @@
+From 39b6c2be03735b82437101cb0c36d915d03b4635 Mon Sep 17 00:00:00 2001
+From: Catalin Rapiteanu <viorel-catalin.rapiteanu@windriver.com>
+Date: Wed, 10 Jun 2026 00:00:00 +0300
+Subject: [PATCH] kernel-rt: Place module signing keys in a separate package
+
+Currently we package our module signing keys as part of
+the 'linux-rt-kbuild' package.  This means that anyone obtaining
+our 'linux-rt-kbuild' package, which we do publish, can produce
+signed modules.  This violates the intent of secure boot.
+
+Re-package our module signing keys into a separate package
+known as 'linux-rt-keys'.
+
+To make the key usable by OOT modules, decrypt it into an unencrypted copy
+(signing_key.dec.pem) while KBUILD_SIGN_PIN is still in scope, in place of
+the upstream deletion, and package that copy as signing_key.pem.
+The x509 cert is extracted by the kernel build into certs/signing_key.x509.
+
+Signed-off-by: Jiping Ma <jiping.ma2@windriver.com>
+[lz: adapted the patch for porting kernel from 5.10 to 6.6]
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+[cr: adapted the patch for kernel 6.18.15]
+Signed-off-by: Catalin Rapiteanu <viorel-catalin.rapiteanu@windriver.com>
+---
+ debian/rules.real                           | 28 +++++++++++++++++++++
+ debian/templates/tools-versioned.control.in |  9 +++++++
+ 2 files changed, 37 insertions(+)
+
+diff --git a/debian/rules.real b/debian/rules.real
+index f8ee00e9c1..e5f8d53d71 100644
+--- a/debian/rules.real
++++ b/debian/rules.real
+@@ -213,6 +213,12 @@ endif
+ 		INSTALL_MOD_PATH='$(CURDIR)/$(OUTPUT_DIR)' \
+ 		INSTALL_MOD_STRIP=1
+ 
++	# Decrypt the signing key (encrypted with KBUILD_SIGN_PIN) so that
++	# out-of-tree modules can sign with sign-file non-interactively, then
++	# drop the encrypted original.
++	openssl pkey -in $(DIR)/output/signing_key.pem \
++		-passin env:KBUILD_SIGN_PIN \
++		-out $(DIR)/output/signing_key.dec.pem
+ 	rm $(DIR)/output/signing_key.pem
+ 
+ # cmd_depmod=: Don't run depmod to generate dependency files
+@@ -605,6 +611,28 @@ binary_kbuild: build_kbuild
+ 	dh_link $(PREFIX_DIR) /usr/src/$(PACKAGE_NAME)
+ 	$(dh_binary_post)
+ 
++build_keys:
++
++binary_keys: PACKAGE_NAME = linux-rt-keys
++binary_keys: DH_OPTIONS = -p$(PACKAGE_NAME)
++binary_keys: DIR = $(CURDIR)/debian/$(PACKAGE_NAME)
++binary_keys: build_keys
++	dh_testdir
++	dh_testroot
++	dh_prep
++	dh_installdirs
++	dh_installdirs /usr/src/kernels/$(ABINAME)-$(ARCH)
++	install -m 600 $(BUILD_DIR)/*/output/signing_key.dec.pem \
++		debian/$(PACKAGE_NAME)/usr/src/kernels/$(ABINAME)-$(ARCH)/signing_key.pem
++	dh_install $(BUILD_DIR)/*/certs/signing_key.x509 /usr/src/kernels/$(ABINAME)-$(ARCH)/
++	dh_installchangelogs
++	dh_compress
++	dh_fixperms
++	dh_installdeb
++	dh_gencontrol
++	dh_md5sums
++	dh_builddeb
++
+ build_cpupower: $(STAMPS_DIR)/build-cpupower
+ $(STAMPS_DIR)/build-cpupower: $(STAMPS_DIR)/prepare-build-tools
+ 	$(call make-tools,tools/power/cpupower)
+diff --git a/debian/templates/tools-versioned.control.in b/debian/templates/tools-versioned.control.in
+index f1aabca39a..b0bf57a62f 100644
+--- a/debian/templates/tools-versioned.control.in
++++ b/debian/templates/tools-versioned.control.in
+@@ -15,3 +15,12 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, ${python3:Depends}, pahole
+ Multi-Arch: foreign
+ Description: Kbuild infrastructure for Linux @abiname@
+  This package provides the kbuild infrastructure for the headers packages for Linux kernel version @version@.
++
++Package: linux-rt-keys
++Meta-Rules-Target: keys
++Build-Profiles: <!stage1 !pkg.linux.notools>
++Architecture: linux-any
++Depends: ${misc:Depends}
++Multi-Arch: foreign
++Description: Module signing keys for Linux @abiname@
++ This package provides the kernel module signing keys for Linux kernel version @version@.
+-- 
+2.47.3
+
