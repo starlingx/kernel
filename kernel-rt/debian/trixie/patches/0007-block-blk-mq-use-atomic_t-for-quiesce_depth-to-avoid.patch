@@ -1,0 +1,240 @@
+From 74e5b401318aca32a4e6d33b9d4709399f58e0c7 Mon Sep 17 00:00:00 2001
+From: Ionut Nechita <ionut.nechita@windriver.com>
+Date: Thu, 9 Jul 2026 09:38:03 +0300
+Subject: [PATCH] block/blk-mq: use atomic_t for quiesce_depth to avoid lock
+ contention on RT
+
+On PREEMPT_RT kernels, commit 6bda857bcbb86 ("block: fix ordering
+between checking QUEUE_FLAG_QUIESCED request adding") causes a severe
+throughput regression on systems with many MSI-X interrupt vectors.
+
+That commit closed a store/load race between blk_mq_run_hw_queue() and
+blk_mq_unquiesce_queue() by taking q->queue_lock around the requiesce
+re-check in blk_mq_run_hw_queue().  Its changelog noted two ways to fix
+the race -- (1) a pair of memory barriers, or (2) the queue_lock -- and
+picked (2) because barriers are harder to maintain.
+
+On RT, spinlock_t becomes a sleeping rt_mutex.  blk_mq_run_hw_queue() is
+called from every IRQ thread, and the re-check path is hit on the very
+common "nothing pending" case, so all IRQ threads end up serialising on
+the single q->queue_lock and block in D-state.  On a Broadcom/LSI
+MegaRAID 12GSAS/PCIe Secure SAS39xx (megaraid_sas, 128 MSI-X vectors,
+120 hw queues) throughput drops from 640 MB/s to 153 MB/s.
+
+Take approach (1) instead, and while at it turn quiesce_depth into the
+single source of truth for the quiesce state:
+
+ - quiesce_depth becomes atomic_t and QUEUE_FLAG_QUIESCED is removed;
+   blk_queue_quiesced() is now "atomic_read(&q->quiesce_depth) > 0".
+   This also makes blk_queue_quiesced(), which is read locklessly from
+   the dispatch path, a clean atomic load instead of a plain-int read
+   racing with a spin_lock-protected int update.
+
+ - blk_mq_quiesce_queue_nowait() does an atomic_inc() followed by
+   smp_mb__after_atomic().  The spin_lock() it used to take only served
+   to publish the state change; every caller still follows the quiesce
+   with blk_mq_wait_quiesce_done() (synchronize_srcu()/synchronize_rcu()),
+   which is what actually drains in-flight dispatchers and makes the new
+   state globally visible.  The barrier here just keeps the helper
+   self-contained for the few callers that defer that wait.
+
+ - blk_mq_unquiesce_queue() uses atomic_dec_if_positive() (so the
+   WARN-on-underflow check and the decrement are one atomic op) followed
+   by smp_mb__after_atomic() before blk_mq_run_hw_queues().  This is the
+   write side of the race fixed above: a full barrier between the
+   quiesce_depth store and the blk_mq_hctx_has_pending() load.
+
+ - blk_mq_run_hw_queue() drops the q->queue_lock around the requiesce
+   re-check and uses smp_mb() instead.  This is the read side: a full
+   barrier between the just-inserted request (the store that makes
+   blk_mq_hctx_has_pending() true) and the quiesce-state load.  A full
+   barrier is required on both sides -- this is a classic store-buffer
+   pattern -- so smp_mb()/smp_mb__after_atomic() rather than a read
+   barrier; with that, at least one of the two racing CPUs observes the
+   other's store and the hw queue is not left both un-quiesced and not
+   rerun.
+
+No locking remains on the dispatch hot path.
+
+Performance on the RT kernel and the hardware above:
+ - Before: 153 MB/s, IRQ threads in D-state on q->queue_lock
+ - After:  640 MB/s, no IRQ threads blocked
+
+The non-RT path replaces a queue_lock acquire/release on the re-check
+with an smp_mb(), so it should be no worse, and it also stops taking
+q->queue_lock from blk_mq_run_hw_queue() entirely.
+
+Suggested-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Reviewed-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Reviewed-by: Bart Van Assche <bvanassche@acm.org>
+Fixes: 6bda857bcbb86 ("block: fix ordering between checking QUEUE_FLAG_QUIESCED request adding")
+Cc: stable@vger.kernel.org
+Assisted-by: Claude:claude-opus-4-8 checkpatch
+Signed-off-by: Ionut Nechita <ionut.nechita@windriver.com>
+---
+ block/blk-core.c       |  1 +
+ block/blk-mq-debugfs.c |  1 -
+ block/blk-mq.c         | 69 ++++++++++++++++++++++++++----------------
+ include/linux/blkdev.h |  9 ++++--
+ 4 files changed, 50 insertions(+), 30 deletions(-)
+
+diff --git a/block/blk-core.c b/block/blk-core.c
+index 14ae73eebe0d..1f736bcdfde4 100644
+--- a/block/blk-core.c
++++ b/block/blk-core.c
+@@ -434,6 +434,7 @@ struct request_queue *blk_alloc_queue(struct queue_limits *lim, int node_id)
+ 	mutex_init(&q->limits_lock);
+ 	mutex_init(&q->rq_qos_mutex);
+ 	spin_lock_init(&q->queue_lock);
++	atomic_set(&q->quiesce_depth, 0);
+ 
+ 	init_waitqueue_head(&q->mq_freeze_wq);
+ 	mutex_init(&q->mq_freeze_lock);
+diff --git a/block/blk-mq-debugfs.c b/block/blk-mq-debugfs.c
+index 4896525b1c05..c63fe8864248 100644
+--- a/block/blk-mq-debugfs.c
++++ b/block/blk-mq-debugfs.c
+@@ -89,7 +89,6 @@ static const char *const blk_queue_flag_name[] = {
+ 	QUEUE_FLAG_NAME(INIT_DONE),
+ 	QUEUE_FLAG_NAME(STATS),
+ 	QUEUE_FLAG_NAME(REGISTERED),
+-	QUEUE_FLAG_NAME(QUIESCED),
+ 	QUEUE_FLAG_NAME(RQ_ALLOC_TIME),
+ 	QUEUE_FLAG_NAME(HCTX_ACTIVE),
+ 	QUEUE_FLAG_NAME(SQ_SCHED),
+diff --git a/block/blk-mq.c b/block/blk-mq.c
+index a03f52ab87d6..e244372a6f91 100644
+--- a/block/blk-mq.c
++++ b/block/blk-mq.c
+@@ -260,12 +260,16 @@ EXPORT_SYMBOL_GPL(blk_mq_unfreeze_queue_non_owner);
+  */
+ void blk_mq_quiesce_queue_nowait(struct request_queue *q)
+ {
+-	unsigned long flags;
+-
+-	spin_lock_irqsave(&q->queue_lock, flags);
+-	if (!q->quiesce_depth++)
+-		blk_queue_flag_set(QUEUE_FLAG_QUIESCED, q);
+-	spin_unlock_irqrestore(&q->queue_lock, flags);
++	atomic_inc(&q->quiesce_depth);
++	/*
++	 * Publish the quiesce_depth increment.  Callers must follow this
++	 * with blk_mq_wait_quiesce_done() (synchronize_srcu()/
++	 * synchronize_rcu()), which is what actually guarantees that any
++	 * in-flight dispatcher has finished and that later dispatchers see
++	 * the queue as quiesced; the barrier here only keeps this helper
++	 * self-contained for the few callers that defer the wait.
++	 */
++	smp_mb__after_atomic();
+ }
+ EXPORT_SYMBOL_GPL(blk_mq_quiesce_queue_nowait);
+ 
+@@ -314,21 +318,30 @@ EXPORT_SYMBOL_GPL(blk_mq_quiesce_queue);
+  */
+ void blk_mq_unquiesce_queue(struct request_queue *q)
+ {
+-	unsigned long flags;
+-	bool run_queue = false;
++	int depth;
+ 
+-	spin_lock_irqsave(&q->queue_lock, flags);
+-	if (WARN_ON_ONCE(q->quiesce_depth <= 0)) {
+-		;
+-	} else if (!--q->quiesce_depth) {
+-		blk_queue_flag_clear(QUEUE_FLAG_QUIESCED, q);
+-		run_queue = true;
+-	}
+-	spin_unlock_irqrestore(&q->queue_lock, flags);
++	depth = atomic_dec_if_positive(&q->quiesce_depth);
++	if (WARN_ON_ONCE(depth < 0))
++		return;
+ 
+-	/* dispatch requests which are inserted during quiescing */
+-	if (run_queue)
++	if (depth == 0) {
++		/*
++		 * Full barrier between the quiesce_depth store above and the
++		 * blk_mq_hctx_has_pending() load done from blk_mq_run_hw_queues()
++		 * below.  This pairs with the smp_mb() before the requiesce
++		 * re-check in blk_mq_run_hw_queue(): of the two racing CPUs
++		 * (one inserting a request and then re-checking quiesce state,
++		 * the other unquiescing here and then checking for pending
++		 * work) at least one sees the other's store, so the hw queue
++		 * is not left with a request stranded on a now-running queue.
++		 *
++		 * atomic_dec_if_positive() already orders the decrement on
++		 * success, but spell the barrier out so the pairing is obvious.
++		 */
++		smp_mb__after_atomic();
++		/* dispatch requests which are inserted during quiescing */
+ 		blk_mq_run_hw_queues(q, true);
++	}
+ }
+ EXPORT_SYMBOL_GPL(blk_mq_unquiesce_queue);
+ 
+@@ -2344,17 +2357,21 @@ void blk_mq_run_hw_queue(struct blk_mq_hw_ctx *hctx, bool async)
+ 
+ 	need_run = blk_mq_hw_queue_need_run(hctx);
+ 	if (!need_run) {
+-		unsigned long flags;
+-
+ 		/*
+-		 * Synchronize with blk_mq_unquiesce_queue(), because we check
+-		 * if hw queue is quiesced locklessly above, we need the use
+-		 * ->queue_lock to make sure we see the up-to-date status to
+-		 * not miss rerunning the hw queue.
++		 * Re-check after a full barrier.  A request may have been
++		 * inserted before this call, while a concurrent
++		 * blk_mq_unquiesce_queue() drops quiesce_depth to zero and
++		 * then runs the hw queues.  This smp_mb() orders the request
++		 * insert (the store that makes blk_mq_hctx_has_pending() true)
++		 * before the requiesce-state load below, and pairs with the
++		 * smp_mb__after_atomic() between the quiesce_depth store and
++		 * the blk_mq_hctx_has_pending() load in blk_mq_unquiesce_queue()
++		 * (and in blk_mq_quiesce_queue_nowait()).  With a full barrier
++		 * on both sides, at least one CPU observes the other's store,
++		 * so the queue is not left both un-quiesced and not rerun.
+ 		 */
+-		spin_lock_irqsave(&hctx->queue->queue_lock, flags);
++		smp_mb();
+ 		need_run = blk_mq_hw_queue_need_run(hctx);
+-		spin_unlock_irqrestore(&hctx->queue->queue_lock, flags);
+ 
+ 		if (!need_run)
+ 			return;
+diff --git a/include/linux/blkdev.h b/include/linux/blkdev.h
+index 59e54550a053..2e0cf3c2e90d 100644
+--- a/include/linux/blkdev.h
++++ b/include/linux/blkdev.h
+@@ -506,7 +506,8 @@ struct request_queue {
+ 
+ 	spinlock_t		queue_lock;
+ 
+-	int			quiesce_depth;
++	/* Atomic quiesce depth - also serves as quiesced indicator (depth > 0) */
++	atomic_t		quiesce_depth;
+ 
+ 	struct gendisk		*disk;
+ 
+@@ -650,7 +651,6 @@ enum {
+ 	QUEUE_FLAG_INIT_DONE,		/* queue is initialized */
+ 	QUEUE_FLAG_STATS,		/* track IO start and completion times */
+ 	QUEUE_FLAG_REGISTERED,		/* queue has been registered to a disk */
+-	QUEUE_FLAG_QUIESCED,		/* queue has been quiesced */
+ 	QUEUE_FLAG_RQ_ALLOC_TIME,	/* record rq->alloc_time_ns */
+ 	QUEUE_FLAG_HCTX_ACTIVE,		/* at least one blk-mq hctx is active */
+ 	QUEUE_FLAG_SQ_SCHED,		/* single queue style io dispatch */
+@@ -687,7 +687,10 @@ void blk_queue_flag_clear(unsigned int flag, struct request_queue *q);
+ #define blk_noretry_request(rq) \
+ 	((rq)->cmd_flags & (REQ_FAILFAST_DEV|REQ_FAILFAST_TRANSPORT| \
+ 			     REQ_FAILFAST_DRIVER))
+-#define blk_queue_quiesced(q)	test_bit(QUEUE_FLAG_QUIESCED, &(q)->queue_flags)
++static inline bool blk_queue_quiesced(struct request_queue *q)
++{
++	return atomic_read(&q->quiesce_depth) > 0;
++}
+ #define blk_queue_pm_only(q)	atomic_read(&(q)->pm_only)
+ #define blk_queue_registered(q)	test_bit(QUEUE_FLAG_REGISTERED, &(q)->queue_flags)
+ #define blk_queue_sq_sched(q)	test_bit(QUEUE_FLAG_SQ_SCHED, &(q)->queue_flags)
+-- 
+2.47.3

@@ -4,6 +4,7 @@
 0004-cpuidle-governors-menu-Special-case-nohz_full-CPUs.patch
 0005-Revert-PCI-IOV-Add-PCI-rescan-remove-locking-when-en.patch
 0006-PCI-IOV-Fix-race-between-SR-IOV-enable-disable-and-h.patch
+0007-block-blk-mq-use-atomic_t-for-quiesce_depth-to-avoid.patch
 zl3073x-backport/0001-dpll-zl3073x-fix-kernel-doc-name-and-missing-paramet.patch
 zl3073x-backport/0002-dpll-zl3073x-Cache-reference-monitor-status.patch
 zl3073x-backport/0003-dpll-zl3073x-Cache-all-reference-properties-in-zl307.patch
