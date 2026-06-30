@@ -6,6 +6,16 @@
 0006-PCI-IOV-Fix-race-between-SR-IOV-enable-disable-and-h.patch
 0007-block-blk-mq-use-atomic_t-for-quiesce_depth-to-avoid.patch
 0008-drbd-fix-false-positive-resync-throttling-in-drbd_rs.patch
+serial/0001-serial-8250-Protect-LCR-write-in-shutdown.patch
+serial/0002-serial-8250_dw-Avoid-unnecessary-LCR-writes.patch
+serial/0003-serial-8250-Add-serial8250_handle_irq_locked.patch
+serial/0004-serial-8250_dw-Rework-dw8250_handle_irq-locking-and-.patch
+serial/0005-serial-8250_dw-Rework-IIR_NO_INT-handling-to-stop-in.patch
+serial/0006-serial-8250-Add-late-synchronize_irq-to-shutdown-to-.patch
+serial/0007-serial-8250_dw-Ensure-BUSY-is-deasserted.patch
+serial/0008-serial-core-introduce-guard-uart_port_lock_check_sys.patch
+serial/0009-serial-8250-dispatch-SysRq-character-in-serial8250_h.patch
+serial/0010-serial-8250_dw-dispatch-SysRq-character-in-dw8250_ha.patch
 zl3073x-backport/0001-dpll-zl3073x-fix-kernel-doc-name-and-missing-paramet.patch
 zl3073x-backport/0002-dpll-zl3073x-Cache-reference-monitor-status.patch
 zl3073x-backport/0003-dpll-zl3073x-Cache-all-reference-properties-in-zl307.patch
