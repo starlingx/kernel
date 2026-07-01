@@ -63,7 +63,6 @@ override_dh_auto_install:
 	# Make the regular DDP fw be the default one to load
 	dh_installdirs -p$(pkg_common_name) /lib/firmware/intel/ice/ddp/
 	ln -frs debian/$(pkg_common_name)/lib/firmware/updates/intel/ice/ddp/ice-*.pkg debian/$(pkg_common_name)/lib/firmware/intel/ice/ddp/stx-ice.pkg
-	ln -frs debian/$(pkg_common_name)/lib/firmware/updates/intel/ice/ddp/ice-*.pkg debian/$(pkg_common_name)/lib/firmware/intel/ice/ddp/ice.pkg
 
 override_dh_strip:
 	dh_strip
