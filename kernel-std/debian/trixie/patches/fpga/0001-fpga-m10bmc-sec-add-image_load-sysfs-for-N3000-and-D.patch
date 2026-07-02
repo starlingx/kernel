@@ -1,0 +1,641 @@
+From 7e46461bb2749e8f3378d5d366ec4041033bdc5d Mon Sep 17 00:00:00 2001
+From: Ionut Nechita <ionut.nechita@windriver.com>
+Date: Mon, 3 Aug 2026 15:43:36 +0300
+Subject: [PATCH] fpga: m10bmc-sec: add image_load sysfs for N3000 and D5005
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The Intel MAX10 BMC secure-update driver in mainline exposes only the
+firmware-upload ABI (/sys/class/firmware/secure-updateN) for staging and
+flashing a new image. It has no way to trigger a reload of an image that
+is already present in FLASH or EEPROM, which OPAE userspace relies on to
+switch between the BMC factory/user images or to reload the PKVL retimer
+firmware without a full firmware-upload cycle.
+
+Add the control/available_images and control/image_load sysfs attributes
+for the N3000 and D5005 cards. available_images returns the space
+separated list of image key words accepted by the device, and writing
+one of those key words to image_load triggers the corresponding reload:
+
+ - bmc_factory / bmc_user reload a BMC image by writing DRBL_CONFIG_SEL
+   and DRBL_REBOOT_REQ to the doorbell register. The config-select
+   polarity is inverted between N3000 and D5005, so the two cards use
+   separate handler tables and a separate m10sec_d5005_ops.
+
+ - retimer_fw (N3000 only) reloads the PKVL retimer EEPROM by asserting
+   DRBL_PKVL_EEPROM_LOAD_SEC, waiting for RSU_PROG_PKVL_PROM_DONE (or a
+   RSU_STAT_PKVL_REJECT for a duplicate image), then polling
+   M10BMC_N3000_PKVL_POLL_CTRL for preload completion.
+
+A reload and a secure update drive the same doorbell register, and the
+doorbell is not part of the fw handshake register ranges, so it stays
+accessible in every BMC firmware state - including
+M10BMC_FW_STATE_SEC_UPDATE_PROGRAM, while the flash is being written.
+Writing image_load at that point would reboot the BMC mid-write. Add a
+mutex to struct m10bmc_sec, held from m10bmc_sec_prepare() through
+m10bmc_sec_cleanup() for the duration of an upload, and taken with
+mutex_trylock() by image_load_store() so that a reload attempt during an
+update returns -EBUSY rather than blocking for minutes.
+m10bmc_sec_cancel() deliberately does not take the lock; it runs
+asynchronously against the upload that holds it and only sets a flag.
+
+Because m10bmc_sec_prepare() can now block on that mutex while an image
+reload is in progress, the cancel flag is reset at the very start of
+m10bmc_sec_prepare(), before the lock is taken, and a cancel that
+arrives while waiting for the lock is honoured with
+FW_UPLOAD_ERR_CANCELED once it is acquired. This keeps a cancel raised
+during the wait from being lost.
+
+The doorbell RSU progress field is checked before either reload path
+runs, which also rejects a reload when the BMC reports an operation this
+driver did not start.
+
+The control group is hidden via its is_visible() callback whenever the
+device ops do not provide an image_load table, returning
+SYSFS_GROUP_INVISIBLE so no empty control/ directory is left behind, so
+N6000 (which keeps .image_load = NULL) is unaffected.
+
+The M10BMC_N3000_PKVL_* register and bit definitions are added to
+intel-m10-bmc.h for the retimer path.
+
+Reloading a BMC image reboots the BMC, and on N3000 that also resets the
+FPGA and drops the PCIe link, so the card leaves the bus and userspace
+owns re-enumeration. Nothing is quiesced on the kernel side first. This
+is documented in the ABI file rather than handled, and is the main open
+question for this interface.
+
+This is a subset of the functionality carried in linux-dfl, ported to
+the mainline driver structure. It is derived from the linux-dfl
+commit 604ad4f48cee ("fpga: m10bmc-sec: add sysfs to load bmc images")
+and commit e1b885714f68 ("fpga: m10bmc-sec: m10bmc_sec_retimer_load
+callback") by Russ Weight, Tianfei Zhang, Xu Yilun and Ilpo Järvinen.
+The N6000 PMCI and SDM image-load handlers are intentionally left out;
+they depend on the wider PMCI stack that has not been upstreamed.
+
+Cc: Russ Weight <russell.h.weight@intel.com>
+Cc: Tianfei Zhang <tianfei.zhang@intel.com>
+Cc: Xu Yilun <yilun.xu@intel.com>
+Cc: Ilpo Järvinen <ilpo.jarvinen@linux.intel.com>
+Assisted-by: Claude:claude-opus-4-8 checkpatch
+Signed-off-by: Ionut Nechita <ionut.nechita@windriver.com>
+---
+Changes since v2 [1]:
+- prepare: fix a lost firmware-upload cancel. Because m10bmc_sec_prepare()
+  can now block on sec->lock while an image reload is in progress, a cancel
+  raised during that wait was cleared by the cancel_request reset inside the
+  prepare path. Reset the flag at the very start of m10bmc_sec_prepare()
+  before taking the lock, honour a cancel that arrived while waiting with
+  FW_UPLOAD_ERR_CANCELED, and drop the now-redundant reset in the inner
+  helper. Reported by the Sashiko AI patch review.
+- control group: return SYSFS_GROUP_INVISIBLE from is_visible() instead of 0
+  so no empty control/ directory is created on devices without an image_load
+  table (e.g. N6000). Reported by the Sashiko AI patch review.
+- No functional change to the N3000/D5005 reload paths.
+
+[1] https://lore.kernel.org/lkml/20260724192117.60493-1-ionut.nechita@windriver.com/
+
+ .../sysfs-driver-intel-m10-bmc-sec-update     |  34 ++
+ drivers/fpga/intel-m10-bmc-sec-update.c       | 361 +++++++++++++++++-
+ include/linux/mfd/intel-m10-bmc.h             |  35 ++
+ 3 files changed, 425 insertions(+), 5 deletions(-)
+
+diff --git a/Documentation/ABI/testing/sysfs-driver-intel-m10-bmc-sec-update b/Documentation/ABI/testing/sysfs-driver-intel-m10-bmc-sec-update
+index 3a6ca780c75c6..e34aa739ecdf6 100644
+--- a/Documentation/ABI/testing/sysfs-driver-intel-m10-bmc-sec-update
++++ b/Documentation/ABI/testing/sysfs-driver-intel-m10-bmc-sec-update
+@@ -59,3 +59,37 @@ Contact:	Matthew Gerlach <matthew.gerlach@altera.com>
+ Description:	Read only. Returns number of times the secure update
+ 		staging area has been flashed.
+ 		Format: "%u".
++
++What:		/sys/bus/platform/drivers/intel-m10bmc-sec-update/.../control/available_images
++Date:		Jul 2026
++KernelVersion:	7.3
++Contact:	Ionut Nechita <ionut.nechita@windriver.com>
++Description:	Read only. Returns a space separated list of key words
++		that may be written into the image_load file described
++		below. These key words describe a BMC or retimer firmware
++		image in FLASH or EEPROM storage that may be reloaded.
++		This file is only visible if the underlying device
++		supports image reload.
++
++What:		/sys/bus/platform/drivers/intel-m10bmc-sec-update/.../control/image_load
++Date:		Jul 2026
++KernelVersion:	7.3
++Contact:	Ionut Nechita <ionut.nechita@windriver.com>
++Description:	Write only. A key word may be written to this file to
++		trigger a reload of a BMC or retimer firmware image from
++		FLASH or EEPROM. Refer to the available_images file for
++		the list of key words supported by the underlying device.
++		Writing an unsupported string to this file results in
++		-EINVAL being returned. This file is only visible if the
++		underlying device supports image reload.
++
++		Returns -EBUSY if a secure update is in progress through
++		the firmware upload interface, or if the device reports
++		another operation already running.
++
++		Reloading a bmc_factory or bmc_user image reboots the BMC.
++		On cards where the BMC reboot also resets the FPGA and the
++		PCIe link, the device drops off the bus, and re-enumeration
++		is left to userspace. Nothing is quiesced on the kernel
++		side beforehand, so consumers of the other functions of the
++		card observe I/O failures until the device is restored.
+diff --git a/drivers/fpga/intel-m10-bmc-sec-update.c b/drivers/fpga/intel-m10-bmc-sec-update.c
+index 10f678b9ed366..8f89575f7992d 100644
+--- a/drivers/fpga/intel-m10-bmc-sec-update.c
++++ b/drivers/fpga/intel-m10-bmc-sec-update.c
+@@ -11,13 +11,20 @@
+ #include <linux/mfd/intel-m10-bmc.h>
+ #include <linux/mod_devicetable.h>
+ #include <linux/module.h>
++#include <linux/mutex.h>
+ #include <linux/platform_device.h>
+ #include <linux/slab.h>
+ 
+ struct m10bmc_sec;
+ 
++struct image_load {
++	const char *name;
++	int (*load_image)(struct m10bmc_sec *sec);
++};
++
+ struct m10bmc_sec_ops {
+ 	int (*rsu_status)(struct m10bmc_sec *sec);
++	const struct image_load *image_load;	/* terminated with { } member */
+ };
+ 
+ struct m10bmc_sec {
+@@ -28,6 +35,16 @@ struct m10bmc_sec {
+ 	u32 fw_name_id;
+ 	bool cancel_request;
+ 	const struct m10bmc_sec_ops *ops;
++	/*
++	 * Serializes a secure update against an image reload triggered
++	 * through the control/image_load attribute. Both drive the same
++	 * doorbell register, and a reload issued while an update is
++	 * programming the flash would reboot the BMC mid-write. Held from
++	 * m10bmc_sec_prepare() to m10bmc_sec_cleanup() for the duration of
++	 * an upload. m10bmc_sec_cancel() must not take it, see the comment
++	 * there.
++	 */
++	struct mutex lock;
+ };
+ 
+ static DEFINE_XARRAY_ALLOC(fw_upload_xa);
+@@ -254,8 +271,295 @@ static struct attribute_group m10bmc_security_attr_group = {
+ 	.attrs = m10bmc_security_attrs,
+ };
+ 
++/* Image reload control (N3000 / D5005) */
++
++/*
++ * The RSU state machine and the image reload paths share the doorbell
++ * register, and the doorbell is not covered by the fw handshake ranges, so
++ * it stays readable in every BMC firmware state. sec->lock keeps a reload
++ * from racing an in-flight secure update driven by this driver; this check
++ * additionally rejects a reload when the BMC reports an operation that this
++ * driver did not start (a previous driver instance, or OPAE talking to the
++ * card out of band).
++ */
++static int image_load_check_idle(struct m10bmc_sec *sec)
++{
++	const struct m10bmc_csr_map *csr_map = sec->m10bmc->info->csr_map;
++	u32 doorbell;
++	int ret;
++
++	ret = m10bmc_sys_read(sec->m10bmc, csr_map->doorbell, &doorbell);
++	if (ret)
++		return ret;
++
++	if (rsu_prog(doorbell) != RSU_PROG_IDLE &&
++	    rsu_prog(doorbell) != RSU_PROG_RSU_DONE &&
++	    rsu_prog(doorbell) != RSU_PROG_PKVL_PROM_DONE) {
++		dev_err(sec->dev, "Doorbell not idle: 0x%08x\n", doorbell);
++		return -EBUSY;
++	}
++
++	return 0;
++}
++
++static int m10bmc_sec_bmc_image_load(struct m10bmc_sec *sec, unsigned int val)
++{
++	const struct m10bmc_csr_map *csr_map = sec->m10bmc->info->csr_map;
++	u32 doorbell;
++	int ret;
++
++	ret = image_load_check_idle(sec);
++	if (ret)
++		return ret;
++
++	ret = m10bmc_sys_read(sec->m10bmc, csr_map->doorbell, &doorbell);
++	if (ret)
++		return ret;
++
++	if (doorbell & DRBL_REBOOT_DISABLED)
++		return -EBUSY;
++
++	return m10bmc_sys_update_bits(sec->m10bmc, csr_map->doorbell,
++				      DRBL_CONFIG_SEL | DRBL_REBOOT_REQ,
++				      FIELD_PREP(DRBL_CONFIG_SEL, val) |
++				      DRBL_REBOOT_REQ);
++}
++
++static int m10bmc_sec_bmc_image_load_0(struct m10bmc_sec *sec)
++{
++	return m10bmc_sec_bmc_image_load(sec, 0);
++}
++
++static int m10bmc_sec_bmc_image_load_1(struct m10bmc_sec *sec)
++{
++	return m10bmc_sec_bmc_image_load(sec, 1);
++}
++
++static int trigger_retimer_eeprom_load(struct m10bmc_sec *sec)
++{
++	const struct m10bmc_csr_map *csr_map = sec->m10bmc->info->csr_map;
++	struct intel_m10bmc *m10bmc = sec->m10bmc;
++	unsigned int val;
++	int ret;
++
++	ret = m10bmc_sys_update_bits(m10bmc, csr_map->doorbell,
++				     DRBL_PKVL_EEPROM_LOAD_SEC,
++				     DRBL_PKVL_EEPROM_LOAD_SEC);
++	if (ret)
++		return ret;
++
++	/*
++	 * If the current NIOS FW is not bootloader, then the retimer load
++	 * is expected to trigger a NIOS reboot, so the DRBL_PKVL_EEPROM_LOAD
++	 * bit is cleared by the reboot. Otherwise wait for it to be cleared
++	 * by the NIOS FW.
++	 */
++	ret = regmap_read_poll_timeout(m10bmc->regmap,
++				       csr_map->base + csr_map->doorbell,
++				       val,
++				       (!(val & DRBL_PKVL_EEPROM_LOAD_SEC)),
++				       M10BMC_N3000_PKVL_LOAD_INTERVAL_US,
++				       M10BMC_N3000_PKVL_LOAD_TIMEOUT_US);
++	if (ret == -ETIMEDOUT) {
++		dev_err(sec->dev, "PKVL_EEPROM_LOAD clear timedout\n");
++		m10bmc_sys_update_bits(m10bmc, csr_map->doorbell,
++				       DRBL_PKVL_EEPROM_LOAD_SEC, 0);
++		ret = -ENODEV;
++	} else if (ret) {
++		dev_err(sec->dev, "poll EEPROM_LOAD error %d\n", ret);
++	}
++
++	return ret;
++}
++
++static int poll_retimer_eeprom_load_done(struct m10bmc_sec *sec)
++{
++	const struct m10bmc_csr_map *csr_map = sec->m10bmc->info->csr_map;
++	struct intel_m10bmc *m10bmc = sec->m10bmc;
++	unsigned int doorbell_reg;
++	int ret;
++
++	/*
++	 * RSU_STAT_PKVL_REJECT indicates that the current image is
++	 * already programmed. RSU_PROG_PKVL_PROM_DONE that the firmware
++	 * update process has finished, but does not necessarily indicate
++	 * a successful update.
++	 */
++	ret = regmap_read_poll_timeout(m10bmc->regmap,
++				       csr_map->base + csr_map->doorbell,
++				       doorbell_reg,
++				       (rsu_prog(doorbell_reg) ==
++					RSU_PROG_PKVL_PROM_DONE ||
++					FIELD_GET(DRBL_RSU_STATUS, doorbell_reg) ==
++					RSU_STAT_PKVL_REJECT),
++				       M10BMC_N3000_PKVL_PRELOAD_INTERVAL_US,
++				       M10BMC_N3000_PKVL_PRELOAD_TIMEOUT_US);
++	if (ret == -ETIMEDOUT) {
++		dev_err(sec->dev, "Doorbell check timedout: 0x%08x\n",
++			doorbell_reg);
++		return ret;
++	} else if (ret) {
++		dev_err(sec->dev, "poll Doorbell error %d\n", ret);
++		return ret;
++	}
++
++	if (FIELD_GET(DRBL_RSU_STATUS, doorbell_reg) == RSU_STAT_PKVL_REJECT) {
++		dev_err(sec->dev, "duplicate image rejected\n");
++		return -ECANCELED;
++	}
++
++	return 0;
++}
++
++static int poll_retimer_preload_done(struct m10bmc_sec *sec)
++{
++	const struct m10bmc_csr_map *csr_map = sec->m10bmc->info->csr_map;
++	struct intel_m10bmc *m10bmc = sec->m10bmc;
++	unsigned int val;
++	int ret;
++
++	/*
++	 * Wait for the updated firmware to be loaded by the PKVL device
++	 * and confirm that the applied version matches the expected value.
++	 */
++	ret = regmap_read_poll_timeout(m10bmc->regmap,
++				       csr_map->base + M10BMC_N3000_PKVL_POLL_CTRL,
++				       val,
++				       ((val & M10BMC_N3000_PKVL_PRELOAD) ==
++					M10BMC_N3000_PKVL_PRELOAD),
++				       M10BMC_N3000_PKVL_PRELOAD_INTERVAL_US,
++				       M10BMC_N3000_PKVL_PRELOAD_TIMEOUT_US);
++	if (ret) {
++		dev_err(sec->dev, "poll M10BMC_N3000_PKVL_PRELOAD error %d\n", ret);
++		return ret;
++	}
++
++	if ((val & M10BMC_N3000_PKVL_UPG_STATUS_MASK) != M10BMC_N3000_PKVL_UPG_STATUS_GOOD) {
++		dev_err(sec->dev, "error during M10BMC PKVL upgrade\n");
++		return -EIO;
++	}
++
++	return 0;
++}
++
++static int m10bmc_sec_retimer_eeprom_load(struct m10bmc_sec *sec)
++{
++	int ret;
++
++	ret = image_load_check_idle(sec);
++	if (ret)
++		return ret;
++
++	ret = trigger_retimer_eeprom_load(sec);
++	if (ret)
++		return ret;
++
++	ret = poll_retimer_eeprom_load_done(sec);
++	if (ret)
++		return ret;
++
++	return poll_retimer_preload_done(sec);
++}
++
++static const struct image_load n3000_image_load_hndlrs[] = {
++	{
++		.name = "bmc_factory",
++		.load_image = m10bmc_sec_bmc_image_load_1,
++	},
++	{
++		.name = "bmc_user",
++		.load_image = m10bmc_sec_bmc_image_load_0,
++	},
++	{
++		.name = "retimer_fw",
++		.load_image = m10bmc_sec_retimer_eeprom_load,
++	},
++	{}
++};
++
++static const struct image_load d5005_image_load_hndlrs[] = {
++	{
++		.name = "bmc_factory",
++		.load_image = m10bmc_sec_bmc_image_load_0,
++	},
++	{
++		.name = "bmc_user",
++		.load_image = m10bmc_sec_bmc_image_load_1,
++	},
++	{}
++};
++
++static ssize_t available_images_show(struct device *dev,
++				     struct device_attribute *attr, char *buf)
++{
++	struct m10bmc_sec *sec = dev_get_drvdata(dev);
++	const struct image_load *hndlr;
++	ssize_t count = 0;
++
++	for (hndlr = sec->ops->image_load; hndlr->name; hndlr++)
++		count += sysfs_emit_at(buf, count, "%s%s", count ? " " : "",
++				       hndlr->name);
++
++	count += sysfs_emit_at(buf, count, "\n");
++
++	return count;
++}
++static DEVICE_ATTR_RO(available_images);
++
++static ssize_t image_load_store(struct device *dev,
++				struct device_attribute *attr,
++				const char *buf, size_t count)
++{
++	struct m10bmc_sec *sec = dev_get_drvdata(dev);
++	const struct image_load *hndlr;
++	int ret = -EINVAL;
++
++	/*
++	 * Do not wait for an in-flight secure update to finish; it can take
++	 * minutes. Tell userspace to come back later instead.
++	 */
++	if (!mutex_trylock(&sec->lock))
++		return -EBUSY;
++
++	for (hndlr = sec->ops->image_load; hndlr->name; hndlr++) {
++		if (sysfs_streq(buf, hndlr->name)) {
++			ret = hndlr->load_image(sec);
++			break;
++		}
++	}
++
++	mutex_unlock(&sec->lock);
++
++	return ret ? : count;
++}
++static DEVICE_ATTR_WO(image_load);
++
++static umode_t
++m10bmc_control_visible(struct kobject *kobj, struct attribute *attr, int n)
++{
++	struct m10bmc_sec *sec = dev_get_drvdata(kobj_to_dev(kobj));
++
++	if (!sec->ops->image_load)
++		return SYSFS_GROUP_INVISIBLE;
++
++	return attr->mode;
++}
++
++static struct attribute *m10bmc_control_attrs[] = {
++	&dev_attr_available_images.attr,
++	&dev_attr_image_load.attr,
++	NULL,
++};
++
++static struct attribute_group m10bmc_control_attr_group = {
++	.name = "control",
++	.attrs = m10bmc_control_attrs,
++	.is_visible = m10bmc_control_visible,
++};
++
+ static const struct attribute_group *m10bmc_sec_attr_groups[] = {
+ 	&m10bmc_security_attr_group,
++	&m10bmc_control_attr_group,
+ 	NULL,
+ };
+ 
+@@ -525,15 +829,13 @@ static enum fw_upload_err rsu_cancel(struct m10bmc_sec *sec)
+ 	return FW_UPLOAD_ERR_CANCELED;
+ }
+ 
+-static enum fw_upload_err m10bmc_sec_prepare(struct fw_upload *fwl,
+-					     const u8 *data, u32 size)
++static enum fw_upload_err m10bmc_sec_do_prepare(struct fw_upload *fwl,
++						const u8 *data, u32 size)
+ {
+ 	struct m10bmc_sec *sec = fwl->dd_handle;
+ 	const struct m10bmc_csr_map *csr_map = sec->m10bmc->info->csr_map;
+ 	u32 ret;
+ 
+-	sec->cancel_request = false;
+-
+ 	if (!size || size > csr_map->staging_size)
+ 		return FW_UPLOAD_ERR_INVALID_SIZE;
+ 
+@@ -573,6 +875,40 @@ static enum fw_upload_err m10bmc_sec_prepare(struct fw_upload *fwl,
+ 	return ret;
+ }
+ 
++/*
++ * The fw_upload core runs prepare(), write(), poll_complete() and cleanup()
++ * sequentially from a single work item, and only calls cleanup() once
++ * prepare() has succeeded. So take sec->lock here and drop it again on the
++ * failure path; on success it stays held until m10bmc_sec_cleanup().
++ */
++static enum fw_upload_err m10bmc_sec_prepare(struct fw_upload *fwl,
++					     const u8 *data, u32 size)
++{
++	struct m10bmc_sec *sec = fwl->dd_handle;
++	enum fw_upload_err ret;
++
++	/*
++	 * Reset the cancel flag before we can block on the lock, so a cancel
++	 * raised while we wait for an in-flight image reload to release it is
++	 * preserved rather than cleared by m10bmc_sec_do_prepare().
++	 */
++	sec->cancel_request = false;
++
++	mutex_lock(&sec->lock);
++
++	/* Honour a cancel that arrived while we waited for the lock. */
++	if (sec->cancel_request) {
++		mutex_unlock(&sec->lock);
++		return FW_UPLOAD_ERR_CANCELED;
++	}
++
++	ret = m10bmc_sec_do_prepare(fwl, data, size);
++	if (ret != FW_UPLOAD_ERR_NONE)
++		mutex_unlock(&sec->lock);
++
++	return ret;
++}
++
+ #define WRITE_BLOCK_SIZE 0x4000	/* Default write-block size is 0x4000 bytes */
+ 
+ static enum fw_upload_err m10bmc_sec_fw_write(struct fw_upload *fwl, const u8 *data,
+@@ -646,6 +982,9 @@ static enum fw_upload_err m10bmc_sec_poll_complete(struct fw_upload *fwl)
+  * contention on register accesses, m10bmc_sec_cancel() must only update
+  * the cancel_request flag. Other functions will check this flag and handle
+  * the cancel request synchronously.
++ *
++ * For the same reason it must not take sec->lock: that lock is held by the
++ * upload it is being asked to cancel.
+  */
+ static void m10bmc_sec_cancel(struct fw_upload *fwl)
+ {
+@@ -664,6 +1003,8 @@ static void m10bmc_sec_cleanup(struct fw_upload *fwl)
+ 
+ 	if (sec->m10bmc->flash_bulk_ops)
+ 		sec->m10bmc->flash_bulk_ops->unlock_write(sec->m10bmc);
++
++	mutex_unlock(&sec->lock);
+ }
+ 
+ static const struct fw_upload_ops m10bmc_ops = {
+@@ -676,6 +1017,12 @@ static const struct fw_upload_ops m10bmc_ops = {
+ 
+ static const struct m10bmc_sec_ops m10sec_n3000_ops = {
+ 	.rsu_status = m10bmc_sec_n3000_rsu_status,
++	.image_load = n3000_image_load_hndlrs,
++};
++
++static const struct m10bmc_sec_ops m10sec_d5005_ops = {
++	.rsu_status = m10bmc_sec_n3000_rsu_status,
++	.image_load = d5005_image_load_hndlrs,
+ };
+ 
+ static const struct m10bmc_sec_ops m10sec_n6000_ops = {
+@@ -700,6 +1047,10 @@ static int m10bmc_sec_probe(struct platform_device *pdev)
+ 	sec->ops = (struct m10bmc_sec_ops *)platform_get_device_id(pdev)->driver_data;
+ 	dev_set_drvdata(&pdev->dev, sec);
+ 
++	ret = devm_mutex_init(&pdev->dev, &sec->lock);
++	if (ret)
++		return ret;
++
+ 	ret = xa_alloc(&fw_upload_xa, &sec->fw_name_id, sec,
+ 		       xa_limit_32b, GFP_KERNEL);
+ 	if (ret)
+@@ -747,7 +1098,7 @@ static const struct platform_device_id intel_m10bmc_sec_ids[] = {
+ 	},
+ 	{
+ 		.name = "d5005bmc-sec-update",
+-		.driver_data = (kernel_ulong_t)&m10sec_n3000_ops,
++		.driver_data = (kernel_ulong_t)&m10sec_d5005_ops,
+ 	},
+ 	{
+ 		.name = "n6000bmc-sec-update",
+diff --git a/include/linux/mfd/intel-m10-bmc.h b/include/linux/mfd/intel-m10-bmc.h
+index 988f1cd90032f..56ca0aba673be 100644
+--- a/include/linux/mfd/intel-m10-bmc.h
++++ b/include/linux/mfd/intel-m10-bmc.h
+@@ -40,6 +40,41 @@
+ #define M10BMC_N3000_VER_PCB_INFO_MSK	GENMASK(31, 24)
+ #define M10BMC_N3000_VER_LEGACY_INVALID	0xffffffff
+ 
++/* PKVL (retimer) preload poll control register, in system register region */
++#define M10BMC_N3000_PKVL_POLL_CTRL		0x80
++#define M10BMC_N3000_PKVL_A_PRELOAD		BIT(16)
++#define M10BMC_N3000_PKVL_A_PRELOAD_TO	BIT(17)
++#define M10BMC_N3000_PKVL_A_DATA_TOO_BIG	BIT(18)
++#define M10BMC_N3000_PKVL_A_HDR_CKSUM		BIT(20)
++#define M10BMC_N3000_PKVL_B_PRELOAD		BIT(24)
++#define M10BMC_N3000_PKVL_B_PRELOAD_TO	BIT(25)
++#define M10BMC_N3000_PKVL_B_DATA_TOO_BIG	BIT(26)
++#define M10BMC_N3000_PKVL_B_HDR_CKSUM		BIT(28)
++
++#define M10BMC_N3000_PKVL_PRELOAD	(M10BMC_N3000_PKVL_A_PRELOAD | \
++					 M10BMC_N3000_PKVL_B_PRELOAD)
++#define M10BMC_N3000_PKVL_PRELOAD_TIMEOUT	(M10BMC_N3000_PKVL_A_PRELOAD_TO | \
++					 M10BMC_N3000_PKVL_B_PRELOAD_TO)
++#define M10BMC_N3000_PKVL_DATA_TOO_BIG	(M10BMC_N3000_PKVL_A_DATA_TOO_BIG | \
++					 M10BMC_N3000_PKVL_B_DATA_TOO_BIG)
++#define M10BMC_N3000_PKVL_HDR_CHECKSUM	(M10BMC_N3000_PKVL_A_HDR_CKSUM | \
++					 M10BMC_N3000_PKVL_B_HDR_CKSUM)
++
++#define M10BMC_N3000_PKVL_UPG_STATUS_MASK	(M10BMC_N3000_PKVL_PRELOAD | \
++					 M10BMC_N3000_PKVL_PRELOAD_TIMEOUT | \
++					 M10BMC_N3000_PKVL_DATA_TOO_BIG | \
++					 M10BMC_N3000_PKVL_HDR_CHECKSUM)
++#define M10BMC_N3000_PKVL_UPG_STATUS_GOOD	(M10BMC_N3000_PKVL_PRELOAD | \
++					 M10BMC_N3000_PKVL_HDR_CHECKSUM)
++
++/* interval 100ms, timeout 2s to trigger the PKVL EEPROM load */
++#define M10BMC_N3000_PKVL_LOAD_INTERVAL_US	(100 * 1000)
++#define M10BMC_N3000_PKVL_LOAD_TIMEOUT_US	(2 * 1000 * 1000)
++
++/* interval 100ms, timeout 30s for the PKVL preload to complete */
++#define M10BMC_N3000_PKVL_PRELOAD_INTERVAL_US	(100 * 1000)
++#define M10BMC_N3000_PKVL_PRELOAD_TIMEOUT_US	(30 * 1000 * 1000)
++
+ /* Telemetry registers */
+ #define M10BMC_N3000_TELEM_START	0x100
+ #define M10BMC_N3000_TELEM_END		0x250
+-- 
+2.53.0

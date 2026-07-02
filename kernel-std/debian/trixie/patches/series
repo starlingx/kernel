@@ -12,6 +12,7 @@
 0012-PCI-Use-res_to_dev_res-in-reassign_resources_sorted.patch
 0013-PCI-Fix-premature-removal-from-realloc_head-list-dur.patch
 0014-PCI-Fix-alignment-calculation-for-resource-size-larg.patch
+fpga/0001-fpga-m10bmc-sec-add-image_load-sysfs-for-N3000-and-D.patch
 scsi/0001-scsi-sas-Skip-opt_sectors-when-DMA-reports-no-real-o.patch
 scsi/0002-dma-mapping-make-dma_max_mapping_size-return-0-for-n.patch
 scsi/0003-scsi-core-Drop-dev-dma_mask-check-in-evaluating-max_.patch
