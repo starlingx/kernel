@@ -1,0 +1,35 @@
+From 564f03529cf446cb81fa0800ba687d7df8074020 Mon Sep 17 00:00:00 2001
+From: John Garry <john.g.garry@oracle.com>
+Date: Mon, 29 Jun 2026 08:53:10 +0000
+Subject: [PATCH 3/3] scsi: core: Drop dev->dma_mask check in evaluating
+ max_sectors
+
+When evaluating shost->max_sectors, we currently check dma_dev->dma_mask
+is non-NULL, as dma_max_mapping_size(dma_dev) could previously not handle
+unset dma_dev->dma_mask - this is no longer the case.
+
+Signed-off-by: John Garry <john.g.garry@oracle.com>
+---
+ drivers/scsi/hosts.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/scsi/hosts.c b/drivers/scsi/hosts.c
+index 17173239301e6..01e807985670e 100644
+--- a/drivers/scsi/hosts.c
++++ b/drivers/scsi/hosts.c
+@@ -246,10 +246,8 @@ int scsi_add_host_with_dma(struct Scsi_Host *shost, struct device *dev,
+ 
+ 	shost->dma_dev = dma_dev;
+ 
+-	if (dma_dev->dma_mask) {
+-		shost->max_sectors = min_t(unsigned int, shost->max_sectors,
+-				dma_max_mapping_size(dma_dev) >> SECTOR_SHIFT);
+-	}
++	shost->max_sectors = min_not_zero(shost->max_sectors,
++			dma_max_mapping_size(dma_dev) >> SECTOR_SHIFT);
+ 
+ 	error = scsi_mq_setup_tags(shost);
+ 	if (error)
+-- 
+2.43.0
+
