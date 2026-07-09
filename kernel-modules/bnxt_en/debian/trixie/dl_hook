@@ -24,8 +24,8 @@
 # building.
 # Tools needed: mkdir, rm, tar
 
-DL_TARBALL=bcm_236.1.155.0c.tar.gz
-SRC_TARBALL=drivers_linux/bundle/netxtreme-bnxt_en-1.10.3-236.1.155.0.tar.gz
+DL_TARBALL=bcm_238.1.138.6a.tar.gz
+SRC_TARBALL=drivers_linux/bundle/netxtreme-bnxt_en-1.10.3-238.1.138.5.tar.gz
 TMPDIR="bcm_tmp"
 
 DESTDIR="${1}"
