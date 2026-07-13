@@ -1,0 +1,51 @@
+From b855fd652547d1c32a70aa2630be7f82cd1011d9 Mon Sep 17 00:00:00 2001
+From: Catalin Rapiteanu <viorel-catalin.rapiteanu@windriver.com>
+Date: Thu, 11 Jun 2026 19:58:03 +0300
+Subject: [PATCH 2/3] Fix kernel version compilation
+
+Signed-off-by: Catalin Rapiteanu <viorel-catalin.rapiteanu@windriver.com>
+---
+ debian/control | 5 ++---
+ debian/rules   | 5 ++++-
+ 2 files changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/debian/control b/debian/control
+index 9162b94..ce36656 100644
+--- a/debian/control
++++ b/debian/control
+@@ -2,14 +2,13 @@ Source: mlnx-ofed-kernel
+ Section: net
+ Priority: optional
+ Maintainer: Vladimir Sokolovsky <vlad@mellanox.com>
+-Build-Depends: debhelper (>= 8.0.0), autotools-dev, bzip2, dh-dkms | dkms (<< 3.0),
++Build-Depends: debhelper (>= 8.0.0), autotools-dev, bzip2, make, linux@KERNEL_TYPE@-headers-stx-amd64, linux@KERNEL_TYPE@-keys
+ Standards-Version: 4.2.0
+ Homepage: http://www.mellanox.com/page/products_dyn?product_family=26&mtag=linux_sw_drivers
+ 
+ Package: mlnx-ofed-kernel-utils
+ Architecture: any
+-Depends: ${misc:Depends}, coreutils, pciutils, grep, procps, module-init-tools | kmod, lsof,
+- mlnx-tools (>= 5.2.0),
++Depends: ${misc:Depends}, coreutils, pciutils, grep, procps, module-init-tools | kmod, lsof, mlnx-tools (>= 5.2.0), linux@KERNEL_TYPE@-headers-stx-amd64
+ Conflicts: mlnx-en-utils
+ Description: Userspace tools to restart and tune mlnx-ofed kernel modules
+ 
+diff --git a/debian/rules b/debian/rules
+index 5f22d35..273f220 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -47,7 +47,10 @@ export INSTALL_MOD_PATH:=$(CURDIR)/debian/$(pdkms)
+ DIST_NAME := $(shell lsb_release -si)
+ DIST_RELEASE := $(DIST_NAME)/$(shell lsb_release -sc)
+ 
+-kernelver ?= $(shell uname -r)
++#Here kernelver should be the one this package depends on,
++#while "uname -r" got the building machine's os release number.
++kheaders_name = $(shell ls /usr/src | grep linux@KERNEL_TYPE@-headers | grep amd64)
++kernelver = $(shell echo $(kheaders_name) | sed 's/linux@KERNEL_TYPE@-headers-//g')
+ kernelver1 = $(shell echo $(kernelver) | sed -e 's/_/-/g')
+ kernel_source_dir ?= "/lib/modules/$(kernelver)/build"
+ deb_arch = $(shell uname -m)
+-- 
+2.47.3
+

@@ -27,27 +27,18 @@ igb-uio-rt
 #initramfs-trigger
 initramfs-trigger
 
-# Intel Quartzville Linux Driver
-iqvlinux
-iqvlinux-rt
-
-#intel-opae-fpgaa
-kmod-opae-fpga-driver
-kmod-opae-fpga-driver-rt
-
 # libbnxt_re - Broadcom Infiniband verbs library
 libbnxt-re
 
 #kernel-std/kernel-rt
-linux-compiler-gcc-14-x86
-linux-headers-6.12.0-1-amd64
-linux-rt-headers-6.12.0-1-rt-amd64
-linux-headers-6.12.0-1-common
-linux-rt-headers-6.12.0-1-rt-common
-linux-image-6.12.0-1-amd64-unsigned
-linux-rt-image-6.12.0-1-rt-amd64-unsigned
-linux-kbuild-6.12
-linux-rt-kbuild-6.12
+linux-headers-6.18.15+deb13-amd64
+linux-rt-headers-6.18.15+deb13-rt-amd64
+linux-headers-6.18.15+deb13-common
+linux-rt-headers-6.18.15+deb13-rt-common
+linux-image-6.18.15+deb13-amd64-unsigned
+linux-rt-image-6.18.15+deb13-rt-amd64-unsigned
+linux-kbuild-6.18.15+deb13
+linux-rt-kbuild-6.18.15+deb13-rt
 linux-libc-dev
 linux-perf
 linux-cpupower
@@ -56,10 +47,6 @@ linux-cpupower
 mlnx-ofed-kernel-modules
 mlnx-ofed-kernel-modules-rt
 mlnx-ofed-kernel-utils
-
-#qat22
-qat2.2.l
-qat2.2.l-rt
 
 #rdma-core
 ibacm
@@ -83,7 +70,4 @@ srptools
 
 #mstflint
 mstflint
-
-qatzip
-qatengine
 

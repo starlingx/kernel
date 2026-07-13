@@ -1,0 +1,46 @@
+From 33d2d1d57426eac81e53347c8da5b38a2a4ec5c9 Mon Sep 17 00:00:00 2001
+From: Li Zhou <li.zhou@windriver.com>
+Date: Wed, 2 Nov 2022 14:48:33 +0800
+Subject: [PATCH] kernel: rt: unset LOCK_DOWN_IN_EFI_SECURE_BOOT
+
+StarlingX does not follow Debian's signing process so we disable the
+Secure Boot lockdown check and the buildcheck assertion for it.
+
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+[cr: Adapted the patch for kernel 6.18.15 on trixie.]
+Signed-off-by: Catalin Rapiteanu <viorel-catalin.rapiteanu@windriver.com>
+---
+ debian/bin/buildcheck.py | 4 +---
+ debian/config/config     | 2 +-
+ 2 files changed, 2 insertions(+), 4 deletions(-)
+
+diff --git a/debian/bin/buildcheck.py b/debian/bin/buildcheck.py
+index 1234560..1234561 100755
+--- a/debian/bin/buildcheck.py
++++ b/debian/bin/buildcheck.py
+@@ -23,9 +23,7 @@ class CheckSecureBoot:
+             with (self.dir / '.config').open() as fh:
+                 kconfig.read(fh)
+ 
+-            for name, value in [('EFI_STUB', True),
+-                                ('LOCK_DOWN_IN_EFI_SECURE_BOOT', True),
+-                                ('SYSTEM_TRUSTED_KEYS', '""')]:
++            for name, value in [('EFI_STUB', True)]:
+                 if name not in kconfig:
+                     out.write(f'Secure Boot: CONFIG_{name} is not defined\n')
+                     fail = 1
+diff --git a/debian/config/config b/debian/config/config
+index 1234562..1234563 100644
+--- a/debian/config/config
++++ b/debian/config/config
+@@ -7746,7 +7746,7 @@ CONFIG_SECURITY_LANDLOCK=y
+ ## choice: Kernel default lockdown mode
+ CONFIG_LOCK_DOWN_KERNEL_FORCE_NONE=y
+ ## end choice
+-CONFIG_LOCK_DOWN_IN_EFI_SECURE_BOOT=y
++# CONFIG_LOCK_DOWN_IN_EFI_SECURE_BOOT is not set
+ 
+ ##
+ ## file: security/selinux/Kconfig
+-- 
+2.47.3

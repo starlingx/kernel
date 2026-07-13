@@ -1,0 +1,39 @@
+From 2f5c4181ff61fa4b8526b24457253f1b9457e675 Mon Sep 17 00:00:00 2001
+From: Veerasenareddy Burru <vburru@marvell.com>
+Date: Mon, 20 Feb 2023 22:28:58 -0800
+Subject: [PATCH] octeon_ep: print firmware ready status only once
+
+Do not log everytime when firmware ready status is read as 0 (not
+ready). log only once when firmware is not ready and once when
+firmware is ready.
+
+Signed-off-by: Veerasenareddy Burru <vburru@marvell.com>
+[SR: Refreshed patch for SDK 11.23.04]
+Signed-off-by: Shinas Rasheed <srasheed@marvell.com>
+[mvb: Adapt patch for v23.11]
+Signed-off-by: M. Vefa Bicakci <vefa.bicakci@windriver.com>
+---
+ drivers/octeon_ep/octep_main.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/octeon_ep/octep_main.c b/drivers/octeon_ep/octep_main.c
+index 59feaac179f7..675f7ab670c4 100644
+--- a/drivers/octeon_ep/octep_main.c
++++ b/drivers/octeon_ep/octep_main.c
+@@ -1555,7 +1555,7 @@ static bool get_fw_ready_status(struct octep_device *oct)
+ 			continue;
+ 
+ 		pci_read_config_byte(oct->pdev, (pos + 8), &status);
+-		dev_info(&oct->pdev->dev, "Firmware ready status = %u\n", status);
++		dev_info_once(&oct->pdev->dev, "Firmware ready status = %u\n", status);
+ #define FW_STATUS_READY 1ULL
+ 		return (status == FW_STATUS_READY) ? true : false;
+ 	}
+@@ -1597,6 +1597,7 @@ static void octep_dev_setup_task(struct work_struct *work)
+ 			return;
+ 		}
+ 	}
++	dev_info_once(&oct->pdev->dev, "Firmware is ready!!\n");
+ 
+ 	/* Do not free resources on failure. driver unload will
+ 	 * lead to freeing resources.

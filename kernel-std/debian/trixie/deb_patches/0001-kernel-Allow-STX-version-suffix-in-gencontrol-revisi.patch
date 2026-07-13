@@ -1,0 +1,41 @@
+From 0776c4f151dafa2e154774c0b7215c5657c532c9 Mon Sep 17 00:00:00 2001
+From: Catalin Rapiteanu <viorel-catalin.rapiteanu@windriver.com>
+Date: Tue, 9 Jun 2026 20:32:02 +0300
+Subject: [PATCH] kernel: Allow STX version suffix in gencontrol revision
+
+Update debian/config/defines.toml to accept STX revision suffix
+(e.g. 1.stx.123) in the revision_regex for both 'unstable' and
+'trixie' distributions. The STX build system appends '.stx.<N>'
+to the Debian revision, which the new gencontrol.py validates
+against these regexes.
+
+Signed-off-by: Catalin Rapiteanu <viorel-catalin.rapiteanu@windriver.com>
+---
+ debian/config/defines.toml | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/debian/config/defines.toml b/debian/config/defines.toml
+index adece9907d..0a6faab5ef 100644
+--- a/debian/config/defines.toml
++++ b/debian/config/defines.toml
+@@ -132,7 +132,7 @@ revision_regex = '\d+~exp\d+'
+ [[debianrelease]]
+ name_regex = 'unstable'
+ abi_suffix = '+deb14'
+-revision_regex = '\d+(\.\d+)?'
++revision_regex = '\d+(\.\d+)?(\.\w+\.\d+)?'
+ 
+ [[debianrelease]]
+ name_regex = 'forky(-security)?'
+@@ -147,7 +147,7 @@ revision_regex = '\d+(\.\d+)?(\+deb14u\d+)?~bpo13\+\d+'
+ [[debianrelease]]
+ name_regex = 'trixie(-security)?'
+ abi_suffix = '+deb13'
+-revision_regex = '\d+(\.\d+)?(\+deb13u\d+)?'
++revision_regex = '\d+(\.\d+)?(\.\w+\.\d+)?(\+deb13u\d+)?'
+ 
+ [[debianrelease]]
+ name_regex = 'bookworm-backports'
+-- 
+2.47.3
+

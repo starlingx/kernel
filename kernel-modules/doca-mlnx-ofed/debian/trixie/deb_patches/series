@@ -1,0 +1,5 @@
+0001-Build-without-DMKS-and-sign.patch
+0002-Fix-kernel-version-compilation.patch
+0003-Add-additional-packages.patch
+0004-Install-dev-headers-into-dev-package.patch
+0005-Install-modules-maintainer-scripts-for-renamed-packa.patch

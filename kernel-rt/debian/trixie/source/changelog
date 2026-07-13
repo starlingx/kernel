@@ -1,3 +1,8 @@
+linux-rt (6.18.15-1) unstable; urgency=medium
+  * New upstream version 6.18.15 from:
+    https://snapshot.debian.org/archive/debian/20260314T022719Z/pool/main/l/linux/linux_6.18.15.orig.tar.xz
+ -- Viorel-Catalin Rapiteanu <viorel-catalin.rapiteanu@windriver.com>  Mon, 09 Jun 2026 11:11:00 +0300
+
 linux-rt (6.12.57-1) unstable; urgency=medium
   * New upstream update:
     https://git.yoctoproject.org/linux-yocto/commit/?h=v6.12/standard/preempt-rt/base&id=af2d3ab81402c14f81072715d771097a0dfcb427

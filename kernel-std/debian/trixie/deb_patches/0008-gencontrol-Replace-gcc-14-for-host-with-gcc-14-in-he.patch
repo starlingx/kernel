@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Catalin Rapiteanu <viorel-catalin.rapiteanu@windriver.com>
+Date: Thu, 12 Jun 2026 18:00:00 +0300
+Subject: [PATCH] gencontrol: Replace gcc-14-for-host with gcc-14 in headers
+ dependency
+
+The linux-rt-headers package has a runtime Depends on gcc-14-for-host,
+which is a cross-compilation virtual package not available in the STX
+repositories. Replace it with gcc-14 which is available and sufficient
+for building out-of-tree kernel modules on the native architecture.
+
+Signed-off-by: Catalin Rapiteanu <viorel-catalin.rapiteanu@windriver.com>
+---
+ debian/bin/gencontrol.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/debian/bin/gencontrol.py b/debian/bin/gencontrol.py
+--- a/debian/bin/gencontrol.py
++++ b/debian/bin/gencontrol.py
+@@ -419,7 +419,7 @@
+                     desc.append(config.description.long[part])
+                     desc.append_short(config.description.short[part])
+ 
+-        packages_headers[0].depends.merge([relation_c_compiler_host])
++        packages_headers[0].depends.merge([relation_c_compiler])
+         packages_own.extend(packages_image)
+         packages_own.extend(packages_headers)
+ 
+-- 
+2.47.3

@@ -1,0 +1,23 @@
+octeon-ep (2605-1) unstable; urgency=medium
+
+  * Update the PF, VF and PHC drivers to release v26.05; refresh patches.
+
+ -- Viorel-Catalin Rapiteanu <viorel-catalin.rapiteanu@windriver.com>  Thu, 11 Jun 2026 11:25:00 +0300
+
+octeon-ep (112311-1) unstable; urgency=medium
+
+  * Update the PF, VF and PHC drivers to release v23.11; refresh patches.
+
+ -- M. Vefa Bicakci <vefa.bicakci@windriver.com>  Mon, 22 Jan 2024 17:14:00 +0000
+
+octeon-ep (112304-1) unstable; urgency=medium
+
+  * Updated PF, VF and PHC driver for Octeon PCIe NIC
+
+ -- Shinas Rasheed <srasheed@marvell.com>  Tue, May 16 2023 03:07:20 -0700
+
+octeon-ep (112301-1) unstable; urgency=medium
+
+  * PF, VF and PHC driver for Octeon PCIe NIC
+
+ -- Veerasenareddy Burru <vburru@marvell.com>  Wed, 22 Feb 2023 17:54:51 -0800

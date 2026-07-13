@@ -1,0 +1,94 @@
+From eb48a2dbea5b87f879fa9e47dd0f35434352511d Mon Sep 17 00:00:00 2001
+From: Li Zhou <li.zhou@windriver.com>
+Date: Tue, 12 Sep 2023 14:20:59 +0800
+Subject: [PATCH] kernel-rt: Add pkgs without abiname for image/headers
+
+Add 2 packages linux-rt-image-stx-amd64/linux-rt-headers-stx-amd64
+which don't have abiname in their names. They depend on packages with
+abiname in names. Then we can use these 2 packages in anywhere
+that involves image/headers packages (e.g. Build-Depends/yaml config
+and so on). When the abiname is changed later in any kernel upgrading
+we don't need change above places involved any more.
+
+We don't use the linux-rt-image-amd64/linux-rt-headers-amd64 as Debian does
+because they are built by linux-rt-signed-amd64, and coupled with signed
+kernel. We don't follow Debian's signing process so we create 2 new
+packages which are coupled with unsigned image.
+
+Add the 2 new packages in init control file of "debian" folder, or else
+a wrong build sequence ( OOT kernel modules are ahead of kernel ) will
+be determined because it is deduced from init control files of
+packages. The build error for kernel modules is like:
+"unsat-dependency: linux-rt-headers-stx-amd64:amd64"
+
+The STX build scheduler (build-tools/stx) derives the build order from
+the ".dsc" generated before the kernel is built. That ".dsc" lists the
+binary packages from the static (pristine) debian/control, which is
+NOT regenerated from debian/templates/*.control.in at dsc-creation time
+(dsc is produced via "dpkg-buildpackage -nc -S"). Adding the packages
+only to extra.control.in is therefore not enough: the names never reach
+the ".dsc" "Binary:" field, the scheduler never learns that the OOT
+kernel modules build-depend on the kernel, and it schedules them in
+parallel with the kernel. Add the two meta-packages to the static
+debian/control as well so they are advertised in the ".dsc" and the
+modules are correctly ordered after the kernel.
+
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+[cr: Adapted the patch for kernel 6.18.15 on trixie.]
+Signed-off-by: Catalin Rapiteanu <viorel-catalin.rapiteanu@windriver.com>
+---
+ debian/control                    | 16 ++++++++++++++++
+ debian/templates/extra.control.in | 17 +++++++++++++++++
+ 2 files changed, 33 insertions(+)
+
+diff --git a/debian/control b/debian/control
+index 1234560..1234561 100644
+--- a/debian/control
++++ b/debian/control
+@@ -14,6 +14,22 @@ Description: Inspection and simple manipulation of BPF programs and maps
+  The bpftool command allows for inspection and simple modification of
+  Berkeley Packet Filter (BPF) objects on the system.
+ 
++Package: linux-rt-image-stx-amd64
++Build-Profiles: <!stage1 !pkg.linux.nokernel>
++Depends: ${misc:Depends}
++Architecture: amd64
++Description: RT Linux for 64-bit PCs (meta-package)
++ This package depends on the latest unsigned Linux kernel and modules
++ for use on PCs with AMD64, Intel 64 or VIA Nano processors.
++
++Package: linux-rt-headers-stx-amd64
++Build-Profiles: <!stage1 !pkg.linux.nokernel>
++Depends: ${misc:Depends}
++Architecture: amd64
++Description: RT Header files for Linux amd64 configuration (meta-package)
++ This package depends on the architecture-specific header files for the latest
++ Linux kernel amd64 configuration.
++
+ Package: hyperv-daemons
+ Architecture: amd64 arm64 i386 x32
+ Section: admin
+diff --git a/debian/templates/extra.control.in b/debian/templates/extra.control.in
+index e69de29..1234567 100644
+--- a/debian/templates/extra.control.in
++++ b/debian/templates/extra.control.in
+@@ -0,0 +1,17 @@
++Package: linux-rt-image-stx-amd64
++Meta-Rules-Target: meta
++Build-Profiles: <!stage1 !pkg.linux.nokernel>
++Depends: linux-rt-image-@abiname@-amd64-unsigned (= ${binary:Version}), ${misc:Depends}
++Architecture: amd64
++Description: RT Linux for 64-bit PCs (meta-package)
++ This package depends on the latest unsigned Linux kernel and modules
++ for use on PCs with AMD64, Intel 64 or VIA Nano processors.
++
++Package: linux-rt-headers-stx-amd64
++Meta-Rules-Target: meta
++Build-Profiles: <!stage1 !pkg.linux.nokernel>
++Depends: linux-rt-headers-@abiname@-amd64 (= ${binary:Version}), ${misc:Depends}
++Architecture: amd64
++Description: RT Header files for Linux amd64 configuration (meta-package)
++ This package depends on the architecture-specific header files for the latest
++ Linux kernel amd64 configuration.
+-- 
+2.47.3

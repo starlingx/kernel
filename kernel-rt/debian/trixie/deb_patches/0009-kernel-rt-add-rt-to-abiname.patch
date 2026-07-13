@@ -1,0 +1,37 @@
+From bb33cdde8d36fcc3d10b2ebd1001b18347755a07 Mon Sep 17 00:00:00 2001
+From: Li Zhou <li.zhou@windriver.com>
+Date: Thu, 28 Apr 2022 10:16:20 +0800
+Subject: [PATCH] kernel-rt: add '-rt' to abiname
+
+Adding an extra '-rt' to abiname changes e.g. '6.18.15+deb13-amd64'
+in file names/paths to '6.18.15+deb13-rt-amd64'.
+In this way, the same names/paths in kernel-rt and kernel-std
+packages can be avoided.
+
+In trixie, the abiname is computed dynamically in gencontrol.py's
+process_changelog() method rather than being a static field in
+defines.toml. We patch that method to append '-rt' after the
+abiname is determined.
+
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+[cr: Adapted the patch for trixie's new TOML-based config and
+     gencontrol.py which computes abiname dynamically]
+Signed-off-by: Catalin Rapiteanu <viorel-catalin.rapiteanu@windriver.com>
+---
+ debian/bin/gencontrol.py | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/debian/bin/gencontrol.py b/debian/bin/gencontrol.py
+--- a/debian/bin/gencontrol.py
++++ b/debian/bin/gencontrol.py
+@@ -460,6 +460,8 @@ class Gencontrol(Base):
+         else:
+             self.abiname = f'{version.linux_upstream_full}'
+ 
++        self.abiname += '-rt'
++
+         self.vars = {
+             'upstreamversion': self.version.linux_upstream,
+             'version': self.version.linux_version,
+-- 
+2.47.3

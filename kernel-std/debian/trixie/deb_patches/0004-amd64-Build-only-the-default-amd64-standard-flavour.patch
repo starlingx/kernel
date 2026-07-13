@@ -1,0 +1,57 @@
+From 58a0e0a81874af2926e1643dcc568799e4d2859f Mon Sep 17 00:00:00 2001
+From: Catalin Rapiteanu <viorel-catalin.rapiteanu@windriver.com>
+Date: Wed, 10 Jun 2026 14:16:56 +0300
+Subject: [PATCH] amd64: Build only the default amd64 standard flavour
+
+Remove cloud-amd64, rt-amd64, and test flavour definitions from
+debian/config/amd64/defines.toml to limit the build to only the
+standard amd64 kernel flavour. Also disable installer/udeb packages
+since StarlingX does not use the Debian installer.
+
+Signed-off-by: Catalin Rapiteanu <viorel-catalin.rapiteanu@windriver.com>
+---
+ debian/config/amd64/defines.toml | 29 -----------------------------
+ 1 file changed, 29 deletions(-)
+
+diff --git a/debian/config/amd64/defines.toml b/debian/config/amd64/defines.toml
+index bb16621a84..b2d890d383 100644
+--- a/debian/config/amd64/defines.toml
++++ b/debian/config/amd64/defines.toml
+@@ -5,35 +5,6 @@ is_default = true
+ [flavour.description]
+ hardware = '64-bit PCs'
+ hardware_long = 'PCs with AMD64, Intel 64 or VIA Nano processors'
+-[flavour.packages]
+-installer = true
+-
+-[[flavour]]
+-name = 'cloud-amd64'
+-[flavour.build]
+-config = ['config.cloud']
+-[flavour.description]
+-hardware = 'x86-64 cloud'
+-hardware_long = 'cloud platforms including Amazon EC2, Microsoft Azure, and Google Compute Engine'
+-
+-[[flavour]]
+-name = 'rt-amd64'
+-[flavour.build]
+-config = ['config.rt']
+-[flavour.description]
+-hardware = '64-bit PCs'
+-hardware_long = 'PCs with AMD64, Intel 64 or VIA Nano processors'
+-parts = ['rt']
+-
+-[[flavour]]
+-name = 'test'
+-[flavour.build]
+-config = ['config.test', 'amd64/config.test']
+-[flavour.defs]
+-is_test = true
+-[flavour.packages]
+-installer = true
+-
+ [[featureset]]
+ name = 'none'
+ 
+-- 
+2.47.3

@@ -1,0 +1,30 @@
+From f05e1c1fbbf43305635f788779f71697c85f3f14 Mon Sep 17 00:00:00 2001
+From: Shinas Rasheed <srasheed@marvell.com>
+Date: Thu, 25 May 2023 03:02:09 -0700
+Subject: [PATCH] phc: print firmware ready status only once
+
+Do not log every time when firmware ready status is read as 0 (not ready).
+Log only once when firmware is not ready and once when firmware is ready.
+
+Signed-off-by: Shinas Rasheed <srasheed@marvell.com>
+[mvb: Adapt patch for v23.11]
+Signed-off-by: M. Vefa Bicakci <vefa.bicakci@windriver.com>
+---
+ drivers/phc/ep_phc.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/phc/ep_phc.c b/drivers/phc/ep_phc.c
+index 82b231941eb8..d381e367ea00 100644
+--- a/drivers/phc/ep_phc.c
++++ b/drivers/phc/ep_phc.c
+@@ -301,8 +301,8 @@ static u8 oct_get_fw_ready_status(octeon_device_t *oct_dev)
+ 		pci_read_config_word(oct_dev->pci_dev, pos + 4, &vsec_id);
+ 		if (vsec_id == FW_STATUS_VSEC_ID) {
+ 			pci_read_config_byte(oct_dev->pci_dev, (pos + 8), &status);
+-			dev_info(&oct_dev->pci_dev->dev, "OCT_PHC[%d]:fw ready status %u\n",
+-					 oct_dev->octeon_id, status);
++			dev_info_once(&oct_dev->pci_dev->dev, "OCT_PHC[%d]:fw ready status %u\n",
++				      oct_dev->octeon_id, status);
+ 			return status;
+ 		}
+ 	}

@@ -1,0 +1,39 @@
+From 162147fb0d17993fe44fe9595d98defe7a9cee9f Mon Sep 17 00:00:00 2001
+From: Ivan Vecera <ivecera@redhat.com>
+Date: Tue, 3 Feb 2026 18:39:55 +0100
+Subject: [PATCH 11/27] dpll: zl3073x: Associate pin with fwnode handle
+
+Associate the registered DPLL pin with its firmware node by calling
+dpll_pin_fwnode_set().
+
+This links the created pin object to its corresponding DT/ACPI node
+in the DPLL core. Consequently, this enables consumer drivers (such as
+network drivers) to locate and request this specific pin using the
+fwnode_dpll_pin_find() helper.
+
+Reviewed-by: Aleksandr Loktionov <aleksandr.loktionov@intel.com>
+Signed-off-by: Ivan Vecera <ivecera@redhat.com>
+Reviewed-by: Arkadiusz Kubalewski <arkadiusz.kubalewski@intel.com>
+Link: https://patch.msgid.link/20260203174002.705176-3-ivecera@redhat.com
+Signed-off-by: Paolo Abeni <pabeni@redhat.com>
+
+(cherry picked from commit e6dc7727b6083a6bb76a5ba874e040034cd33b47)
+---
+ drivers/dpll/zl3073x/dpll.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/dpll/zl3073x/dpll.c b/drivers/dpll/zl3073x/dpll.c
+index 183052f772b2..af44edefe876 100644
+--- a/drivers/dpll/zl3073x/dpll.c
++++ b/drivers/dpll/zl3073x/dpll.c
+@@ -1481,6 +1481,7 @@ zl3073x_dpll_pin_register(struct zl3073x_dpll_pin *pin, u32 index)
+ 		rc = PTR_ERR(pin->dpll_pin);
+ 		goto err_pin_get;
+ 	}
++	dpll_pin_fwnode_set(pin->dpll_pin, props->fwnode);
+ 
+ 	if (zl3073x_dpll_is_input_pin(pin))
+ 		ops = &zl3073x_dpll_input_pin_ops;
+-- 
+2.43.0
+

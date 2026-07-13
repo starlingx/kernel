@@ -1,0 +1,561 @@
+From 85ffa8f16f4e04b6aa5f05f594067c9ea0724671 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Asbj=C3=B8rn=20Sloth=20T=C3=B8nnesen?= <ast@fiberby.net>
+Date: Thu, 20 Nov 2025 17:44:27 +0000
+Subject: [PATCH 05/27] tools: ynl-gen: add regeneration comment
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Add a comment on regeneration to the generated files.
+
+The comment is placed after the YNL-GEN line[1], as to not interfere
+with ynl-regen.sh's detection logic.
+
+[1] and after the optional YNL-ARG line.
+
+Link: https://lore.kernel.org/r/aR5m174O7pklKrMR@zx2c4.com/
+Suggested-by: Jason A. Donenfeld <Jason@zx2c4.com>
+Signed-off-by: Asbjørn Sloth Tønnesen <ast@fiberby.net>
+Acked-by: Matthieu Baerts (NGI0) <matttbe@kernel.org>
+Link: https://patch.msgid.link/20251120174429.390574-3-ast@fiberby.net
+Signed-off-by: Jakub Kicinski <kuba@kernel.org>
+(cherry picked from commit 68e83f3472667aac18d577587102f4bf77d0bd06)
+---
+ drivers/android/binder_netlink.c               | 1 +
+ drivers/android/binder_netlink.h               | 1 +
+ drivers/dpll/dpll_nl.c                         | 1 +
+ drivers/dpll/dpll_nl.h                         | 1 +
+ drivers/net/ovpn/netlink-gen.c                 | 1 +
+ drivers/net/ovpn/netlink-gen.h                 | 1 +
+ drivers/net/team/team_nl.c                     | 1 +
+ drivers/net/team/team_nl.h                     | 1 +
+ fs/lockd/netlink.c                             | 1 +
+ fs/lockd/netlink.h                             | 1 +
+ fs/nfsd/netlink.c                              | 1 +
+ fs/nfsd/netlink.h                              | 1 +
+ include/uapi/linux/android/binder_netlink.h    | 1 +
+ include/uapi/linux/dpll.h                      | 1 +
+ include/uapi/linux/ethtool_netlink_generated.h | 1 +
+ include/uapi/linux/fou.h                       | 1 +
+ include/uapi/linux/handshake.h                 | 1 +
+ include/uapi/linux/if_team.h                   | 1 +
+ include/uapi/linux/lockd_netlink.h             | 1 +
+ include/uapi/linux/mptcp_pm.h                  | 1 +
+ include/uapi/linux/net_shaper.h                | 1 +
+ include/uapi/linux/netdev.h                    | 1 +
+ include/uapi/linux/nfsd_netlink.h              | 1 +
+ include/uapi/linux/ovpn.h                      | 1 +
+ include/uapi/linux/psp.h                       | 1 +
+ net/core/netdev-genl-gen.c                     | 1 +
+ net/core/netdev-genl-gen.h                     | 1 +
+ net/devlink/netlink_gen.c                      | 1 +
+ net/devlink/netlink_gen.h                      | 1 +
+ net/handshake/genl.c                           | 1 +
+ net/handshake/genl.h                           | 1 +
+ net/ipv4/fou_nl.c                              | 1 +
+ net/ipv4/fou_nl.h                              | 1 +
+ net/mptcp/mptcp_pm_gen.c                       | 1 +
+ net/mptcp/mptcp_pm_gen.h                       | 1 +
+ net/psp/psp-nl-gen.c                           | 1 +
+ net/psp/psp-nl-gen.h                           | 1 +
+ net/shaper/shaper_nl_gen.c                     | 1 +
+ net/shaper/shaper_nl_gen.h                     | 1 +
+ tools/include/uapi/linux/netdev.h              | 1 +
+ tools/net/ynl/pyynl/ynl_gen_c.py               | 1 +
+ 41 files changed, 41 insertions(+)
+
+diff --git a/drivers/android/binder_netlink.c b/drivers/android/binder_netlink.c
+index d05397a50ca6..81e8432b5904 100644
+--- a/drivers/android/binder_netlink.c
++++ b/drivers/android/binder_netlink.c
+@@ -2,6 +2,7 @@
+ /* Do not edit directly, auto-generated from: */
+ /*	Documentation/netlink/specs/binder.yaml */
+ /* YNL-GEN kernel source */
++/* To regenerate run: tools/net/ynl/ynl-regen.sh */
+ 
+ #include <net/netlink.h>
+ #include <net/genetlink.h>
+diff --git a/drivers/android/binder_netlink.h b/drivers/android/binder_netlink.h
+index 882c7a6b537e..57399942a5e3 100644
+--- a/drivers/android/binder_netlink.h
++++ b/drivers/android/binder_netlink.h
+@@ -2,6 +2,7 @@
+ /* Do not edit directly, auto-generated from: */
+ /*	Documentation/netlink/specs/binder.yaml */
+ /* YNL-GEN kernel header */
++/* To regenerate run: tools/net/ynl/ynl-regen.sh */
+ 
+ #ifndef _LINUX_BINDER_GEN_H
+ #define _LINUX_BINDER_GEN_H
+diff --git a/drivers/dpll/dpll_nl.c b/drivers/dpll/dpll_nl.c
+index 3c6d570babf8..36d11ff195df 100644
+--- a/drivers/dpll/dpll_nl.c
++++ b/drivers/dpll/dpll_nl.c
+@@ -2,6 +2,7 @@
+ /* Do not edit directly, auto-generated from: */
+ /*	Documentation/netlink/specs/dpll.yaml */
+ /* YNL-GEN kernel source */
++/* To regenerate run: tools/net/ynl/ynl-regen.sh */
+ 
+ #include <net/netlink.h>
+ #include <net/genetlink.h>
+diff --git a/drivers/dpll/dpll_nl.h b/drivers/dpll/dpll_nl.h
+index 3da10cfe9a6e..7419679b6977 100644
+--- a/drivers/dpll/dpll_nl.h
++++ b/drivers/dpll/dpll_nl.h
+@@ -2,6 +2,7 @@
+ /* Do not edit directly, auto-generated from: */
+ /*	Documentation/netlink/specs/dpll.yaml */
+ /* YNL-GEN kernel header */
++/* To regenerate run: tools/net/ynl/ynl-regen.sh */
+ 
+ #ifndef _LINUX_DPLL_GEN_H
+ #define _LINUX_DPLL_GEN_H
+diff --git a/drivers/net/ovpn/netlink-gen.c b/drivers/net/ovpn/netlink-gen.c
+index 14298188c5f1..ecbe9dcf4f7d 100644
+--- a/drivers/net/ovpn/netlink-gen.c
++++ b/drivers/net/ovpn/netlink-gen.c
+@@ -2,6 +2,7 @@
+ /* Do not edit directly, auto-generated from: */
+ /*	Documentation/netlink/specs/ovpn.yaml */
+ /* YNL-GEN kernel source */
++/* To regenerate run: tools/net/ynl/ynl-regen.sh */
+ 
+ #include <net/netlink.h>
+ #include <net/genetlink.h>
+diff --git a/drivers/net/ovpn/netlink-gen.h b/drivers/net/ovpn/netlink-gen.h
+index 220b5b2fdd4f..b2301580770f 100644
+--- a/drivers/net/ovpn/netlink-gen.h
++++ b/drivers/net/ovpn/netlink-gen.h
+@@ -2,6 +2,7 @@
+ /* Do not edit directly, auto-generated from: */
+ /*	Documentation/netlink/specs/ovpn.yaml */
+ /* YNL-GEN kernel header */
++/* To regenerate run: tools/net/ynl/ynl-regen.sh */
+ 
+ #ifndef _LINUX_OVPN_GEN_H
+ #define _LINUX_OVPN_GEN_H
+diff --git a/drivers/net/team/team_nl.c b/drivers/net/team/team_nl.c
+index 208424ab78f5..6db21725f9cc 100644
+--- a/drivers/net/team/team_nl.c
++++ b/drivers/net/team/team_nl.c
+@@ -2,6 +2,7 @@
+ /* Do not edit directly, auto-generated from: */
+ /*	Documentation/netlink/specs/team.yaml */
+ /* YNL-GEN kernel source */
++/* To regenerate run: tools/net/ynl/ynl-regen.sh */
+ 
+ #include <net/netlink.h>
+ #include <net/genetlink.h>
+diff --git a/drivers/net/team/team_nl.h b/drivers/net/team/team_nl.h
+index c9ec1b22ac4d..74816b193475 100644
+--- a/drivers/net/team/team_nl.h
++++ b/drivers/net/team/team_nl.h
+@@ -2,6 +2,7 @@
+ /* Do not edit directly, auto-generated from: */
+ /*	Documentation/netlink/specs/team.yaml */
+ /* YNL-GEN kernel header */
++/* To regenerate run: tools/net/ynl/ynl-regen.sh */
+ 
+ #ifndef _LINUX_TEAM_GEN_H
+ #define _LINUX_TEAM_GEN_H
+diff --git a/fs/lockd/netlink.c b/fs/lockd/netlink.c
+index 6e00b02cad90..880c42b4f8c3 100644
+--- a/fs/lockd/netlink.c
++++ b/fs/lockd/netlink.c
+@@ -2,6 +2,7 @@
+ /* Do not edit directly, auto-generated from: */
+ /*	Documentation/netlink/specs/lockd.yaml */
+ /* YNL-GEN kernel source */
++/* To regenerate run: tools/net/ynl/ynl-regen.sh */
+ 
+ #include <net/netlink.h>
+ #include <net/genetlink.h>
+diff --git a/fs/lockd/netlink.h b/fs/lockd/netlink.h
+index 1920543a7955..d8408f077dd8 100644
+--- a/fs/lockd/netlink.h
++++ b/fs/lockd/netlink.h
+@@ -2,6 +2,7 @@
+ /* Do not edit directly, auto-generated from: */
+ /*	Documentation/netlink/specs/lockd.yaml */
+ /* YNL-GEN kernel header */
++/* To regenerate run: tools/net/ynl/ynl-regen.sh */
+ 
+ #ifndef _LINUX_LOCKD_GEN_H
+ #define _LINUX_LOCKD_GEN_H
+diff --git a/fs/nfsd/netlink.c b/fs/nfsd/netlink.c
+index ca54aa583530..ac51a44e1065 100644
+--- a/fs/nfsd/netlink.c
++++ b/fs/nfsd/netlink.c
+@@ -2,6 +2,7 @@
+ /* Do not edit directly, auto-generated from: */
+ /*	Documentation/netlink/specs/nfsd.yaml */
+ /* YNL-GEN kernel source */
++/* To regenerate run: tools/net/ynl/ynl-regen.sh */
+ 
+ #include <net/netlink.h>
+ #include <net/genetlink.h>
+diff --git a/fs/nfsd/netlink.h b/fs/nfsd/netlink.h
+index 8eb903f24c41..478117ff6b8c 100644
+--- a/fs/nfsd/netlink.h
++++ b/fs/nfsd/netlink.h
+@@ -2,6 +2,7 @@
+ /* Do not edit directly, auto-generated from: */
+ /*	Documentation/netlink/specs/nfsd.yaml */
+ /* YNL-GEN kernel header */
++/* To regenerate run: tools/net/ynl/ynl-regen.sh */
+ 
+ #ifndef _LINUX_NFSD_GEN_H
+ #define _LINUX_NFSD_GEN_H
+diff --git a/include/uapi/linux/android/binder_netlink.h b/include/uapi/linux/android/binder_netlink.h
+index b218f96d6668..bf69833c9a19 100644
+--- a/include/uapi/linux/android/binder_netlink.h
++++ b/include/uapi/linux/android/binder_netlink.h
+@@ -2,6 +2,7 @@
+ /* Do not edit directly, auto-generated from: */
+ /*	Documentation/netlink/specs/binder.yaml */
+ /* YNL-GEN uapi header */
++/* To regenerate run: tools/net/ynl/ynl-regen.sh */
+ 
+ #ifndef _UAPI_LINUX_ANDROID_BINDER_NETLINK_H
+ #define _UAPI_LINUX_ANDROID_BINDER_NETLINK_H
+diff --git a/include/uapi/linux/dpll.h b/include/uapi/linux/dpll.h
+index 69d35570ac4f..b7ff9c44f9aa 100644
+--- a/include/uapi/linux/dpll.h
++++ b/include/uapi/linux/dpll.h
+@@ -2,6 +2,7 @@
+ /* Do not edit directly, auto-generated from: */
+ /*	Documentation/netlink/specs/dpll.yaml */
+ /* YNL-GEN uapi header */
++/* To regenerate run: tools/net/ynl/ynl-regen.sh */
+ 
+ #ifndef _UAPI_LINUX_DPLL_H
+ #define _UAPI_LINUX_DPLL_H
+diff --git a/include/uapi/linux/ethtool_netlink_generated.h b/include/uapi/linux/ethtool_netlink_generated.h
+index 0e8ac0d974e2..622d49e010db 100644
+--- a/include/uapi/linux/ethtool_netlink_generated.h
++++ b/include/uapi/linux/ethtool_netlink_generated.h
+@@ -2,6 +2,7 @@
+ /* Do not edit directly, auto-generated from: */
+ /*	Documentation/netlink/specs/ethtool.yaml */
+ /* YNL-GEN uapi header */
++/* To regenerate run: tools/net/ynl/ynl-regen.sh */
+ 
+ #ifndef _UAPI_LINUX_ETHTOOL_NETLINK_GENERATED_H
+ #define _UAPI_LINUX_ETHTOOL_NETLINK_GENERATED_H
+diff --git a/include/uapi/linux/fou.h b/include/uapi/linux/fou.h
+index b5cd3e7b3775..bb6bef74d2d1 100644
+--- a/include/uapi/linux/fou.h
++++ b/include/uapi/linux/fou.h
+@@ -2,6 +2,7 @@
+ /* Do not edit directly, auto-generated from: */
+ /*	Documentation/netlink/specs/fou.yaml */
+ /* YNL-GEN uapi header */
++/* To regenerate run: tools/net/ynl/ynl-regen.sh */
+ 
+ #ifndef _UAPI_LINUX_FOU_H
+ #define _UAPI_LINUX_FOU_H
+diff --git a/include/uapi/linux/handshake.h b/include/uapi/linux/handshake.h
+index 662e7de46c54..d7e40f594888 100644
+--- a/include/uapi/linux/handshake.h
++++ b/include/uapi/linux/handshake.h
+@@ -2,6 +2,7 @@
+ /* Do not edit directly, auto-generated from: */
+ /*	Documentation/netlink/specs/handshake.yaml */
+ /* YNL-GEN uapi header */
++/* To regenerate run: tools/net/ynl/ynl-regen.sh */
+ 
+ #ifndef _UAPI_LINUX_HANDSHAKE_H
+ #define _UAPI_LINUX_HANDSHAKE_H
+diff --git a/include/uapi/linux/if_team.h b/include/uapi/linux/if_team.h
+index a5c06243a435..f4cd839ae725 100644
+--- a/include/uapi/linux/if_team.h
++++ b/include/uapi/linux/if_team.h
+@@ -2,6 +2,7 @@
+ /* Do not edit directly, auto-generated from: */
+ /*	Documentation/netlink/specs/team.yaml */
+ /* YNL-GEN uapi header */
++/* To regenerate run: tools/net/ynl/ynl-regen.sh */
+ 
+ #ifndef _UAPI_LINUX_IF_TEAM_H
+ #define _UAPI_LINUX_IF_TEAM_H
+diff --git a/include/uapi/linux/lockd_netlink.h b/include/uapi/linux/lockd_netlink.h
+index 21c65aec3bc6..2d766a0fa6ea 100644
+--- a/include/uapi/linux/lockd_netlink.h
++++ b/include/uapi/linux/lockd_netlink.h
+@@ -2,6 +2,7 @@
+ /* Do not edit directly, auto-generated from: */
+ /*	Documentation/netlink/specs/lockd.yaml */
+ /* YNL-GEN uapi header */
++/* To regenerate run: tools/net/ynl/ynl-regen.sh */
+ 
+ #ifndef _UAPI_LINUX_LOCKD_NETLINK_H
+ #define _UAPI_LINUX_LOCKD_NETLINK_H
+diff --git a/include/uapi/linux/mptcp_pm.h b/include/uapi/linux/mptcp_pm.h
+index bf44a5cf5b5a..c97d060ee90b 100644
+--- a/include/uapi/linux/mptcp_pm.h
++++ b/include/uapi/linux/mptcp_pm.h
+@@ -2,6 +2,7 @@
+ /* Do not edit directly, auto-generated from: */
+ /*	Documentation/netlink/specs/mptcp_pm.yaml */
+ /* YNL-GEN uapi header */
++/* To regenerate run: tools/net/ynl/ynl-regen.sh */
+ 
+ #ifndef _UAPI_LINUX_MPTCP_PM_H
+ #define _UAPI_LINUX_MPTCP_PM_H
+diff --git a/include/uapi/linux/net_shaper.h b/include/uapi/linux/net_shaper.h
+index d8834b59f7d7..3dd22c2930d9 100644
+--- a/include/uapi/linux/net_shaper.h
++++ b/include/uapi/linux/net_shaper.h
+@@ -2,6 +2,7 @@
+ /* Do not edit directly, auto-generated from: */
+ /*	Documentation/netlink/specs/net_shaper.yaml */
+ /* YNL-GEN uapi header */
++/* To regenerate run: tools/net/ynl/ynl-regen.sh */
+ 
+ #ifndef _UAPI_LINUX_NET_SHAPER_H
+ #define _UAPI_LINUX_NET_SHAPER_H
+diff --git a/include/uapi/linux/netdev.h b/include/uapi/linux/netdev.h
+index 48eb49aa03d4..44fb62a103e4 100644
+--- a/include/uapi/linux/netdev.h
++++ b/include/uapi/linux/netdev.h
+@@ -2,6 +2,7 @@
+ /* Do not edit directly, auto-generated from: */
+ /*	Documentation/netlink/specs/netdev.yaml */
+ /* YNL-GEN uapi header */
++/* To regenerate run: tools/net/ynl/ynl-regen.sh */
+ 
+ #ifndef _UAPI_LINUX_NETDEV_H
+ #define _UAPI_LINUX_NETDEV_H
+diff --git a/include/uapi/linux/nfsd_netlink.h b/include/uapi/linux/nfsd_netlink.h
+index 887cbd12b695..e157e2009ea8 100644
+--- a/include/uapi/linux/nfsd_netlink.h
++++ b/include/uapi/linux/nfsd_netlink.h
+@@ -2,6 +2,7 @@
+ /* Do not edit directly, auto-generated from: */
+ /*	Documentation/netlink/specs/nfsd.yaml */
+ /* YNL-GEN uapi header */
++/* To regenerate run: tools/net/ynl/ynl-regen.sh */
+ 
+ #ifndef _UAPI_LINUX_NFSD_NETLINK_H
+ #define _UAPI_LINUX_NFSD_NETLINK_H
+diff --git a/include/uapi/linux/ovpn.h b/include/uapi/linux/ovpn.h
+index 680d1522dc87..959b41def61f 100644
+--- a/include/uapi/linux/ovpn.h
++++ b/include/uapi/linux/ovpn.h
+@@ -2,6 +2,7 @@
+ /* Do not edit directly, auto-generated from: */
+ /*	Documentation/netlink/specs/ovpn.yaml */
+ /* YNL-GEN uapi header */
++/* To regenerate run: tools/net/ynl/ynl-regen.sh */
+ 
+ #ifndef _UAPI_LINUX_OVPN_H
+ #define _UAPI_LINUX_OVPN_H
+diff --git a/include/uapi/linux/psp.h b/include/uapi/linux/psp.h
+index 607c42c39ba5..d458d592acc9 100644
+--- a/include/uapi/linux/psp.h
++++ b/include/uapi/linux/psp.h
+@@ -2,6 +2,7 @@
+ /* Do not edit directly, auto-generated from: */
+ /*	Documentation/netlink/specs/psp.yaml */
+ /* YNL-GEN uapi header */
++/* To regenerate run: tools/net/ynl/ynl-regen.sh */
+ 
+ #ifndef _UAPI_LINUX_PSP_H
+ #define _UAPI_LINUX_PSP_H
+diff --git a/net/core/netdev-genl-gen.c b/net/core/netdev-genl-gen.c
+index e9a2a6f26cb7..fe0a9ed73526 100644
+--- a/net/core/netdev-genl-gen.c
++++ b/net/core/netdev-genl-gen.c
+@@ -2,6 +2,7 @@
+ /* Do not edit directly, auto-generated from: */
+ /*	Documentation/netlink/specs/netdev.yaml */
+ /* YNL-GEN kernel source */
++/* To regenerate run: tools/net/ynl/ynl-regen.sh */
+ 
+ #include <net/netlink.h>
+ #include <net/genetlink.h>
+diff --git a/net/core/netdev-genl-gen.h b/net/core/netdev-genl-gen.h
+index cf3fad74511f..cffc08517a41 100644
+--- a/net/core/netdev-genl-gen.h
++++ b/net/core/netdev-genl-gen.h
+@@ -2,6 +2,7 @@
+ /* Do not edit directly, auto-generated from: */
+ /*	Documentation/netlink/specs/netdev.yaml */
+ /* YNL-GEN kernel header */
++/* To regenerate run: tools/net/ynl/ynl-regen.sh */
+ 
+ #ifndef _LINUX_NETDEV_GEN_H
+ #define _LINUX_NETDEV_GEN_H
+diff --git a/net/devlink/netlink_gen.c b/net/devlink/netlink_gen.c
+index 9fd00977d59e..ae6f1fe44d5f 100644
+--- a/net/devlink/netlink_gen.c
++++ b/net/devlink/netlink_gen.c
+@@ -2,6 +2,7 @@
+ /* Do not edit directly, auto-generated from: */
+ /*	Documentation/netlink/specs/devlink.yaml */
+ /* YNL-GEN kernel source */
++/* To regenerate run: tools/net/ynl/ynl-regen.sh */
+ 
+ #include <net/netlink.h>
+ #include <net/genetlink.h>
+diff --git a/net/devlink/netlink_gen.h b/net/devlink/netlink_gen.h
+index 09cc6f264ccf..2817d53a0eba 100644
+--- a/net/devlink/netlink_gen.h
++++ b/net/devlink/netlink_gen.h
+@@ -2,6 +2,7 @@
+ /* Do not edit directly, auto-generated from: */
+ /*	Documentation/netlink/specs/devlink.yaml */
+ /* YNL-GEN kernel header */
++/* To regenerate run: tools/net/ynl/ynl-regen.sh */
+ 
+ #ifndef _LINUX_DEVLINK_GEN_H
+ #define _LINUX_DEVLINK_GEN_H
+diff --git a/net/handshake/genl.c b/net/handshake/genl.c
+index f55d14d7b726..870612609491 100644
+--- a/net/handshake/genl.c
++++ b/net/handshake/genl.c
+@@ -2,6 +2,7 @@
+ /* Do not edit directly, auto-generated from: */
+ /*	Documentation/netlink/specs/handshake.yaml */
+ /* YNL-GEN kernel source */
++/* To regenerate run: tools/net/ynl/ynl-regen.sh */
+ 
+ #include <net/netlink.h>
+ #include <net/genetlink.h>
+diff --git a/net/handshake/genl.h b/net/handshake/genl.h
+index ae72a596f6cc..8d3e18672daf 100644
+--- a/net/handshake/genl.h
++++ b/net/handshake/genl.h
+@@ -2,6 +2,7 @@
+ /* Do not edit directly, auto-generated from: */
+ /*	Documentation/netlink/specs/handshake.yaml */
+ /* YNL-GEN kernel header */
++/* To regenerate run: tools/net/ynl/ynl-regen.sh */
+ 
+ #ifndef _LINUX_HANDSHAKE_GEN_H
+ #define _LINUX_HANDSHAKE_GEN_H
+diff --git a/net/ipv4/fou_nl.c b/net/ipv4/fou_nl.c
+index 9ff7797ef7c4..309d5ba983d0 100644
+--- a/net/ipv4/fou_nl.c
++++ b/net/ipv4/fou_nl.c
+@@ -2,6 +2,7 @@
+ /* Do not edit directly, auto-generated from: */
+ /*	Documentation/netlink/specs/fou.yaml */
+ /* YNL-GEN kernel source */
++/* To regenerate run: tools/net/ynl/ynl-regen.sh */
+ 
+ #include <net/netlink.h>
+ #include <net/genetlink.h>
+diff --git a/net/ipv4/fou_nl.h b/net/ipv4/fou_nl.h
+index 63a6c4ed803d..438342dc8507 100644
+--- a/net/ipv4/fou_nl.h
++++ b/net/ipv4/fou_nl.h
+@@ -2,6 +2,7 @@
+ /* Do not edit directly, auto-generated from: */
+ /*	Documentation/netlink/specs/fou.yaml */
+ /* YNL-GEN kernel header */
++/* To regenerate run: tools/net/ynl/ynl-regen.sh */
+ 
+ #ifndef _LINUX_FOU_GEN_H
+ #define _LINUX_FOU_GEN_H
+diff --git a/net/mptcp/mptcp_pm_gen.c b/net/mptcp/mptcp_pm_gen.c
+index dcffd847af33..c180930a8e0e 100644
+--- a/net/mptcp/mptcp_pm_gen.c
++++ b/net/mptcp/mptcp_pm_gen.c
+@@ -2,6 +2,7 @@
+ /* Do not edit directly, auto-generated from: */
+ /*	Documentation/netlink/specs/mptcp_pm.yaml */
+ /* YNL-GEN kernel source */
++/* To regenerate run: tools/net/ynl/ynl-regen.sh */
+ 
+ #include <net/netlink.h>
+ #include <net/genetlink.h>
+diff --git a/net/mptcp/mptcp_pm_gen.h b/net/mptcp/mptcp_pm_gen.h
+index e24258f6f819..b9280bcb43f5 100644
+--- a/net/mptcp/mptcp_pm_gen.h
++++ b/net/mptcp/mptcp_pm_gen.h
+@@ -2,6 +2,7 @@
+ /* Do not edit directly, auto-generated from: */
+ /*	Documentation/netlink/specs/mptcp_pm.yaml */
+ /* YNL-GEN kernel header */
++/* To regenerate run: tools/net/ynl/ynl-regen.sh */
+ 
+ #ifndef _LINUX_MPTCP_PM_GEN_H
+ #define _LINUX_MPTCP_PM_GEN_H
+diff --git a/net/psp/psp-nl-gen.c b/net/psp/psp-nl-gen.c
+index 9fdd6f831803..a57a3c4d11a1 100644
+--- a/net/psp/psp-nl-gen.c
++++ b/net/psp/psp-nl-gen.c
+@@ -2,6 +2,7 @@
+ /* Do not edit directly, auto-generated from: */
+ /*	Documentation/netlink/specs/psp.yaml */
+ /* YNL-GEN kernel source */
++/* To regenerate run: tools/net/ynl/ynl-regen.sh */
+ 
+ #include <net/netlink.h>
+ #include <net/genetlink.h>
+diff --git a/net/psp/psp-nl-gen.h b/net/psp/psp-nl-gen.h
+index 25268ed11fb5..6856a9aac518 100644
+--- a/net/psp/psp-nl-gen.h
++++ b/net/psp/psp-nl-gen.h
+@@ -2,6 +2,7 @@
+ /* Do not edit directly, auto-generated from: */
+ /*	Documentation/netlink/specs/psp.yaml */
+ /* YNL-GEN kernel header */
++/* To regenerate run: tools/net/ynl/ynl-regen.sh */
+ 
+ #ifndef _LINUX_PSP_GEN_H
+ #define _LINUX_PSP_GEN_H
+diff --git a/net/shaper/shaper_nl_gen.c b/net/shaper/shaper_nl_gen.c
+index 204c8ae8c7b1..e8cccc4c1180 100644
+--- a/net/shaper/shaper_nl_gen.c
++++ b/net/shaper/shaper_nl_gen.c
+@@ -2,6 +2,7 @@
+ /* Do not edit directly, auto-generated from: */
+ /*	Documentation/netlink/specs/net_shaper.yaml */
+ /* YNL-GEN kernel source */
++/* To regenerate run: tools/net/ynl/ynl-regen.sh */
+ 
+ #include <net/netlink.h>
+ #include <net/genetlink.h>
+diff --git a/net/shaper/shaper_nl_gen.h b/net/shaper/shaper_nl_gen.h
+index cb7f9026fc23..ec41c90431a4 100644
+--- a/net/shaper/shaper_nl_gen.h
++++ b/net/shaper/shaper_nl_gen.h
+@@ -2,6 +2,7 @@
+ /* Do not edit directly, auto-generated from: */
+ /*	Documentation/netlink/specs/net_shaper.yaml */
+ /* YNL-GEN kernel header */
++/* To regenerate run: tools/net/ynl/ynl-regen.sh */
+ 
+ #ifndef _LINUX_NET_SHAPER_GEN_H
+ #define _LINUX_NET_SHAPER_GEN_H
+diff --git a/tools/include/uapi/linux/netdev.h b/tools/include/uapi/linux/netdev.h
+index 48eb49aa03d4..44fb62a103e4 100644
+--- a/tools/include/uapi/linux/netdev.h
++++ b/tools/include/uapi/linux/netdev.h
+@@ -2,6 +2,7 @@
+ /* Do not edit directly, auto-generated from: */
+ /*	Documentation/netlink/specs/netdev.yaml */
+ /* YNL-GEN uapi header */
++/* To regenerate run: tools/net/ynl/ynl-regen.sh */
+ 
+ #ifndef _UAPI_LINUX_NETDEV_H
+ #define _UAPI_LINUX_NETDEV_H
+diff --git a/tools/net/ynl/pyynl/ynl_gen_c.py b/tools/net/ynl/pyynl/ynl_gen_c.py
+index aadeb3abcad8..be506702278a 100755
+--- a/tools/net/ynl/pyynl/ynl_gen_c.py
++++ b/tools/net/ynl/pyynl/ynl_gen_c.py
+@@ -3435,6 +3435,7 @@ def main():
+         line += ' --user-header '.join([''] + args.user_header)
+         line += ' --exclude-op '.join([''] + args.exclude_op)
+         cw.p(f'/* YNL-ARG{line} */')
++    cw.p('/* To regenerate run: tools/net/ynl/ynl-regen.sh */')
+     cw.nl()
+ 
+     if args.mode == 'uapi':
+-- 
+2.43.0
+
