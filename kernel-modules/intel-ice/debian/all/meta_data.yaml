@@ -7,12 +7,12 @@ dl_path:
         archive/refs/tags/v2.6.6.tar.gz"
   sha256sum: 2328b9a0d474824c3e965d969622b6bd1623854282c38c592c501971e30fa4ec
 dl_files:
-  ice_comms-1.3.58.0.zip:
+  ice_comms-1.3.63.0.zip:
     topdir: null
-    url: "https://downloadmirror.intel.com/867495/\
-       ice_comms-1.3.58.0.zip"
-    md5sum: 40bea39e6f1e3b07863543456715006e
-    sha256sum: efb21245bad5d2ab687e7cf96e0066cdbe1be31676d44f8af7807a3c9f10ef37
+    url: "https://downloadmirror.intel.com/916254/\
+       ice_comms-1.3.63.0.zip"
+    md5sum: e8cb1fbf8a46fafa642da138774e2798
+    sha256sum: 4c9449c05507eac121ea4e35d56a547a7274e52c96845c6709a56421b9d91b0c
 revision:
   dist: $STX_DIST
   GITREVCOUNT:
