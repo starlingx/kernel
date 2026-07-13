@@ -1,11 +1,11 @@
 ---
-debver: 4.13.19
+debver: 4.13.35
 debname: iavf
 dl_path:
   name: iavf-4.13.19.tar.gz
   url: "https://github.com/intel/ethernet-linux-iavf/\
-        archive/refs/tags/v4.13.19.tar.gz"
-  sha256sum: dfe079d9db5943d84abd4cd2275105f85a13fa11a0e509441c5bb9ff85c76d3f
+        archive/refs/tags/v4.13.35.tar.gz"
+  sha256sum: 30a9efd8723537c3c0ce02650ef1cf477af95f1e2859f4859a51ba8081163e0a
 revision:
   dist: $STX_DIST
   GITREVCOUNT:
