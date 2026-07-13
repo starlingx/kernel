@@ -1,0 +1,31 @@
+From 4dfff225b4a87a74df8d974673eccbe18a921b14 Mon Sep 17 00:00:00 2001
+From: John Garry <john.g.garry@oracle.com>
+Date: Mon, 29 Jun 2026 08:53:09 +0000
+Subject: [PATCH 2/3] dma-mapping: make dma_max_mapping_size() return 0 for no
+ DMA capability
+
+For when a device is not DMA capable, the max mapping size would be 0, so
+make dma_max_mapping_size() reflect that.
+
+Signed-off-by: John Garry <john.g.garry@oracle.com>
+---
+ kernel/dma/mapping.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/kernel/dma/mapping.c b/kernel/dma/mapping.c
+index fe7472f13b106..0e1d84f23d0bf 100644
+--- a/kernel/dma/mapping.c
++++ b/kernel/dma/mapping.c
+@@ -986,6 +986,9 @@ size_t dma_max_mapping_size(struct device *dev)
+ 	const struct dma_map_ops *ops = get_dma_ops(dev);
+ 	size_t size = SIZE_MAX;
+ 
++	if (!dev->dma_mask)
++		return 0;
++
+ 	if (dma_map_direct(dev, ops))
+ 		size = dma_direct_max_mapping_size(dev);
+ 	else if (use_dma_iommu(dev))
+-- 
+2.43.0
+

@@ -5,6 +5,9 @@
 0005-Revert-PCI-IOV-Add-PCI-rescan-remove-locking-when-en.patch
 0006-PCI-IOV-Fix-race-between-SR-IOV-enable-disable-and-h.patch
 0007-drbd-fix-false-positive-resync-throttling-in-drbd_rs.patch
+scsi/0001-scsi-sas-Skip-opt_sectors-when-DMA-reports-no-real-o.patch
+scsi/0002-dma-mapping-make-dma_max_mapping_size-return-0-for-n.patch
+scsi/0003-scsi-core-Drop-dev-dma_mask-check-in-evaluating-max_.patch
 serial/0001-serial-8250-Protect-LCR-write-in-shutdown.patch
 serial/0002-serial-8250_dw-Avoid-unnecessary-LCR-writes.patch
 serial/0003-serial-8250-Add-serial8250_handle_irq_locked.patch
