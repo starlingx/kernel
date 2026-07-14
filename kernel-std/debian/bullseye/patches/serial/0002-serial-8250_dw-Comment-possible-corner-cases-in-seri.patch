@@ -1,0 +1,67 @@
+From b5162e93baec85e7ee892eb3e26a3da090133b05 Mon Sep 17 00:00:00 2001
+Message-ID: <b5162e93baec85e7ee892eb3e26a3da090133b05.1778656477.git.ionut.nechita@windriver.com>
+In-Reply-To: <cover.1778656477.git.ionut.nechita@windriver.com>
+References: <cover.1778656477.git.ionut.nechita@windriver.com>
+From: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+Date: Mon, 17 Mar 2025 11:40:21 +0200
+Subject: [PATCH v3 6.12.y 02/10] serial: 8250_dw: Comment possible corner
+ cases in serial_out() implementation
+
+commit bd8cad85561b8de36f099404c332bf3e3dbe90f5 upstream.
+
+8250 DesignWare driver uses a few custom implementations of the serial_out().
+These implementations are carefully made to avoid infinite loops. But this is
+not obvious from looking at the code. Comment the possible corner cases in
+the respective functions.
+
+Signed-off-by: Andy Shevchenko <andriy.shevchenko@linux.intel.com>
+Link: https://lore.kernel.org/r/20250317094021.1201512-1-andriy.shevchenko@linux.intel.com
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Signed-off-by: Ionut Nechita <ionut.nechita@windriver.com>
+---
+ drivers/tty/serial/8250/8250_dw.c | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
+
+diff --git a/drivers/tty/serial/8250/8250_dw.c b/drivers/tty/serial/8250/8250_dw.c
+index 3225011fd772..88c55336d50f 100644
+--- a/drivers/tty/serial/8250/8250_dw.c
++++ b/drivers/tty/serial/8250/8250_dw.c
+@@ -107,11 +107,23 @@ static inline int dw8250_modify_msr(struct uart_port *p, int offset, int value)
+ 	return value;
+ }
+ 
++/*
++ * This function is being called as part of the uart_port::serial_out()
++ * routine. Hence, it must not call serial_port_out() or serial_out()
++ * against the modified registers here, i.e. LCR.
++ */
+ static void dw8250_force_idle(struct uart_port *p)
+ {
+ 	struct uart_8250_port *up = up_to_u8250p(p);
+ 	unsigned int lsr;
+ 
++	/*
++	 * The following call currently performs serial_out()
++	 * against the FCR register. Because it differs to LCR
++	 * there will be no infinite loop, but if it ever gets
++	 * modified, we might need a new custom version of it
++	 * that avoids infinite recursion.
++	 */
+ 	serial8250_clear_and_reinit_fifos(up);
+ 
+ 	/*
+@@ -128,6 +140,11 @@ static void dw8250_force_idle(struct uart_port *p)
+ 	serial_port_in(p, UART_RX);
+ }
+ 
++/*
++ * This function is being called as part of the uart_port::serial_out()
++ * routine. Hence, it must not call serial_port_out() or serial_out()
++ * against the modified registers here, i.e. LCR.
++ */
+ static void dw8250_check_lcr(struct uart_port *p, int offset, int value)
+ {
+ 	struct dw8250_data *d = to_dw8250_data(p->private_data);
+-- 
+2.54.0
+
