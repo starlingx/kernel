@@ -1,0 +1,9 @@
+# kcompat-generator.sh (invoked from src/linux/driver/common.mk at parse
+# time) writes inc/linux/kcompat_generated_defs.h into the upstream source
+# tree. Because debian/rules drives the build with
+# "dh --sourcedirectory=src/linux/driver/", dh_auto_clean runs "make clean"
+# in that directory during "debian/rules clean", which regenerates the file
+# before "dpkg-source -b" runs. As the file is not part of the orig tarball,
+# dpkg-source would otherwise abort with "unexpected upstream changes".
+# Ignore this generated, non-source artifact when building the source package.
+extend-diff-ignore = "(^|/)kcompat_generated_defs\.h$"

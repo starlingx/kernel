@@ -1,0 +1,12 @@
+---
+debver: 1.3.0.13
+debname: iqvlinux
+# The driver sources is no longer publicly available via sourceforge past
+# version 1.2.0.28. As a result, since licensing allows us, we have included
+# the driver directly into our repository.
+src_path: iqvlinux-1.3.0.13
+revision:
+  dist: $STX_DIST
+  GITREVCOUNT:
+    BASE_SRCREV: ece2c0e24868d93645832712f8bf94e3e126d439
+    SRC_DIR: ${MY_REPO}/stx/kernel/kernel-modules/intel-qv

@@ -27,6 +27,10 @@ igb-uio-rt
 #initramfs-trigger
 initramfs-trigger
 
+# Intel Quartzville Linux Driver
+iqvlinux
+iqvlinux-rt
+
 # libbnxt_re - Broadcom Infiniband verbs library
 libbnxt-re
 
