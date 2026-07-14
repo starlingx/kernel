@@ -1,0 +1,156 @@
+From b6d2dd538b64b7f396833d50a42dae89b0655d39 Mon Sep 17 00:00:00 2001
+From: Ionut Nechita <ionut.nechita@windriver.com>
+Date: Wed, 14 Jul 2026 16:34:11 +0300
+Subject: [PATCH] sched/deadline: arm fair-server on nohz_full when RT coexists
+ with CFS
+
+On a nohz_full isolated core, a CPU-bound SCHED_FIFO/SCHED_RR task can
+starve runnable CFS tasks on the same core for several seconds. The fair
+(dl-)server that is meant to guarantee CFS bandwidth (default 50ms/1s) is
+never armed: sched_can_stop_tick() decides the tick can stop as soon as an
+RT task is present, without starting rq->fair_server, so the guaranteed CFS
+bandwidth is never delivered and the CFS task makes no progress until the RT
+task yields.
+
+Rework sched_can_stop_tick() to coordinate the fair server with the
+nohz_full tick state:
+
+  - RT + CFS queued: start rq->fair_server and keep the tick running
+    (return false), so CFS receives its guaranteed bandwidth.
+  - RT only: stop the servers; keep the tick only for more than one RR task
+    (round-robin), otherwise allow it to stop.
+  - CFS only: stop the servers before applying the existing tick-stop checks.
+
+Add dl_servers_stop_all() to centralize server teardown.
+
+This is a backport of the upstream fix "sched/deadline: Make dl-server nohz
+full aware" by Juri Lelli, adapted to this tree which provides the fair
+server but not the SCX ext_server (CONFIG_SCHED_CLASS_EXT is enabled but
+rq->ext_server does not exist here), so the SCX-server handling is omitted.
+
+Reproduced on an isolated nohz_full core: a CFS heartbeat pinned to the core
+freezes for ~4-5s while a SCHED_FIFO prio-80 hog runs, with
+fair_server/cpuX configured (runtime=50ms period=1s) but not delivering
+bandwidth. With this change the CFS task keeps making progress.
+
+Fixes: 557a6bfc662c ("sched/fair: Add trivial fair server")
+Assisted-by: Claude:claude-opus-4-8 checkpatch
+Signed-off-by: Ionut Nechita <ionut.nechita@windriver.com>
+---
+ kernel/sched/core.c     | 46 ++++++++++++++++++++++++-----------------
+ kernel/sched/deadline.c | 11 ++++++++++
+ kernel/sched/sched.h    |  1 +
+ 3 files changed, 39 insertions(+), 19 deletions(-)
+
+diff --git a/kernel/sched/core.c b/kernel/sched/core.c
+index 582c3847f483a..417cb99513cc6 100644
+--- a/kernel/sched/core.c
++++ b/kernel/sched/core.c
+@@ -1338,36 +1338,44 @@ static inline bool __need_bw_check(struct rq *rq, struct task_struct *p)
+ 
+ bool sched_can_stop_tick(struct rq *rq)
+ {
+-	int fifo_nr_running;
+-
+ 	/* Deadline tasks, even if single, need the tick */
+ 	if (rq->dl.dl_nr_running)
+ 		return false;
+ 
+ 	/*
+-	 * If there are more than one RR tasks, we need the tick to affect the
+-	 * actual RR behaviour.
++	 * If there are RT tasks running, we may still have to service
++	 * lower-priority CFS tasks through the fair (dl-)server. Without the
++	 * server armed (and the tick to drive it) a CPU-bound SCHED_FIFO/RR
++	 * task starves CFS indefinitely on a nohz_full core, so keep the tick
++	 * and make sure the server is running in that case.
+ 	 */
+-	if (rq->rt.rr_nr_running) {
+-		if (rq->rt.rr_nr_running == 1)
+-			return true;
+-		else
++	if (rq->rt.rt_nr_running) {
++		if (rq->cfs.h_nr_queued) {
++			dl_server_start(&rq->fair_server);
++			return false;
++		}
++
++		/* Only RT tasks left: nothing for the fair server to protect. */
++		dl_servers_stop_all(rq);
++
++		/*
++		 * More than one RR task needs the tick to rotate them; a single
++		 * RR task or a FIFO-only run does not need forced preemption.
++		 */
++		if (rq->rt.rr_nr_running > 1)
+ 			return false;
+-	}
+ 
+-	/*
+-	 * If there's no RR tasks, but FIFO tasks, we can skip the tick, no
+-	 * forced preemption between FIFO tasks.
+-	 */
+-	fifo_nr_running = rq->rt.rt_nr_running - rq->rt.rr_nr_running;
+-	if (fifo_nr_running)
+ 		return true;
++	}
+ 
+ 	/*
+-	 * If there are no DL,RR/FIFO tasks, there must only be CFS or SCX tasks
+-	 * left. For CFS, if there's more than one we need the tick for
+-	 * involuntary preemption. For SCX, ask.
++	 * If there are no DL/RT tasks, there must only be CFS or SCX tasks
++	 * left. The fair server is no longer needed, so stop it before we
++	 * consider stopping the tick. For CFS, if there's more than one we
++	 * need the tick for involuntary preemption. For SCX, ask.
+ 	 */
++	dl_servers_stop_all(rq);
++
+ 	if (scx_enabled() && !scx_can_stop_tick(rq))
+ 		return false;
+ 
+@@ -8581,7 +8589,7 @@ int sched_cpu_dying(unsigned int cpu)
+ 		WARN(true, "Dying CPU not properly vacated!");
+ 		dump_rq_tasks(rq, KERN_WARNING);
+ 	}
+-	dl_server_stop(&rq->fair_server);
++	dl_servers_stop_all(rq);
+ 	rq_unlock_irqrestore(rq, &rf);
+ 
+ 	calc_load_migrate(rq);
+diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
+index 72499cf2a1db5..979219e61c2d2 100644
+--- a/kernel/sched/deadline.c
++++ b/kernel/sched/deadline.c
+@@ -1807,6 +1807,17 @@ void dl_server_stop(struct sched_dl_entity *dl_se)
+ 	dl_se->dl_server_active = 0;
+ }
+ 
++/*
++ * Stop all dl-servers associated with @rq. Used when a runqueue no longer
++ * hosts the lower-priority tasks that the servers are meant to protect, so
++ * their timers stop disturbing (nohz_full) cores. Each dl_server_stop() is a
++ * no-op for a server that is not active.
++ */
++void dl_servers_stop_all(struct rq *rq)
++{
++	dl_server_stop(&rq->fair_server);
++}
++
+ void dl_server_init(struct sched_dl_entity *dl_se, struct rq *rq,
+ 		    dl_server_pick_f pick_task)
+ {
+diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
+index 2f8b06b12a98f..990d1a496608a 100644
+--- a/kernel/sched/sched.h
++++ b/kernel/sched/sched.h
+@@ -409,6 +409,7 @@ extern s64 dl_scaled_delta_exec(struct rq *rq, struct sched_dl_entity *dl_se, s6
+ extern void dl_server_update(struct sched_dl_entity *dl_se, s64 delta_exec);
+ extern void dl_server_start(struct sched_dl_entity *dl_se);
+ extern void dl_server_stop(struct sched_dl_entity *dl_se);
++extern void dl_servers_stop_all(struct rq *rq);
+ extern void dl_server_init(struct sched_dl_entity *dl_se, struct rq *rq,
+ 		    dl_server_pick_f pick_task);
+ extern void sched_init_dl_servers(void);
+-- 
+2.43.0
