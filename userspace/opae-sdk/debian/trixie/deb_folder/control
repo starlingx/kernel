@@ -1,0 +1,55 @@
+Source: opae
+Priority: optional
+Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
+Build-Depends: debhelper-compat (= 13),
+               gcc, g++,
+               make, cmake,
+               pkg-config,
+               python3-dev,
+               python3-pip,
+               python3-setuptools,
+               python3-wheel,
+               python3-jsonschema,
+               python3-yaml,
+               pybind11-dev,
+               libjson-c-dev,
+               uuid-dev,
+               libhwloc-dev,
+               libssl-dev,
+               libedit-dev,
+               libcli11-dev,
+               libspdlog-dev,
+               libnuma-dev,
+               doxygen,
+               pandoc,
+               libtbb-dev
+Standards-Version: 4.1.2
+Section: libs
+Homepage: https://github.com/OPAE/opae-sdk.git
+Vcs-Git: https://github.com/OPAE/opae-sdk.git
+
+Package: opae
+Section: libs
+Priority: optional
+Architecture: any
+Depends: ${python3:Depends}, ${shlibs:Depends}, ${misc:Depends}
+Description: OPAE runtime
+
+Package: opae-devel
+Section: libdevel
+Priority: optional
+Architecture: any
+Multi-Arch: same
+Depends: opae (= ${binary:Version}),
+         libssl-dev,
+         ${python3:Depends}, ${shlibs:Depends}, ${misc:Depends}
+Description: OPAE headers, sample source, and documentation
+
+Package: opae-extra-tools
+Section: utils
+Priority: optional
+Architecture: any
+Multi-Arch: same
+Depends: opae (= ${binary:Version}), opae-devel (= ${binary:Version}),
+         ${python3:Depends}, ${shlibs:Depends}, ${misc:Depends},
+Description: OPAE extra tool binaries

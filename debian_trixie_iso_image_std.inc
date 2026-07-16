@@ -75,3 +75,8 @@ srptools
 #mstflint
 mstflint
 
+#opae-sdk - Intel FPGA / OPAE userspace runtime and tools
+opae
+opae-devel
+opae-extra-tools
+

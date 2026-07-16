@@ -1,0 +1,5 @@
+opae (2.14.0-3) unstable; urgency=medium
+
+  * Initial release for StarlingX (OPAE SDK 2.14.0-3).
+
+ -- Ionut Nechita <ionut.nechita@windriver.com>  Thu, 16 Jul 2026 00:00:00 +0000

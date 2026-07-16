@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# The only parameter is the name of the folder where the source code
+# is extracted to. Be aware that the extracted package should
+# be put at the same path where this script is located.
+# Tools needed: unzip
+
+OPAE_PKG=2.14.0-3.zip
+OPAE_SRC=opae-sdk-2.14.0-3
+
+unzip ./${OPAE_PKG}
+if [ $? -ne 0 ]
+then
+    echo "unzip failed: OPAE SDK source!"
+    exit 1
+fi
+
+mv ${OPAE_SRC} $1
+if [ $? -ne 0 ]
+then
+    echo "mv failed: OPAE SDK source!"
+    exit 1
+fi
+
+rm -f ${OPAE_PKG}

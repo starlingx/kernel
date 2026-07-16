@@ -1,0 +1,50 @@
+#!/usr/bin/make -f
+# See debhelper(7) (uncomment to enable)
+# output every command that modifies files on the build system.
+#export DH_VERBOSE = 1
+
+
+# see FEATURE AREAS in dpkg-buildflags(1)
+#export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+# see ENVIRONMENT in dpkg-buildflags(1)
+# package maintainers to append CFLAGS
+#export DEB_CFLAGS_MAINT_APPEND  = -Wall -pedantic
+# package maintainers to append LDFLAGS
+#export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
+
+export DEB_BUILD_OPTIONS=noddebs
+DEB_HOST_GNU_TYPE ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
+
+# debhelper builds the cmake tree out-of-source in obj-<gnu-type>.
+OBJ_DIR=obj-$(DEB_HOST_GNU_TYPE)
+
+# Trixie ships python3 as an externally-managed environment (PEP 668);
+# pip needs --break-system-packages to stage the python dist artifacts.
+PIP_INSTALL=DEB_PYTHON_INSTALL_LAYOUT=deb_system python3 -m pip install \
+	--break-system-packages --prefix=/usr --root=$(CURDIR)/debian/tmp
+
+
+%:
+	dh $@
+
+
+override_dh_auto_configure:
+	dh_auto_configure -- -DCMAKE_INSTALL_PREFIX=/usr -DOPAE_BUILD_PYTHON_DIST=ON -DOPAE_BUILD_FPGABIST=ON
+
+override_dh_auto_install:
+	$(PIP_INSTALL) $(CURDIR)/$(OBJ_DIR)/binaries/opae.io/stage
+	$(PIP_INSTALL) $(CURDIR)/binaries/hssi
+	$(PIP_INSTALL) $(CURDIR)/binaries/ofs.uio
+	$(PIP_INSTALL) $(CURDIR)/$(OBJ_DIR)/binaries/fpgadiag/stage
+	$(PIP_INSTALL) $(CURDIR)/$(OBJ_DIR)/libraries/pyopae/stage
+	$(PIP_INSTALL) $(CURDIR)/$(OBJ_DIR)/libraries/pyopaeuio/stage
+	$(PIP_INSTALL) $(CURDIR)/python/opae.admin
+	$(PIP_INSTALL) $(CURDIR)/python/packager
+	$(PIP_INSTALL) $(CURDIR)/python/pacsign
+	$(PIP_INSTALL) $(CURDIR)/platforms
+	dh_auto_install
+	# OPAE's cmake stages the python packages under /usr/local as well;
+	# the Debian-layout copies already live under /usr (deb_system pip
+	# above), so drop the duplicate /usr/local tree.
+	rm -rf $(CURDIR)/debian/tmp/usr/local

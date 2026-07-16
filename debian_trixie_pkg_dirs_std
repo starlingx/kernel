@@ -11,4 +11,5 @@ userspace/broadcom/libbnxt_re
 userspace/mellanox/rdma-core
 userspace/mellanox/mstflint
 userspace/mellanox/mlnx-tools
+userspace/opae-sdk
 userspace/initramfs-trigger

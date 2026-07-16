@@ -1,0 +1,16 @@
+---
+debver: 2.14.0-3
+debname: opae
+dl_hook: dl_hook
+dl_files:
+  2.14.0-3.zip:
+    topdir: null
+    url:
+      "https://github.com/OFS/opae-sdk/archive/refs/tags/\
+       2.14.0-3.zip"
+    sha256sum: df6fbfe0fba0dbaa0457664019784c0f161fd588b5768feda0fd861556faa224
+revision:
+  dist: $STX_DIST
+  GITREVCOUNT:
+    BASE_SRCREV: 074d973959cb774c70e7443281beabb51d7b9ed2
+    SRC_DIR: ${MY_REPO}/stx/kernel/userspace/opae-sdk
