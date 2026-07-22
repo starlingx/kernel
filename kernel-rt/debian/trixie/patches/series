@@ -8,6 +8,11 @@
 0008-drbd-fix-false-positive-resync-throttling-in-drbd_rs.patch
 0009-sched-deadline-arm-fair-server-on-nohz_full-when-RT-.patch
 0010-drbd-increase-maximum-CPU-mask-size.patch
+0011-PCI-Fix-bridge-window-alignment-with-optional-resour.patch
+0012-PCI-Don-t-claim-disabled-bridge-windows.patch
+0013-PCI-Use-res_to_dev_res-in-reassign_resources_sorted.patch
+0014-PCI-Fix-premature-removal-from-realloc_head-list-dur.patch
+0015-PCI-Fix-alignment-calculation-for-resource-size-larg.patch
 scsi/0001-scsi-sas-Skip-opt_sectors-when-DMA-reports-no-real-o.patch
 scsi/0002-dma-mapping-make-dma_max_mapping_size-return-0-for-n.patch
 scsi/0003-scsi-core-Drop-dev-dma_mask-check-in-evaluating-max_.patch
