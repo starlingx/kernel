@@ -1,0 +1,39 @@
+From b2fc073eb61529fe5e1d5bdeef1ff53d8887fe1f Mon Sep 17 00:00:00 2001
+From: Joel Colledge <joel.colledge@linbit.com>
+Date: Thu, 6 Aug 2026 16:42:08 -0400
+Subject: [PATCH] drbd: increase maximum CPU mask size
+
+The previous limit only allowed for a full mask for 112 CPUs. A CPU mask
+such as "8,,,,,,,,,,,,,,,,,,,,,,,,,,,,,," could be used to address CPUs
+with higher IDs, but it is often impractical to format the mask this
+way.
+
+This size will also likely be too small at some point. A solution using
+bitmap_parselist() to define the CPU mask may be better long term.
+
+A drbdsetup build with this change remains compatible with a kernel
+module without it, and vice versa.
+
+(cherry picked from commit 5697d9932836d9550bbb6fe7c0cac0a2094e9be9)
+---
+ include/linux/drbd.h | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/include/linux/drbd.h b/include/linux/drbd.h
+index 5468a23..b0ab25c 100644
+--- a/include/linux/drbd.h
++++ b/include/linux/drbd.h
+@@ -387,6 +387,10 @@ enum write_ordering_e {
+ #define DRBD_MD_INDEX_FLEX_EXT -2
+ #define DRBD_MD_INDEX_FLEX_INT -3
+ 
+-#define DRBD_CPU_MASK_SIZE 32
++/*
++ * This is the maximum string length accepted by drbdadm.
++ * It allows a full mask for up to 908 CPUs.
++ */
++#define DRBD_CPU_MASK_SIZE 256
+ 
+ #endif
+-- 
+2.43.0
