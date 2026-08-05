@@ -1,0 +1,7 @@
+Update out-of-tree mlnx_ofed driver from Mellanox DOCA
+DOCA release :
+    https://linux.mellanox.com/public/repo/doca/
+Firmware compatibility check for ConnectX 6 :
+    https://networking-docs.nvidia.com/connectx6dxfwrn/22481000/firmware-compatible-products
+Bnxt :
+https://techdocs.broadcom.com/us/en/storage-and-ethernet-connectivity/ethernet-nic-controllers/bcm957xxx/adapters/software-installation/supported-operating-systems.html

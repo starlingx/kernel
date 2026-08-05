@@ -1,0 +1,98 @@
+From 9a128a80a1038f21884c7ea12ff943506fc6e9d3 Mon Sep 17 00:00:00 2001
+From: Iulian Mocanu <iulian.mocanu@windriver.com>
+Date: Tue, 30 Jun 2026 14:21:23 -0400
+Subject: [PATCH 2/2] Update build rules
+
+- build signed modules instead of DKMS
+- derives kernelver from the installed linux@KERNEL_TYPE@-headers package
+- enables module signing with the kernel's signing keys
+- splits output into -modules@KERNEL_TYPE@ and -dev@KERNEL_TYPE@ packages
+- installs the modules package's postinst/prerm/triggers
+
+Signed-off-by: Iulian Mocanu <iulian.mocanu@windriver.com>
+---
+ debian/rules | 34 ++++++++++++++++++++++++----------
+ 1 file changed, 24 insertions(+), 10 deletions(-)
+
+diff --git a/debian/rules b/debian/rules
+index 0288915..6ee73f8 100755
+--- a/debian/rules
++++ b/debian/rules
+@@ -17,8 +17,8 @@
+ 
+ -include /usr/share/dpkg/architecture.mk
+ 
+-WITH_DKMS ?= 1
+-WITH_MOD_SIGN ?= 0
++WITH_DKMS ?= 0
++WITH_MOD_SIGN ?= 1
+ MLXNUMC = $(shell grep ^processor /proc/cpuinfo | wc -l)
+ NJOBS ?= $(shell if [ $(MLXNUMC) -lt 16 ]; then echo $(MLXNUMC); else echo 16; fi)
+ ifeq ($(WITH_DKMS),1)
+@@ -28,13 +28,18 @@ else
+ DKMS3 = 0
+ endif
+ 
++kernels_key_dir = /usr/src/kernels/$(kernelver)
++export MODULE_SIGN_PRIV_KEY = $(kernels_key_dir)/signing_key.pem
++export MODULE_SIGN_PUB_KEY = $(kernels_key_dir)/signing_key.x509
+ 
+ pname:=mlnx-ofed-kernel
+ psource:=$(pname)-source
+ ifeq ($(WITH_DKMS),1)
+ pdkms:=$(pname)-dkms
++pdev:=$(pname)-dkms
+ else
+-pdkms:=$(pname)-modules
++pdkms:=$(pname)-modules@KERNEL_TYPE@
++pdev:=$(pname)-dev@KERNEL_TYPE@
+ endif
+ putils:=$(pname)-utils
+ 
+@@ -48,7 +53,10 @@ export INSTALL_MOD_PATH:=$(CURDIR)/debian/$(pdkms)
+ DIST_NAME := $(shell lsb_release -si)
+ DIST_RELEASE := $(DIST_NAME)/$(shell lsb_release -sc)
+ 
+-kernelver ?= $(shell uname -r)
++#Here kernelver should be the one this package depends on,
++#while "uname -r" got the building machine's os release number.
++kheaders_name = $(shell ls /usr/src | grep linux@KERNEL_TYPE@-headers | grep amd64)
++kernelver = $(shell echo $(kheaders_name) | sed 's/linux@KERNEL_TYPE@-headers-//g')
+ kernelver1 = $(shell echo $(kernelver) | sed -e 's/_/-/g')
+ kernel_source_dir ?= "/lib/modules/$(kernelver)/build"
+ deb_arch = $(shell uname -m)
+@@ -120,12 +128,14 @@ ifeq ($(WITH_DKMS),1)
+ 	dh_installdirs -p$(pdkms)  usr/src/ofa_kernel/
+ 	# copy the ofa-kernel build headers using ofed_scripts/pre_build.sh in the DKMS MAKE step (called from ofed_scripts/pre_build.sh).
+ else
+-	dh_installdirs -p$(pdkms)  $(mod_dev_dir)
+-	cp -a include/			debian/$(pdkms)$(mod_dev_dir)
+-	cp -a config*			debian/$(pdkms)$(mod_dev_dir)
+-	cp -a compat*			debian/$(pdkms)$(mod_dev_dir)
+-	cp -a ofed_scripts		debian/$(pdkms)$(mod_dev_dir)
+-	cp -a Module*.symvers		debian/$(pdkms)$(mod_dev_dir)
++	dh_installdirs -p$(pdev)  $(mod_dev_dir)
++	cp -a include/			debian/$(pdev)$(mod_dev_dir)
++	cp -a config*			debian/$(pdev)$(mod_dev_dir)
++	cp -a compat*			debian/$(pdev)$(mod_dev_dir)
++	cp -a ofed_scripts		debian/$(pdev)$(mod_dev_dir)
++	cp -a Module*.symvers		debian/$(pdev)$(mod_dev_dir)
++	dh_installdirs -p$(pdev)  usr/src/ofa_kernel
++	ln -sf /$(mod_dev_dir) debian/$(pdev)/usr/src/ofa_kernel/default
+ endif
+ 
+ 	# Force DKMS to install our modules.
+@@ -219,6 +229,10 @@ ifeq ($(DKMS3),1)
+ 	echo "activate-await update-initramfs" >debian/$(pdkms)/DEBIAN/triggers
+ endif
+ else
++	install -d debian/$(pdkms)/DEBIAN
++	install -m 0755 debian/$(pname)-modules.postinst debian/$(pdkms)/DEBIAN/postinst
++	install -m 0755 debian/$(pname)-modules.prerm    debian/$(pdkms)/DEBIAN/prerm
++	install -m 0644 debian/$(pname)-modules.triggers debian/$(pdkms)/DEBIAN/triggers
+ 	sed -i \
+ 		-e 's/@KVER@/$(kernelver)/' \
+ 		-e 's/@ARCH@/$(deb_arch)/' \
+-- 
+2.47.3
+

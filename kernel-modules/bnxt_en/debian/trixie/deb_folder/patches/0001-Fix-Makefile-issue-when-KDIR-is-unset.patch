@@ -1,0 +1,38 @@
+From 2167c748c528fa3a463c2769f79cfc71c2a836fe Mon Sep 17 00:00:00 2001
+From: Iulian Mocanu <iulian.mocanu@windriver.com>
+Date: Thu, 9 Jul 2026 11:01:42 -0400
+Subject: [PATCH 1/1] Fix Makefile issue when KDIR is unset
+
+---
+ bnxt_en-1.10.3-238.1.138.5/Makefile | 2 ++
+ bnxt_re-238.1.138.5/Makefile        | 1 +
+ 2 files changed, 3 insertions(+)
+
+diff --git a/bnxt_en-1.10.3-238.1.138.5/Makefile b/bnxt_en-1.10.3-238.1.138.5/Makefile
+index 875f063..97e8701 100644
+--- a/bnxt_en-1.10.3-238.1.138.5/Makefile
++++ b/bnxt_en-1.10.3-238.1.138.5/Makefile
+@@ -44,6 +44,8 @@ KDIR ?= $(srctree)
+ ifneq ($(KDIR),)
+   LINUX=$(KDIR)
+   LINUXSRC=$(LINUX)
++else ifneq ($(LINUX),)
++  KDIR=$(LINUX)
+ endif
+ 
+ ifeq ($M,)
+diff --git a/bnxt_re-238.1.138.5/Makefile b/bnxt_re-238.1.138.5/Makefile
+index 76a0aa1..585bd18 100644
+--- a/bnxt_re-238.1.138.5/Makefile
++++ b/bnxt_re-238.1.138.5/Makefile
+@@ -873,6 +873,7 @@ OFED_INCLUDES := LINUXINCLUDE=' \
+                 -I$(OFA_KERNEL_PATH)/include \
+ 		-I$(OFA_KERNEL_PATH)/include/linux \
+                 -I$(OFA_KERNEL_PATH)/include/uapi \
++		-I$(KDIR)/include \
+ 		 $$(if $$(CONFIG_XEN),-D__XEN_INTERFACE_VERSION__=$$(CONFIG_XEN_INTERFACE_VERSION)) \
+ 		 $$(if $$(CONFIG_XEN),-I$$(KSRC)/arch/x86/include/mach-xen) \
+                 -I$(OFA_KERNEL_PATH)/arch/$$(SRCARCH)/include/generated/uapi \
+-- 
+2.47.3
+

@@ -1,0 +1,65 @@
+From 6483864a489e2a21e7403ba98c91f95ba57954c7 Mon Sep 17 00:00:00 2001
+From: Iulian Mocanu <iulian.mocanu@windriver.com>
+Date: Tue, 30 Jun 2026 14:16:44 -0400
+Subject: [PATCH 1/2] Update control file
+
+- drops mlnx-ofed-kernel-dkms and its DKMS build-deps
+- adds mlnx-ofed-kernel-modules@KERNEL_TYPE@ and mlnx-ofed-kernel-dev@KERNEL_TYPE@
+- switches build/runtime deps to the STX kernel headers (linux@KERNEL_TYPE@-headers-stx-amd64) 
+and signing keys (linux@KERNEL_TYPE@-keys).
+
+Signed-off-by: Iulian Mocanu <iulian.mocanu@windriver.com>
+---
+ debian/control | 31 +++++++++++++------------------
+ 1 file changed, 13 insertions(+), 18 deletions(-)
+
+diff --git a/debian/control b/debian/control
+index 9162b94..b8f42ad 100644
+--- a/debian/control
++++ b/debian/control
+@@ -2,29 +2,24 @@ Source: mlnx-ofed-kernel
+ Section: net
+ Priority: optional
+ Maintainer: Vladimir Sokolovsky <vlad@mellanox.com>
+-Build-Depends: debhelper (>= 8.0.0), autotools-dev, bzip2, dh-dkms | dkms (<< 3.0),
++Build-Depends: debhelper (>= 8.0.0), autotools-dev, bzip2, make, linux@KERNEL_TYPE@-headers-stx-amd64, linux@KERNEL_TYPE@-keys
+ Standards-Version: 4.2.0
+ Homepage: http://www.mellanox.com/page/products_dyn?product_family=26&mtag=linux_sw_drivers
+ 
+ Package: mlnx-ofed-kernel-utils
+ Architecture: any
+-Depends: ${misc:Depends}, coreutils, pciutils, grep, procps, module-init-tools | kmod, lsof,
+- mlnx-tools (>= 5.2.0),
++Depends: ${misc:Depends}, coreutils, pciutils, grep, procps, module-init-tools | kmod, lsof, mlnx-tools (>= 5.2.0), linux@KERNEL_TYPE@-headers-stx-amd64
+ Conflicts: mlnx-en-utils
+ Description: Userspace tools to restart and tune mlnx-ofed kernel modules
+ 
+-Package: mlnx-ofed-kernel-dkms
+-Section: kernel
+-Architecture: all
+-Depends: dkms, ${misc:Depends}, mlnx-ofed-kernel-utils, libc6-dev, gcc,
+-Recommends: linux-headers-arm64 | linux-headers-powerpc | linux-headers-ppc64 | linux-headers-ppc64le | linux-headers-amd64 | linux-headers-generic | linux-headers
+-Provides: mlnx-rdma-rxe-dkms, fwctl-dkms
+-Conflicts: mlnx-rdma-rxe-dkms, fwctl-dkms
+-Replaces: mlnx-rdma-rxe-dkms, fwctl-dkms
+-Description: DKMS support for mlnx-ofed kernel modules
+- This package provides integration with the DKMS infrastructure for
+- automatically building out of tree kernel modules.
+- .
+- This package provides the source code for the mlnx-ofed kernel modules.
+- .
+- This package contains the source to be built with dkms.
++Package: mlnx-ofed-kernel-modules@KERNEL_TYPE@
++Architecture: any
++Depends: ${shlibs:Depends}, ${misc:Depends}, mlnx-ofed-kernel-utils
++Description: ofed kernel modules
++ This package provides the mlnx-ofed out of tree kernel modules.
++
++Package: mlnx-ofed-kernel-dev@KERNEL_TYPE@
++Architecture: any
++Depends: ${shlibs:Depends}, ${misc:Depends}
++Description: ofed kernel modules
++  This package provides the source code for the mlnx-ofed kernel modules.
+-- 
+2.47.3
+

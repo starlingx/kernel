@@ -1,1 +1,1 @@
-0001-Fix-bnxt_en-and-bnxt_re-build-against-Linux-6.16-and.patch
+0001-Fix-Makefile-issue-when-KDIR-is-unset.patch
