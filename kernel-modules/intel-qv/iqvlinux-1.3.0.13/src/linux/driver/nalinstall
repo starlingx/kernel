@@ -1,0 +1,152 @@
+#!/bin/bash
+
+#  Copyright(c) 1999 Intel Corporation. All rights reserved.
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of version 2 of the GNU General Public License as
+# published by the Free Software Foundation.
+#
+#  This program is distributed in the hope that it will be useful, but
+#  WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+#  The full GNU General Public License is included in this distribution
+#  in the file called COPYING.
+#
+#  Contact Information:
+#  Intel Corporation, 5200 N.E. Elam Young Parkway, Hillsboro, OR 97124-6497
+
+MODE=install
+
+if [ "$1" = "uninstall" ]
+then
+	MODE=uninstall
+elif [ "$1" = "" ]
+then
+    SOURCE_DIR=$PWD
+else
+    SOURCE_DIR=$1
+fi
+
+MachineType=$(uname -i)
+KernelVersion=$(uname -r)
+
+K_VERSION=`uname -r| cut -c1-3 | sed 's/2\.[56]/2\.6/'`
+
+DriverName=iqvlinux
+if [ "$K_VERSION" = "2.4" ]
+then
+    DriverFileName=$DriverName.o
+else
+    DriverFileName=$DriverName.ko
+fi
+
+if [ ! -e $SOURCE_DIR/$DriverFileName ] && [ "$MODE" = "install" ]
+then
+    printf "\033[31mError: unable to find driver file ($DriverFileName) in $SOURCE_DIR\n\033[0m"
+    exit 1
+fi
+
+DriverDirectoryName=/lib/modules/$KernelVersion/updates/drivers/net/ethernet/intel
+DriverOldDirectoryName=/lib/modules/$KernelVersion/kernel/drivers/net
+
+if [ ! -d $DriverDirectoryName ]
+then
+    printf "Directory for driver installation does not exist...need to create it.\n\033[31m"
+    OUTPUT=`mkdir -p $DriverDirectoryName`
+    Status=$?
+    if [ $Status -ne 0 ]
+    then
+        printf "\033[31mError: failed to create direcotry for driver installation ($OUTPUT)\n\033[0m"
+        exit $Status
+    else
+        printf "\033[32mDirectory for driver installation created successfully.\n\033[0m"
+    fi
+else
+    printf "\033[33mSkipping directory creation for driver installation as it already exists.\n\033[0m"
+fi
+
+if [ -e $DriverDirectoryName/$DriverFileName ]
+then
+    printf "Removing existing $DriverFileName driver...\033[31m"
+    OUTPUT=`rm -fv $DriverDirectoryName/$DriverFileName`
+    Status=$?
+    if [ $Status -ne 0 ]
+    then
+        printf "\033[31mError: failed to remove driver ($OUTPUT)\n\033[0m"
+        exit $Status
+    else
+        printf "\033[32mOK\n\033[0m"
+    fi
+else
+    printf "\033[33mSkipping removing QV driver - it does not exist...\n\033[0m"
+fi
+
+if [ -e $DriverOldDirectoryName/$DriverFileName ]
+then
+    printf "Removing existing $DriverFileName driver from the obsolete location: $DriverOldDirectoryName...\033[31m"
+    OUTPUT=`rm -fv $DriverOldDirectoryName/$DriverFileName`
+    Status=$?
+    if [ $Status -ne 0 ]
+    then
+        printf "\033[31mError: failed to remove driver ($OUTPUT)\n\033[0m"
+        exit $Status
+    else
+        printf "\033[32mOK\n\033[0m"
+    fi
+fi
+ 
+if [ "$MODE" = "install" ]
+then
+	printf "Copying $DriverFileName driver file to /lib/modules directory...\033[31m"
+	OUTPUT=`cp -v $SOURCE_DIR/$DriverFileName $DriverDirectoryName`
+	Status=$?
+	if [ $Status -ne 0 ]
+	then
+		printf "\033[31mError: failed to copy driver ($OUTPUT)\033[0m"
+		exit $Status
+	else
+		printf "\033[32mOK!\033[0m\n"
+	fi
+fi
+
+# Install the node and driver
+IsDriverLoaded=`lsmod | cut -c1-${#DriverName} | grep $DriverName`
+if [ ${#IsDriverLoaded} -gt 0 ]
+then
+	printf "\033[34;1mTry and unload the old driver...\033[31m"
+	OUTPUT=`rmmod -s $DriverName`
+
+	Status=$?
+
+	if [ $Status -ne 0 ]
+	then
+		printf "\033[31mError: failed to unload driver: $OUTPUT\n\033[0m"
+	else
+		printf "\033[32mOK\n\033[0m"
+	fi
+	fi
+
+if [ "$MODE" = "install" ]
+then
+	printf "\033[34;1mDriver installation verification...\033[0m"
+	if [ -e $DriverDirectoryName/$DriverFileName ]
+	then
+		depmod -A
+		OsId=`grep -E '(sles)' /etc/os-release`
+		if [ ${#OsId} -ne 0 ]
+		then
+		    modprobe --allow-unsupported $DriverName
+		else
+		    modprobe $DriverName
+		fi
+		rmmod $DriverName
+		printf "\033[32mInstalled!\033[0m\n"
+	else
+		printf "\033[31mError: Failed to install the $DriverFileName driver\033[0m"
+	fi
+fi

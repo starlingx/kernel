@@ -1,0 +1,35 @@
+From fdc26b2bc9b96e826039a18028f1be1e4de5a2e9 Mon Sep 17 00:00:00 2001
+From: Catalin Rapiteanu <viorel-catalin.rapiteanu@windriver.com>
+Date: Tue, 14 Jul 2026 00:00:00 +0000
+Subject: [PATCH] iqvlinux: pass linux common header to kcompat-generator
+
+On Debian the kernel headers are split into an arch-specific tree
+(KSRC) and a "common" source tree that holds include/linux/*.h.
+kcompat-generator.sh greps headers by relative path under KSRC, which
+lacks them, so it aborts and the build fails at "debian/rules clean".
+
+Pass the common tree (KSRC_COMMON, exported from debian/rules) to the
+generator instead, matching the other Intel drivers (i40e, iavf, ice).
+The module build still uses KSRC.
+
+Signed-off-by: Catalin Rapiteanu <viorel-catalin.rapiteanu@windriver.com>
+---
+ src/linux/driver/common.mk | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/linux/driver/common.mk b/src/linux/driver/common.mk
+index 9a75339..892ff38 100644
+--- a/src/linux/driver/common.mk
++++ b/src/linux/driver/common.mk
+@@ -265,7 +265,7 @@ minimum_kver_check = $(eval $(call _minimum_kver_check,${1},${2},${3}))
+ # call script that populates defines automatically
+ $(if $(shell \
+     $(if $(findstring 1,${V}),,QUIET_COMPAT=1) \
+-    KSRC=${KSRC} OUT=../../../inc/linux/kcompat_generated_defs.h CONFFILE=${CONFIG_FILE} \
++    KSRC=${KSRC_COMMON} OUT=../../../inc/linux/kcompat_generated_defs.h CONFFILE=${CONFIG_FILE} \
+     bash kcompat-generator.sh && echo ok), , $(error kcompat-generator.sh failed))
+ 
+ ################
+-- 
+2.47.3
+
