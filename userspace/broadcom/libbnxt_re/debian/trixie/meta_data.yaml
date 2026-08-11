@@ -1,0 +1,15 @@
+---
+debver: 238.1.138.5
+debname: libbnxt-re
+dl_hook: dl_hook
+dl_files:
+  bcm_238.1.138.6a.tar.gz:
+    topdir: null
+    url: "https://docs.broadcom.com/docs-and-downloads/\
+          ethernet-network-adapters/NXE/BRCM_238.1.138.6/bcm_238.1.138.6a.tar.gz"
+    sha256sum: 9b3b3fb3b5d14bafbb6ae83c45005c2edef8d0a76fbbc2f9a4cfad0b2d05ecc7
+revision:
+  dist: $STX_DIST
+  GITREVCOUNT:
+    BASE_SRCREV: e8cb7ff3ee3cee16c15287fe91204a448786acfa
+    SRC_DIR: ${MY_REPO}/stx/kernel/userspace/broadcom/libbnxt_re

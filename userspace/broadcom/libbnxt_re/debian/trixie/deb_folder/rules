@@ -1,0 +1,53 @@
+#!/usr/bin/make -f
+#
+# Copyright (c) 2022 Wind River Systems, Inc.
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements. The ASF licenses this
+# file to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#  http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+# output every command that modifies files on the build system.
+#export DH_VERBOSE = 1
+
+include /usr/share/dpkg/architecture.mk
+
+libdir=/usr/lib/$(DEB_HOST_MULTIARCH)
+debdir=debian/libbnxt-re
+
+%:
+	dh $@
+
+override_dh_auto_install:
+	dh_auto_install
+	# Now, the following symbolic link exists:
+	#   /usr/lib/x86_64-linux-gnu/libbnxt_re.so -> libbnxt_re-rdmav34.so
+	#
+	# We need to create the following symbolic link as well:
+	#   /usr/lib/x86_64-linux-gnu/libibverbs/libbnxt_re-rdmav34.so -> ../libbnxt_re-rdmav34.so
+	#
+	# To avoid hard-coding the version (v34), read the link.
+	libname="$$(readlink "$(debdir)/$(libdir)/libbnxt_re.so")" && \
+	    mkdir -p "$(debdir)/$(libdir)/libibverbs/" && \
+	    ln -s "../$${libname}" "$(debdir)/$(libdir)/libibverbs/$${libname}"
+	# Remove static library and libtool archive files.
+	# - Static library is not necessary given that no other packages statically
+	#   link against the libbnxt_re library.
+	# - Libtool archive files (*.la) are not recommended to be included in
+	#   Debian packages:
+	#   https://www.debian.org/doc/manuals/maint-guide/advanced.en.html#library
+	#   https://wiki.debian.org/ReleaseGoals/LAFileRemoval
+	rm -vf \
+	    $(debdir)/$(libdir)/libbnxt_re.a \
+	    $(debdir)/$(libdir)/libbnxt_re.la
