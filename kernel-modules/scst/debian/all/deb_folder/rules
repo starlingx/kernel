@@ -1,0 +1,94 @@
+#!/usr/bin/make -f
+#
+# Copyright (c) 2026 Wind River Systems, Inc.
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements. The ASF licenses this
+# file to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#  http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+# output every command that modifies files on the build system.
+#export DH_VERBOSE = 1
+
+%:
+	dh $@
+
+WITH_MOD_SIGN ?= 1
+
+kheaders_name=$(shell ls /usr/src | grep linux@KERNEL_TYPE@-headers | grep amd64)
+export KSRC=/usr/src/$(kheaders_name)
+kversion=$(shell echo $(kheaders_name) | sed 's/linux@KERNEL_TYPE@-headers-//g')
+kmod_name=scst
+version=$(shell dpkg-parsechangelog | sed -n 's/^Version: *\([^-]\+\)-.\+/\1/p')
+pkg_name=scst@KERNEL_TYPE@
+pkg_common_name=scst-common
+
+_sysconfdir=/etc
+_defaultdocdir=/usr/share/doc
+
+ifeq ($(WITH_MOD_SIGN),1)
+_keydir ?= /usr/src/kernels/$(kversion)/
+privkey ?= $(_keydir)/signing_key.pem
+pubkey ?= $(_keydir)/signing_key.x509
+endif
+
+override_dh_auto_clean:
+	@true
+
+override_dh_auto_build:
+	$(MAKE) -C scst 2release
+	$(MAKE) -C scst KDIR=$(KSRC)
+	$(MAKE) -C scst/src/dev_handlers KDIR=$(KSRC)
+	$(MAKE) -C iscsi-scst KDIR=$(KSRC) INFINIBAND_ENABLED=false
+
+override_dh_auto_install:
+	install -d debian/$(pkg_name)/lib/modules/$(kversion)/weak-updates/$(kmod_name)-$(version)/
+	install -m 644 scst/src/scst.ko debian/$(pkg_name)/lib/modules/$(kversion)/weak-updates/$(kmod_name)-$(version)/
+	install -m 644 scst/src/dev_handlers/scst_vdisk.ko debian/$(pkg_name)/lib/modules/$(kversion)/weak-updates/$(kmod_name)-$(version)/
+	install -m 644 iscsi-scst/kernel/iscsi-scst.ko debian/$(pkg_name)/lib/modules/$(kversion)/weak-updates/$(kmod_name)-$(version)/
+	install -d debian/$(pkg_common_name)/$(_sysconfdir)/modules-load.d/
+	install -m 644 debian/extra/scst.conf debian/$(pkg_common_name)/$(_sysconfdir)/modules-load.d/
+	# Control-device node creator: a helper + a systemd unit that create
+	# /dev/iscsi-scst-ctl once the modules are loaded (the module registers
+	# the char device with no class, so devtmpfs does not create the node).
+	install -d debian/$(pkg_common_name)/usr/sbin
+	install -m 755 debian/extra/scst-ctl-dev debian/$(pkg_common_name)/usr/sbin/scst-ctl-dev
+	install -d debian/$(pkg_common_name)/lib/systemd/system
+	install -m 644 debian/extra/scst-ctl-dev.service debian/$(pkg_common_name)/lib/systemd/system/scst-ctl-dev.service
+	# udev rule: remove the node when iscsi_scst is unloaded and recreate it
+	# (via scst-ctl-dev) when it is loaded, so its dynamic major stays right.
+	install -d debian/$(pkg_common_name)/lib/udev/rules.d
+	install -m 644 debian/extra/60-scst-ctl-dev.rules debian/$(pkg_common_name)/lib/udev/rules.d/60-scst-ctl-dev.rules
+	# systemd preset: StarlingX ships 99-default-disable.preset, so ship a
+	# preset that enables the scst-ctl-dev unit on the image (the [Install]
+	# WantedBy and the postinst enable do not survive the disable-by-default
+	# policy).
+	install -d debian/$(pkg_common_name)/lib/systemd/system-preset
+	install -m 644 debian/extra/50-scst.preset debian/$(pkg_common_name)/lib/systemd/system-preset/50-scst.preset
+
+override_dh_install:
+	@true
+
+override_dh_strip:
+	dh_strip
+	find debian -name '*.ko' | xargs strip -g
+ifeq ($(WITH_MOD_SIGN),1)
+	@echo "Sign the modules!"
+	/usr/lib/linux@KERNEL_TYPE@-kbuild-*/scripts/sign-file sha256 $(privkey) $(pubkey) \
+		./debian/$(pkg_name)/lib/modules/$(kversion)/weak-updates/$(kmod_name)-$(version)/scst.ko
+	/usr/lib/linux@KERNEL_TYPE@-kbuild-*/scripts/sign-file sha256 $(privkey) $(pubkey) \
+		./debian/$(pkg_name)/lib/modules/$(kversion)/weak-updates/$(kmod_name)-$(version)/scst_vdisk.ko
+	/usr/lib/linux@KERNEL_TYPE@-kbuild-*/scripts/sign-file sha256 $(privkey) $(pubkey) \
+		./debian/$(pkg_name)/lib/modules/$(kversion)/weak-updates/$(kmod_name)-$(version)/iscsi-scst.ko
+endif

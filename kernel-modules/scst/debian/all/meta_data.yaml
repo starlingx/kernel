@@ -1,0 +1,12 @@
+---
+debname: scst
+debver: 3.10.0-1
+dl_path:
+  name: scst-3.10.0.tar.gz
+  url: "https://github.com/SCST-project/scst/archive/refs/tags/v3.10.tar.gz"
+  sha256sum: c376c6ab91c62c700752fb5f7d332b1194b44f862b59802bf7e36dc92f96beb7
+revision:
+  dist: $STX_DIST
+  GITREVCOUNT:
+    BASE_SRCREV: da5a3692a32b01d06c6c777dd8bda6ba96977a39
+    SRC_DIR: ${MY_REPO}/stx/kernel/kernel-modules/scst

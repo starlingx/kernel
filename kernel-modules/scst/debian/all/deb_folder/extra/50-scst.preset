@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Wind River Systems, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Enable the SCST boot-time helpers on the StarlingX image.
+#
+# StarlingX ships 99-default-disable.preset (disable everything not explicitly
+# enabled), so a unit's [Install] WantedBy and the package postinst's
+# deb-systemd-helper enable do not take effect on the built image - the preset
+# policy wins and the units come up disabled. Without these enabled at boot:
+#   - scst-ctl-dev never creates /dev/iscsi-scst-ctl, so the gateway's
+#     device-plugin DaemonSet fails to mount it and the gateway pod cannot
+#     schedule (Insufficient starlingx.io/scst-iscsi-ctl).
+# SCST module presence is not reported from here: node-feature-discovery
+# publishes the loaded modules in its per-node NodeFeature object, and the
+# rook-ceph app's pre-apply check reads them from there - no boot-time unit or
+# node label is needed for that.
+#
+# A numeric prefix below 99 so it is evaluated before 99-default-disable.
+enable scst-ctl-dev.service

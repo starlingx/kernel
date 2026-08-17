@@ -1,0 +1,28 @@
+#
+# Copyright (c) 2026 Wind River Systems, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Create /dev/iscsi-scst-ctl once the SCST iSCSI modules are loaded.
+#
+# The iscsi_scst module registers its control device without a device class,
+# so the node is not created by devtmpfs/udev. systemd-modules-load.service
+# loads the modules from /etc/modules-load.d/scst.conf at boot; this unit runs
+# right after and creates the control node, so the SCST control-device
+# Kubernetes device plugin finds it on the host without the gateway having run.
+
+[Unit]
+Description=Create the SCST iSCSI control device node
+After=systemd-modules-load.service
+Requires=systemd-modules-load.service
+ConditionPathExists=/sys/module/iscsi_scst
+# No "node already present" condition: scst-ctl-dev checks an existing node
+# against the major now registered and replaces it if it does not match.
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/sbin/scst-ctl-dev
+
+[Install]
+WantedBy=multi-user.target

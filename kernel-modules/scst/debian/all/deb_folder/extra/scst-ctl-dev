@@ -1,0 +1,56 @@
+#!/bin/sh
+#
+# Copyright (c) 2026 Wind River Systems, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Create the SCST iSCSI control device node /dev/iscsi-scst-ctl.
+#
+# The iscsi_scst module registers its control char device with
+# register_chrdev() and no device class, so devtmpfs/udev does not create the
+# node automatically. iscsi-scstd would create it on first start, but the SCST
+# control-device Kubernetes device plugin must see it on the host before the
+# gateway has ever run on a controller. scst-ctl-dev.service runs this at
+# boot and the 60-scst-ctl-dev udev rule runs it whenever iscsi_scst is
+# loaded, so the node is present independent of iscsi-scstd.
+#
+# The major is allocated dynamically and can change if the module is unloaded
+# and another module takes that major before iscsi_scst is loaded again. An
+# existing node is kept only if it is a character device with the major now
+# registered for iscsi-scst-ctl and minor 0 (the device iscsi-scstd itself
+# creates); otherwise it is replaced.
+
+set -eu
+
+DEV=/dev/iscsi-scst-ctl
+NAME=iscsi-scst-ctl
+
+# Resolve the dynamically-allocated major from /proc/devices.
+major=$(awk -v n="$NAME" '
+    /^Character devices:/ { inchar = 1; next }
+    /^Block devices:/     { inchar = 0 }
+    inchar && $2 == n     { print $1; exit }
+' /proc/devices)
+
+if [ -z "${major:-}" ]; then
+    echo "iscsi-scst-ctl: character device '$NAME' not registered; is iscsi_scst loaded?" >&2
+    exit 1
+fi
+
+if [ -c "$DEV" ]; then
+    current=$(stat -c '%Hr:%Lr' "$DEV")
+    if [ "$current" = "$major:0" ]; then
+        exit 0
+    fi
+    echo "iscsi-scst-ctl: $DEV is $current, expected $major:0; recreating"
+elif [ -e "$DEV" ]; then
+    echo "iscsi-scst-ctl: $DEV is not a character device; recreating"
+fi
+
+# Create the node under a temporary name and rename it into place, so $DEV is
+# never missing or half-made while it is replaced.
+tmp="$DEV.$$"
+rm -f "$tmp"
+mknod -m 0600 "$tmp" c "$major" 0
+mv -fT "$tmp" "$DEV"
+echo "iscsi-scst-ctl: created $DEV (major $major)"

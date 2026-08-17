@@ -31,6 +31,11 @@ initramfs-trigger
 iqvlinux
 iqvlinux-rt
 
+# SCST iSCSI target kernel modules
+scst
+scst-rt
+scst-common
+
 # libbnxt_re - Broadcom Infiniband verbs library
 libbnxt-re
 

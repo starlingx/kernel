@@ -1,0 +1,19 @@
+#
+# Copyright (c) 2026 Wind River Systems, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Keep /dev/iscsi-scst-ctl in step with the iscsi_scst module.
+#
+# The module registers its control char device with a dynamic major and no
+# device class, so nothing else creates or removes the node. The kernel sends
+# the module "add" uevent after the module's init has run (do_init_module),
+# so the major is already in /proc/devices when scst-ctl-dev runs. On unload
+# the node is removed, so a node can never be left pointing at a major that
+# another driver has taken in the meantime. scst-ctl-dev.service still runs
+# the same helper at boot, so the node is right whatever the boot ordering
+# of module loading and udev.
+ACTION=="add", SUBSYSTEM=="module", KERNEL=="iscsi_scst", \
+    RUN+="/usr/sbin/scst-ctl-dev"
+ACTION=="remove", SUBSYSTEM=="module", KERNEL=="iscsi_scst", \
+    RUN+="/bin/rm -f /dev/iscsi-scst-ctl"

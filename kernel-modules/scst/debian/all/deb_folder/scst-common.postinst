@@ -1,0 +1,23 @@
+#!/bin/sh
+#
+# Copyright (c) 2026 Wind River Systems, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+set -e
+
+if [ "$1" = "configure" ]; then
+    if [ -d /run/systemd/system ]; then
+        systemctl daemon-reload >/dev/null 2>&1 || true
+    fi
+    for unit in scst-ctl-dev.service; do
+        deb-systemd-helper enable "$unit" >/dev/null 2>&1 || true
+        if [ -d /run/systemd/system ]; then
+            systemctl start "$unit" >/dev/null 2>&1 || true
+        fi
+    done
+fi
+
+#DEBHELPER#
+
+exit 0

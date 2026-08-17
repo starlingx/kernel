@@ -1,0 +1,5 @@
+scst (3.10.0-1) unstable; urgency=medium
+
+  * Release of SCST 3.10 kernel modules for StarlingX.
+
+ -- Sai sirisha <SaiSirisha.Nagarakanti@windriver.com>  Thu, 06 Aug 2026 12:00:00 +0000

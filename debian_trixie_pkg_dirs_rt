@@ -7,3 +7,4 @@ kernel-modules/intel-igb_uio
 kernel-modules/intel-qv
 kernel-modules/doca-mlnx-ofed
 kernel-modules/octeon_ep
+kernel-modules/scst

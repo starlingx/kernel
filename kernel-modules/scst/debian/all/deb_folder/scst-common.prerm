@@ -1,0 +1,19 @@
+#!/bin/sh
+#
+# Copyright (c) 2026 Wind River Systems, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+set -e
+
+if [ "$1" = "remove" ] || [ "$1" = "deconfigure" ]; then
+    if [ -d /run/systemd/system ]; then
+        for unit in scst-ctl-dev.service; do
+            systemctl stop "$unit" >/dev/null 2>&1 || true
+        done
+    fi
+fi
+
+#DEBHELPER#
+
+exit 0

@@ -1,0 +1,24 @@
+Source: scst
+Section: kernel
+Priority: optional
+Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
+Build-Depends: debhelper-compat (= 13), linux@KERNEL_TYPE@-headers-stx-amd64, linux@KERNEL_TYPE@-keys
+Standards-Version: 4.5.1
+Rules-Requires-Root: no
+
+Package: scst@KERNEL_TYPE@
+Architecture: amd64
+Depends: ${misc:Depends}, scst-common
+Description: SCST iSCSI target kernel modules for StarlingX
+ This package provides the scst, scst_vdisk, and iscsi-scst Out-of-Tree
+ kernel modules for the SCST iSCSI storage gateway. These modules enable
+ SCSI-3 Persistent Reservations (PR) capable shared disks for Windows
+ Server Failover Clustering (WSFC).
+
+Package: scst-common
+Architecture: any
+Depends: ${misc:Depends}
+Description: SCST common configuration files for StarlingX
+ This package provides the common configuration files for the SCST
+ iSCSI target kernel modules. It includes the modules-load.d configuration
+ for auto-loading SCST modules at boot.
