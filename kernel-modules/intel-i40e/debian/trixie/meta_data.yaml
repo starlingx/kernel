@@ -1,11 +1,11 @@
 ---
-debver: 2.30.12
+debver: 2.30.18
 debname: i40e
 dl_path:
-  name: i40e-2.30.12.tar.gz
-  url: "https://github.com/intel/ethernet-linux-i40e/releases/\
-        download/v2.30.12/i40e-2.30.12.tar.gz"
-  sha256sum: 8fb4de1dccbc77e7d86d718e1fb71be909d43bb3d3516c876d269ebe2cdaeba4
+  name: i40e-2.30.18.tar.gz
+  url: "https://github.com/intel/ethernet-linux-i40e/\
+        releases/download/v2.30.18/i40e-2.30.18.tar.gz"
+  sha256sum: d1cb08d92ad7ad66c88752a481388266ae5d8ca8e189079b0a2a0885af3e3cf6
 revision:
   dist: $STX_DIST
   GITREVCOUNT:
