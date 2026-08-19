@@ -1,8 +1,8 @@
 ---
-debver: 2.6.6
+debver: 2.6.6.4.1
 debname: ice
 dl_path:
-  name: v2.6.6.tar.gz
+  name: v2.6.6.4.1.tar.gz
   url: "https://github.com/intel/ethernet-linux-ice/\
         archive/refs/tags/v2.6.6.tar.gz"
   sha256sum: 2328b9a0d474824c3e965d969622b6bd1623854282c38c592c501971e30fa4ec

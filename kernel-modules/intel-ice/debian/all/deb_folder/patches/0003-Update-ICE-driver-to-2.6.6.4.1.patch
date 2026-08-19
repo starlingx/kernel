@@ -1,0 +1,1018 @@
+From 7423c83b81996b3d77ac35a2e9c371fa36c2777e Mon Sep 17 00:00:00 2001
+From: Iulian Mocanu <iulian.mocanu@windriver.com>
+Date: Wed, 19 Aug 2026 13:24:23 -0400
+Subject: [PATCH] Update ICE driver to 2.6.6.4.1
+
+Patch contains fixes for issues specific to VRAN
+
+Signed-off-by:  Iulian Mocanu <iulian.mocanu@windriver.com>
+Signed-off-by:  Michael Lemos <michael.lemos@intel.com>
+Signed-off-by:  Timothy Miskell  <timothy.miskell@intel.com>
+---
+ src/ice_debugfs.c   |  69 ++++++++++
+ src/ice_dpll.c      |   3 +
+ src/ice_ethtool.c   |   1 +
+ src/ice_ethtool.h   |   1 +
+ src/ice_flex_pipe.c |  13 +-
+ src/ice_main.c      |   2 +-
+ src/ice_ptp.c       | 316 ++++++++++++++++++++++++++++++++++++++++++--
+ src/ice_ptp.h       |  50 ++++++-
+ src/ice_ptp_hw.c    |  12 +-
+ src/ice_trace.h     |  54 ++++++--
+ src/ice_type.h      |   8 +-
+ src/ice_vf_lib.c    |  36 +----
+ 12 files changed, 499 insertions(+), 66 deletions(-)
+
+diff --git a/src/ice_debugfs.c b/src/ice_debugfs.c
+index dacc5d0..3f0ad7a 100644
+--- a/src/ice_debugfs.c
++++ b/src/ice_debugfs.c
+@@ -1431,6 +1431,69 @@ ice_debugfs_command_write(struct file *file, const char __user *buf,
+ 		} else {
+ 			goto command_help;
+ 		}
++	} else if (argc == 1 && !strncmp(argv[0], "trigger_phy_soft_reset", 22)) {
++		struct ice_ptp_port *ptp_port = &pf->ptp.port;
++
++		if (hw->mac_type != ICE_MAC_GENERIC_3K_E825 ||
++		    pf->ptp.state != ICE_PTP_READY)
++			goto command_help;
++
++		dev_warn_ratelimited(dev, "Initiating manual PHY soft reset on port %d\n",
++				     ptp_port->port_num);
++
++		ice_port_perform_phy_soft_reset(pf, ptp_port->port_num, ptp_port);
++	} else if ((argc == 1 || argc == 2) && !strncmp(argv[0], "automatic_phy_soft_reset_enable", 31)) {
++		struct ice_ptp_port *ptp_port = &pf->ptp.port;
++
++		if (hw->mac_type != ICE_MAC_GENERIC_3K_E825 ||
++		    pf->ptp.state != ICE_PTP_READY)
++			goto command_help;
++
++		if (argc == 1) {
++			dev_info(dev, "Automatic PHY soft reset for port %d is %s\n",
++				 ptp_port->port_num,
++				 str_enabled_disabled(ptp_port->phy_soft_reset_enabled));
++		} else {
++			bool enable;
++
++			ret = kstrtobool(argv[1], &enable);
++			if (ret)
++				goto command_help;
++
++			dev_info(dev, "Automatic PHY soft reset for port %d is now %s\n",
++				 ptp_port->port_num,
++				 str_enabled_disabled(enable));
++
++			ptp_port->phy_soft_reset_enabled = enable;
++		}
++	} else if ((argc == 1 || argc == 2) && !strncmp(argv[0], "automatic_phy_soft_reset_threshold", 35)) {
++		struct ice_ptp_port *ptp_port = &pf->ptp.port;
++
++		if (hw->mac_type != ICE_MAC_GENERIC_3K_E825 ||
++		    pf->ptp.state != ICE_PTP_READY)
++			goto command_help;
++
++		if (argc == 1) {
++			dev_info(dev, "Automatic PHY soft reset threshold for port %d is %u\n",
++				 ptp_port->port_num,
++				 ptp_port->phy_soft_reset_threshold);
++		} else {
++			u32 threshold;
++
++			ret = kstrtou32(argv[1], 0, &threshold);
++			if (ret)
++				goto command_help;
++
++			/* The threshold cannot be zero */
++			if (!threshold)
++				goto command_help;
++
++			dev_info(dev, "Automatic PHY soft reset threshold for port %d is now %u\n",
++				 ptp_port->port_num,
++				 threshold);
++
++			ptp_port->phy_soft_reset_threshold = threshold;
++		}
+ 	} else if (argc == 2 && !strncmp(argv[0], "dump", 4) &&
+ 		   !strncmp(argv[1], "switch", 6)) {
+ 		ret = ice_dump_sw_cfg(hw);
+@@ -1591,6 +1654,12 @@ command_help:
+ #endif /* ICE_ADD_PROBES */
+ 		if (ice_is_feature_supported(pf, ICE_F_PHY_RCLK))
+ 			dev_info(dev, "\t dump rclk_status\n");
++		if (hw->mac_type == ICE_MAC_GENERIC_3K_E825 &&
++		    pf->ptp.state == ICE_PTP_READY) {
++			dev_info(dev, "\t trigger_phy_soft_reset\n");
++			dev_info(dev, "\t automatic_phy_soft_reset_enable [0|1]\n");
++			dev_info(dev, "\t automatic_phy_soft_reset_threshold [threshold]\n");
++		}
+ 		ret = -EINVAL;
+ 		goto command_write_error;
+ 	}
+diff --git a/src/ice_dpll.c b/src/ice_dpll.c
+index c788854..e01bc69 100644
+--- a/src/ice_dpll.c
++++ b/src/ice_dpll.c
+@@ -3208,6 +3208,9 @@ static void ice_dpll_deinit_worker(struct ice_pf *pf)
+ {
+ 	struct ice_dplls *d = &pf->dplls;
+ 
++	if (!d->kworker)
++		return;
++
+ 	kthread_cancel_delayed_work_sync(&d->work);
+ 	kthread_destroy_worker(d->kworker);
+ }
+diff --git a/src/ice_ethtool.c b/src/ice_ethtool.c
+index 394d663..38e83e4 100644
+--- a/src/ice_ethtool.c
++++ b/src/ice_ethtool.c
+@@ -232,6 +232,7 @@ static const struct ice_stats ice_gstrings_pf_stats[] = {
+ 	ICE_PF_STAT(ICE_TX_HWTSTAMP_FLUSHED, ptp.tx_hwtstamp_flushed),
+ 	ICE_PF_STAT(ICE_TX_HWTSTAMP_DISCARDED, ptp.tx_hwtstamp_discarded),
+ 	ICE_PF_STAT(ICE_LATE_CACHED_PHC_UPDATES, ptp.late_cached_phc_updates),
++	ICE_PF_STAT(ICE_PTP_PHY_SOFT_RESETS, ptp.port.phy_soft_resets),
+ };
+ 
+ static const u32 ice_regs_dump_list[] = {
+diff --git a/src/ice_ethtool.h b/src/ice_ethtool.h
+index 28d1fbd..9a5de5b 100644
+--- a/src/ice_ethtool.h
++++ b/src/ice_ethtool.h
+@@ -210,6 +210,7 @@ struct ice_stats {
+ #define ICE_TX_HWTSTAMP_FLUSHED		"tx_hwtstamp_flushed"
+ #define ICE_TX_HWTSTAMP_DISCARDED	"tx_hwtstamp_discarded"
+ #define ICE_LATE_CACHED_PHC_UPDATES	"late_cached_phc_updates"
++#define ICE_PTP_PHY_SOFT_RESETS		"ptp_phy_soft_resets"
+ 
+ struct ice_phy_type_to_ethtool {
+ 	u64 aq_link_speed;
+diff --git a/src/ice_flex_pipe.c b/src/ice_flex_pipe.c
+index 739ba3f..22548e6 100644
+--- a/src/ice_flex_pipe.c
++++ b/src/ice_flex_pipe.c
+@@ -1531,7 +1531,7 @@ ice_adapter_find_prof_id_with_mask(struct ice_hw *hw, enum ice_block blk,
+ {
+ 	struct ice_hw *adapter_hw = ice_get_primary_hw(
+ hw->back);
+-	struct ice_es *es = &adapter_hw->blk[blk].es;
++	struct ice_es *es;
+ 
+ 	/* For FD, we don't want to reuse an existing profile with the same
+ 	 * field vector and mask. This will cause rule interference.
+@@ -1539,6 +1539,12 @@ hw->back);
+ 	if (blk == ICE_BLK_FD)
+ 		return -ENOENT;
+ 
++	/* Guard against the primary port being mid-removal */
++	if (!adapter_hw || !adapter_hw->blk[blk].es.t)
++		return -ENOENT;
++
++	es = &adapter_hw->blk[blk].es;
++
+ 	for (u8 i = 0; i < es->count; i++) {
+ 		u16 off = i * es->fvw;
+ 
+@@ -2645,6 +2651,7 @@ void ice_free_hw_tbls(struct ice_hw *hw)
+ 		kfree(hw->blk[i].prof.t);
+ 		kfree(hw->blk[i].prof_redir.t);
+ 		kfree(hw->blk[i].es.t);
++		hw->blk[i].es.t = NULL; /* prevent dangling pointer use after free */
+ 		kfree(hw->blk[i].es.ref_count);
+ 		kfree(hw->blk[i].es.written);
+ 		kfree(hw->blk[i].es.mask_ena);
+@@ -3466,8 +3473,8 @@ hw->back);
+ 								    es, masks,
+ 								    &prof_id);
+ 			if (status)
+-				status = ice_alloc_prof_id(primary, blk,
+-							   &prof_id);
++				status = ice_alloc_prof_id(primary ? primary : hw,
++							   blk, &prof_id);
+ 			else
+ 				status = ice_subscribe_prof_id(hw, blk,
+ 							       prof_id);
+diff --git a/src/ice_main.c b/src/ice_main.c
+index 14eebe1..c9f1a60 100644
+--- a/src/ice_main.c
++++ b/src/ice_main.c
+@@ -33,7 +33,7 @@
+ #define DRV_VERSION_MINOR 6
+ #define DRV_VERSION_BUILD 6
+ 
+-#define DRV_VERSION	"2.6.6"
++#define DRV_VERSION	"2.6.6.4.1"
+ #define DRV_SUMMARY	"Intel(R) Ethernet Connection E800 Series Linux Driver"
+ #ifdef ICE_ADD_PROBES
+ #define DRV_VERSION_EXTRA "_probes"
+diff --git a/src/ice_ptp.c b/src/ice_ptp.c
+index c359606..88c832b 100644
+--- a/src/ice_ptp.c
++++ b/src/ice_ptp.c
+@@ -2305,7 +2305,7 @@ ice_ptp_is_tx_tracker_up(struct ice_ptp_tx *tx)
+ {
+ 	lockdep_assert_held(&tx->lock);
+ 
+-	return tx->init && !tx->calibrating;
++	return tx->init && !tx->disabled;
+ }
+ 
+ /**
+@@ -2319,6 +2319,7 @@ void ice_ptp_req_tx_single_tstamp(struct ice_ptp_tx *tx, u8 idx)
+ 	struct ice_ptp_port *ptp_port;
+ 	unsigned long flags;
+ 	struct sk_buff *skb;
++	struct device *dev;
+ 	struct ice_pf *pf;
+ 
+ 	if (!tx->init)
+@@ -2326,6 +2327,7 @@ void ice_ptp_req_tx_single_tstamp(struct ice_ptp_tx *tx, u8 idx)
+ 
+ 	ptp_port = container_of(tx, struct ice_ptp_port, tx);
+ 	pf = ptp_port_to_pf(ptp_port);
++	dev = ice_pf_to_dev(pf);
+ 	params = &pf->hw.ptp.phy.e810;
+ 
+ 	/* Drop packets which have waited for more than 2 seconds */
+@@ -2348,7 +2350,13 @@ void ice_ptp_req_tx_single_tstamp(struct ice_ptp_tx *tx, u8 idx)
+ 
+ 	spin_lock_irqsave(&params->atqbal_wq.lock, flags);
+ 
+-	params->atqbal_flags |= ATQBAL_FLAGS_INTR_IN_PROGRESS;
++	if (test_and_set_bit(ATQBAL_FLAGS_INTR_IN_PROGRESS,
++			     params->atqbal_flags)) {
++		dev_dbg(dev, "%s: low latency interrupt request already in progress?\n",
++			__func__);
++		spin_unlock_irqrestore(&params->atqbal_wq.lock, flags);
++		return;
++	}
+ 
+ 	/* Write TS index to read to the PF register so the FW can read it */
+ 	wr32(&pf->hw, PF_SB_ATQBAL,
+@@ -2391,7 +2399,8 @@ void ice_ptp_complete_tx_single_tstamp(struct ice_ptp_tx *tx)
+ 
+ 	spin_lock_irqsave(&params->atqbal_wq.lock, flags);
+ 
+-	if (!(params->atqbal_flags & ATQBAL_FLAGS_INTR_IN_PROGRESS))
++	if (!test_and_clear_bit(ATQBAL_FLAGS_INTR_IN_PROGRESS,
++				params->atqbal_flags))
+ 		dev_dbg(dev, "%s: low latency interrupt request not in progress?\n",
+ 			__func__);
+ 
+@@ -2399,8 +2408,6 @@ void ice_ptp_complete_tx_single_tstamp(struct ice_ptp_tx *tx)
+ 	hi = rd32(&pf->hw, PF_SB_ATQBAH);
+ 
+ 	/* Wake up threads waiting on low latency interface */
+-	params->atqbal_flags &= ~ATQBAL_FLAGS_INTR_IN_PROGRESS;
+-
+ 	wake_up_locked(&params->atqbal_wq);
+ 
+ 	spin_unlock_irqrestore(&params->atqbal_wq.lock, flags);
+@@ -2755,7 +2762,7 @@ ice_ptp_alloc_tx_tracker(struct ice_ptp_tx *tx)
+ 	tx->tstamps = tstamps;
+ 	tx->in_use = in_use;
+ 	tx->init = 1;
+-	tx->calibrating = 0;
++	tx->disabled = 0;
+ 	tx->last_ll_ts_idx_read = -1;
+ 
+ 	spin_lock_init(&tx->lock);
+@@ -3195,13 +3202,13 @@ static void ice_ptp_wait_for_offsets(struct work_struct *work)
+ 	if (ice_is_reset_in_progress(pf->state))
+ 		goto err;
+ 
+-	if (port->tx.calibrating) {
++	if (port->tx.disabled) {
+ 		tx_err = ice_ptp_check_tx_fifo(port);
+ 		if (!tx_err)
+ 			tx_err = ice_phy_cfg_tx_offset_e82x(&pf->hw,
+ 							    port->port_num);
+ 		if (!tx_err)
+-			port->tx.calibrating = false;
++			port->tx.disabled = false;
+ 	}
+ 
+ 	if (port->rx_calibrating) {
+@@ -3287,7 +3294,7 @@ static int ice_ptp_port_phy_restart(struct ice_ptp_port *ptp_port)
+ 		 * PHY offset
+ 		 */
+ 		spin_lock(&ptp_port->tx.lock);
+-		ptp_port->tx.calibrating = true;
++		ptp_port->tx.disabled = true;
+ 		spin_unlock(&ptp_port->tx.lock);
+ 		ptp_port->tx_fifo_busy_cnt = 0;
+ 		ptp_port->rx_calibrating = true;
+@@ -3427,8 +3434,10 @@ skip_unused_txclk_disable:
+ 		ice_ptp_port_phy_restart(ptp_port);
+ 		return;
+ 	case ICE_MAC_GENERIC_3K_E825:
+-		if (linkup)
++		if (linkup) {
++			ice_ptp_phy_soft_reset_eth56g(hw, ptp_port->port_num);
+ 			ice_ptp_port_phy_restart(ptp_port);
++		}
+ 		return;
+ 	default:
+ 		dev_warn(ice_pf_to_dev(pf), "%s: Unknown PHY type\n", __func__);
+@@ -4765,6 +4774,10 @@ ice_ptp_rx_hwtstamp(struct ice_rx_ring *rx_ring,
+ 	ts_ns = ice_ptp_extend_32b_ts(cached_time, ts_high);
+ 	ts_ns = ice_tspll_ticks2ns(hw, ts_ns);
+ 
++	ice_trace(rx_hwtstamp,
++		  ice_pf_to_dev((struct ice_pf *)rx_ring->vsi->back),
++		  skb, cached_time, ts_high, ts_ns);
++
+ 	hwtstamps = skb_hwtstamps(skb);
+ 	memset(hwtstamps, 0, sizeof(*hwtstamps));
+ 	hwtstamps->hwtstamp = ns_to_ktime(ts_ns);
+@@ -5086,6 +5099,260 @@ static void ice_ptp_maybe_trigger_tx_interrupt(struct ice_pf *pf)
+ 	}
+ }
+ 
++/**
++ * ice_port_perform_phy_soft_reset - Perform a PHY soft reset for E825C port
++ * @pf: Board private structure
++ * @port_num: The port number to reset
++ * @ptp_port: PTP port software structure if the port driver is loaded.
++ *
++ * Perform a PHY soft reset for the given port of the device. Note that we
++ * must still reset the PHY even if the PF driver for the port number is
++ * unloaded. In that case, the port structure won't exist and will be NULL.
++ *
++ * Context: if ptp_port is non-NULL, caller must have a valid reference to it.
++ */
++void ice_port_perform_phy_soft_reset(struct ice_pf *pf, u8 port_num,
++				     struct ice_ptp_port *ptp_port)
++{
++	struct device *dev = ice_pf_to_dev(pf);
++	struct ice_hw *hw = &pf->hw;
++	int err, err_count = 0;
++	unsigned long flags;
++
++	/* 1. If the port is active, disable new Tx timestamps */
++	if (ptp_port) {
++		spin_lock_irqsave(&ptp_port->tx.lock, flags);
++		ptp_port->tx.disabled = true;
++		spin_unlock_irqrestore(&ptp_port->tx.lock, flags);
++
++		/* Track how many times the PHY soft reset has occurred for
++		 * active ports.
++		 */
++		ptp_port->phy_soft_resets++;
++	}
++
++	/* 2. Disable PHY interrupts for the port */
++	err = ice_phy_cfg_intr_eth56g(hw, port_num, false, 1);
++	if (err) {
++		dev_warn(dev, "Failed to disable PHY interrupt for port %d, err %d. Continuing anyway\n",
++			 port_num, err);
++		err_count++;
++	}
++
++	/* 3. Trigger a PHY soft reset for the port. */
++	err = ice_ptp_phy_soft_reset_eth56g(hw, port_num);
++	if (err) {
++		dev_warn(dev, "Soft reset of PHY port %d failed, err %d. Continuing anyway\n",
++			 port_num, err);
++		err_count++;
++	}
++
++	/* 4. If the port is active, perform PHY reconfiguration */
++	if (ptp_port && ptp_port->link_up) {
++		mutex_lock(&ptp_port->ps_lock);
++		err = ice_start_phy_timer_eth56g(hw, port_num);
++		mutex_unlock(&ptp_port->ps_lock);
++
++		if (err) {
++			dev_warn(dev, "Failed to restart PHY port %d, err %d. Continuing anyway\n",
++				 port_num, err);
++			err_count++;
++		}
++	}
++
++	/* 5. Re-enable PHY interrupts */
++	err = ice_phy_cfg_intr_eth56g(hw, port_num, true, 1);
++	if (err) {
++		dev_warn(dev, "Failed to re-enable PHY interrupt for port %d, err %d\n",
++			 port_num, err);
++		err_count++;
++	}
++
++	/* 6. Re-enable Tx timestamps */
++	if (ptp_port) {
++		spin_lock_irqsave(&ptp_port->tx.lock, flags);
++		ptp_port->tx.disabled = false;
++		spin_unlock_irqrestore(&ptp_port->tx.lock, flags);
++
++		/* 7. Reset stuck count */
++		ptp_port->phy_stuck_count = 0;
++	}
++
++	if (err_count)
++		dev_warn_ratelimited(dev, "PHY soft reset for port %d attempted, but process encountered %d errors\n",
++				     port_num, err_count);
++	else
++		dev_warn_ratelimited(dev, "PHY soft reset for port %d complete\n",
++				     port_num);
++}
++
++static bool ice_ptp_has_tstamp_timeout(struct ice_ptp_tx *tx)
++{
++	unsigned long flags, idx;
++	bool timeouts = false;
++
++	spin_lock_irqsave(&tx->lock, flags);
++	for_each_set_bit(idx, tx->in_use, tx->len)
++		if (time_is_before_jiffies(tx->tstamps[idx].start + 2 * HZ)) {
++			timeouts = true;
++			break;
++		}
++	spin_unlock_irqrestore(&tx->lock, flags);
++
++	return timeouts;
++}
++
++/**
++ * ice_ptp_check_phy_interrupt_status - Check if E825C PHY interrupt is blocked
++ * @pf: Board private structure
++ *
++ * The E825C PHY timestamping block can become stuck such that no interrupts
++ * will be generated. This is known to occur due to software misconfiguration,
++ * but is suspected to possibly occur rarely during normal operation. If the
++ * PHY_PTP_INT_STATUS indicator for the port is stuck high, but the port PHY
++ * timestamp memory block is cleared, then port timestamp interrupt might be
++ * stuck.
++ *
++ * If a port appears stuck for two checks in a row, attempt to recover the
++ * timestamp block by performing a PHY soft reset for the associated port.
++ */
++static void ice_ptp_check_phy_interrupt_status(struct ice_pf *pf)
++{
++	struct device *dev = ice_pf_to_dev(pf);
++	u32 phy_ports_maybe_stuck = 0;
++	struct ice_ptp_port *ptp_port;
++	struct ice_hw *hw = &pf->hw;
++	u64 tstamp_ready;
++	u32 ts_status;
++	int err;
++
++	/* Only need to check for PHY lockup on E825-C devices */
++	if (hw->mac_type != ICE_MAC_GENERIC_3K_E825)
++		return;
++
++	err = ice_ptp_read_tx_hwtstamp_status_eth56g(hw, &ts_status);
++	if (err) {
++		dev_dbg(dev, "Failed to read PHY_PTP_INT_STATUS, err %d\n",
++			err);
++		return;
++	}
++
++	if (!ts_status)
++		return;
++
++	for (int port_num = 0; port_num < hw->ptp.num_lports; port_num++) {
++		u32 threshold;
++		bool enabled;
++		if (!(ts_status & BIT(port_num)))
++			continue;
++
++		err = ice_get_phy_tx_tstamp_ready(hw, port_num, &tstamp_ready);
++		if (err)
++			continue;
++
++		/* If the port has an active driver, it will have a PTP port
++		 * structure associated with this adapter. The hardware block
++		 * must be reset regardless, but additional steps are taken
++		 * for active ports.
++		 */
++		rcu_read_lock();
++		ptp_port = xa_load(&pf->adapter->ptp_ports, port_num);
++		if (!ptp_port || !kref_get_unless_zero(&ptp_port->ref))
++			ptp_port = NULL;
++		rcu_read_unlock();
++
++		if (ptp_port) {
++			threshold = ptp_port->phy_soft_reset_threshold;
++			enabled = ptp_port->phy_soft_reset_enabled;
++		} else {
++			/* Use the owner settings for ports which aren't
++			 * enabled in software.
++			 */
++			threshold = pf->ptp.port.phy_soft_reset_threshold;
++			enabled = pf->ptp.port.phy_soft_reset_enabled;
++		}
++
++		/* If the timestamp status bit for the PHY interrupt is read
++		 * high, and the timestamp ready bitmap is clear, the
++		 * timestamp interrupt might be stuck. When this occurs, new
++		 * interrupts cannot be generated for any port on the quad.
++		 *
++		 * For ports which are not enabled in software, there should
++		 * be no timestamps on the port and no activity. However, if
++		 * the hardware PHY interrupt becomes locked, we must still
++		 * clear the port to allow interrupts on that quad. For such
++		 * ports, immediately perform a soft reset when we detect the
++		 * locked state.
++		 *
++		 * For software-enabled ports, the detection logic may
++		 * generate false positives. This occurs because we cannot
++		 * guarantee reading the PHY interrupt status and the ready
++		 * bitmap atomically without change from hardware end.
++		 * Instead, keep track of how many consectutive stalls we
++		 * detect for the port. Once it exceeds the configured
++		 * threshold, perform a PHY soft reset and reset the count.
++		 *
++		 * Additionally, for software-enabled ports, check if we have
++		 * stalled timestamp requests. If a timestamp has been waiting
++		 * in software for too long, assume the PHY interrupt is stuck
++		 * and initiate a soft reset.
++		 *
++		 * Automatic recovery may be disabled, in which case instead
++		 * only log a warning but do not initiate the reset process.
++		 */
++		if (ptp_port && ice_ptp_has_tstamp_timeout(&ptp_port->tx)) {
++			if (enabled) {
++				dev_warn_ratelimited(dev, "Detected Tx timestamp timeouts on port %d. Attempting automatic recovery via PHY soft reset\n",
++						     port_num);
++				ice_port_perform_phy_soft_reset(pf, port_num, ptp_port);
++			} else {
++				dev_warn_ratelimited(dev, "Detected Tx timestamp timeouts on port %d, but automatic PHY soft reset is disabled.\n",
++						     port_num);
++			}
++		} else if (!tstamp_ready) {
++			if (ptp_port) {
++				ptp_port->phy_stuck_count++;
++				dev_dbg(dev, "Detected possible PHY interrupt stall %d consecutive times on port %d\n",
++					ptp_port->phy_stuck_count, port_num);
++			}
++
++			if (enabled) {
++				if (!ptp_port) {
++					dev_warn_ratelimited(dev, "Detected possible PHY interrupt stall on disabled port %d. Attempting automatic recovery via PHY soft reset\n",
++							     port_num);
++					ice_port_perform_phy_soft_reset(pf, port_num, NULL);
++				} else if (ptp_port->phy_stuck_count >= threshold) {
++					dev_warn_ratelimited(dev, "Detected possible PHY interrupt stall on port %d. Attempting automatic recovery via PHY soft reset\n",
++							     port_num);
++					ice_port_perform_phy_soft_reset(pf, port_num, ptp_port);
++				}
++			} else {
++				if (!ptp_port) {
++					dev_warn_ratelimited(dev, "Detected possible PHY interrupt stall on disabled port %d, but automatic PHY soft reset is disabled\n",
++							     port_num);
++				} else if (ptp_port->phy_stuck_count >= threshold) {
++					dev_warn_ratelimited(dev, "Detected possible PHY interrupt stall on port %d, but automatic PHY soft reset is disabled\n",
++							     port_num);
++					ptp_port->phy_stuck_count = 0;
++				}
++			}
++		} else {
++			/* Port appears to not be stuck, clear the count */
++			if (ptp_port) {
++				if (ptp_port->phy_stuck_count > 0)
++					dev_dbg(dev, "Clearing PHY stuck count on port %d with a stuck count of %d\n",
++						port_num, ptp_port->phy_stuck_count);
++				ptp_port->phy_stuck_count = 0;
++			}
++		}
++
++		if (ptp_port)
++			kref_put(&ptp_port->ref, ice_ptp_release_port_rcu);
++	}
++
++	pf->ptp.phy_ports_maybe_stuck = phy_ports_maybe_stuck;
++}
++
+ /**
+  * ice_ptp_periodic_work - Do PTP periodic work
+  * @info: Driver's PTP info structure
+@@ -5107,6 +5374,8 @@ static long ice_ptp_periodic_work(struct ptp_clock_info *info)
+ 	if (err)
+ 		retry = true;
+ 
++	ice_ptp_check_phy_interrupt_status(pf);
++
+ 	ice_ptp_maybe_trigger_tx_interrupt(pf);
+ 
+ 	if (ice_is_feature_supported(pf, ICE_F_CGU))
+@@ -5411,6 +5680,14 @@ bool ice_ptp_tx_tstamps_pending(struct ice_pf *pf)
+ 	if (pf->ptp.state != ICE_PTP_READY)
+ 		return false;
+ 
++	/* E810 devices with support for the low latency timestamp interrupt
++	 * have specialized handling for timestamps. They should not
++	 * re-schedule the miscellaneous interrupt.
++	 */
++	if (hw->mac_type == ICE_MAC_E810 &&
++	    hw->dev_caps.ts_dev_info.ts_ll_int_read)
++		return false;
++
+ 	switch (pf->ptp.tx_interrupt_mode) {
+ 	case ICE_PTP_TX_INTERRUPT_NONE:
+ 		return false;
+@@ -5875,6 +6152,10 @@ static int ice_ptp_init_port(struct ice_pf *pf, struct ice_ptp_port *ptp_port)
+ 
+ 	mutex_init(&ptp_port->ps_lock);
+ 
++	ptp_port->phy_soft_reset_enabled = false;
++	ptp_port->phy_soft_reset_threshold = 30;
++	ptp_port->phy_stuck_count = 0;
++
+ 	switch (hw->mac_type) {
+ 	case ICE_MAC_E810:
+ 	case ICE_MAC_E830:
+@@ -6040,6 +6321,18 @@ void ice_ptp_init(struct ice_pf *pf)
+ 
+ 	ptp->state = ICE_PTP_READY;
+ 
++	/* Seed the cached PTP link state from the current PHY link status.
++	 * On a fresh load the port structure is zeroed (link_up == false).
++	 * If the link is already up at this point no link-change edge will
++	 * follow to set it, and ice_ptp_link_change() is edge-driven, so the
++	 * flag would stay stale, stalling cached PHC updates and starving
++	 * Rx/Tx timestamps. Establish the initial level here.
++	 */
++	if (pf->hw.port_info)
++		ptp->port.link_up =
++			!!(pf->hw.port_info->phy.link_info.link_info &
++			   ICE_AQ_LINK_UP);
++
+ 	if (ice_pf_src_tmr_owned(pf))
+ #ifndef HAVE_PTP_CANCEL_WORKER_SYNC
+ 		ice_ptp_schedule_worker(ptp, 0);
+@@ -6073,6 +6366,9 @@ err_exit:
+ void ice_ptp_release(struct ice_pf *pf)
+ {
+ 	struct ice_ptp *ptp = &pf->ptp;
++	if (pf->adapter && pf->adapter->ctrl_pf == pf)
++		pf->adapter->ctrl_pf = NULL;
++
+ 	if (ptp->state == ICE_PTP_UNINIT)
+ 		return;
+ 
+diff --git a/src/ice_ptp.h b/src/ice_ptp.h
+index c28b424..07be6ce 100644
+--- a/src/ice_ptp.h
++++ b/src/ice_ptp.h
+@@ -127,8 +127,9 @@ enum ice_tx_tstamp_work {
+  * @offset: offset into timestamp block to get the real index
+  * @len: length of the tstamps and in_use fields.
+  * @init: if true, the tracker is initialized;
+- * @calibrating: if true, the PHY is calibrating the Tx offset. During this
+- *               window, timestamps are temporarily disabled.
++ * @disabled: if true, new timestamp requests are disabled. This is set during
++ *            operations which might impact validity of Tx timestamps such as
++ *            during initial calibration of PHY timestamps on E82x.
+  * @has_ready_bitmap: if true, the hardware has a valid Tx timestamp ready
+  *                    bitmap register. If false, fall back to verifying new
+  *                    timestamp values against previously cached copy.
+@@ -142,7 +143,7 @@ struct ice_ptp_tx {
+ 	u8 offset;
+ 	u8 len;
+ 	u8 init : 1;
+-	u8 calibrating : 1;
++	u8 disabled : 1;
+ 	u8 has_ready_bitmap : 1;
+ 	s8 last_ll_ts_idx_read;
+ };
+@@ -169,6 +170,7 @@ struct ice_ptp_tx {
+  * @port_num: the port number this structure represents
+  * @tx_clk: currently active Tx reference clock source
+  * @tx_clk_req: requested Tx reference clock source (new target)
++ * @phy_soft_resets: number of times port has been PHY soft reset
+  */
+ struct ice_ptp_port {
+ 	struct kref ref;
+@@ -181,6 +183,11 @@ struct ice_ptp_port {
+ 	u8 rx_calibrating : 1;
+ 	enum ice_e825c_ref_clk tx_clk;
+ 	enum ice_e825c_ref_clk tx_clk_req;
++	/* PHY soft reset configuration */
++	u32 phy_soft_resets;
++	u32 phy_soft_reset_threshold;
++	u32 phy_stuck_count;
++	bool phy_soft_reset_enabled;
+ };
+ 
+ enum ice_ptp_state {
+@@ -313,6 +320,7 @@ struct ice_ptp {
+ 	u32 tx_hwtstamp_flushed;
+ 	u32 tx_hwtstamp_discarded;
+ 	u32 late_cached_phc_updates;
++	u32 phy_ports_maybe_stuck;
+ };
+ 
+ static inline struct ice_ptp *__ptp_port_to_ptp(struct ice_ptp_port *p)
+@@ -331,7 +339,7 @@ static inline struct ice_ptp *__ptp_info_to_ptp(struct ptp_clock_info *i)
+ #define ptp_info_to_pf(i) \
+ 	container_of(__ptp_info_to_ptp((i)), struct ice_pf, ptp)
+ 
+-static inline int ice_ptp_get_seq_id(struct sk_buff *skb)
++static inline int ice_ptp_get_tx_seq_id(struct sk_buff *skb)
+ {
+ 	struct ptp_header *hdr;
+ 	int type;
+@@ -351,6 +359,33 @@ static inline int ice_ptp_get_seq_id(struct sk_buff *skb)
+ 	return be16_to_cpu(hdr->sequence_id);
+ }
+ 
++static inline int ice_ptp_get_rx_seq_id(struct sk_buff *skb)
++{
++	struct ptp_header *hdr;
++	unsigned int offset;
++	int type;
++
++	if (!skb || !skb_mac_header_was_set(skb))
++		return -1;
++
++	offset = skb->data - skb_mac_header(skb);
++	skb_push(skb, offset);
++
++	type = ptp_classify_raw(skb);
++
++	if (type == PTP_CLASS_NONE) {
++		skb_pull(skb, offset);
++		return -1;
++	}
++
++	hdr = ptp_parse_header(skb, type);
++	skb_pull(skb, offset);
++	if (!hdr)
++		return -1;
++
++	return be16_to_cpu(hdr->sequence_id);
++}
++
+ #define SYNC_EXEC_CMD			0x3
+ #define ICE_PTP_TS_VALID		BIT(0)
+ #define FIFO_EMPTY			BIT(2)
+@@ -428,6 +463,8 @@ int ice_ptp_get_phc_freq_ratio(struct ice_pf *pf,
+ 			       struct virtchnl_phc_freq_ratio *ratio);
+ #endif /* CONFIG_X86 && VIRTCHNL_PTP_SUPPORT */
+ int ice_ptp_clock_index(struct ice_pf *pf);
++void ice_port_perform_phy_soft_reset(struct ice_pf *pf, u8 port_num,
++				     struct ice_ptp_port *ptp_port);
+ #else /* IS_ENABLED(CONFIG_PTP_1588_CLOCK) */
+ static inline bool ice_is_ptp_supported(struct ice_pf *pf)
+ {
+@@ -529,5 +566,10 @@ static inline void ice_dpll_pin_idx_to_name(struct ice_pf *pf,
+ {
+ 	snprintf(pin_name, MAX_PIN_NAME, "Pin %i", pin);
+ }
++
++static void ice_port_perform_phy_soft_reset(struct ice_pf *pf, u8 port_num,
++					    struct ice_ptp_port *ptp_port)
++{
++}
+ #endif /* IS_ENABLED(CONFIG_PTP_1588_CLOCK) */
+ #endif /* _ICE_PTP_H_ */
+diff --git a/src/ice_ptp_hw.c b/src/ice_ptp_hw.c
+index 00b475f..73a73c2 100644
+--- a/src/ice_ptp_hw.c
++++ b/src/ice_ptp_hw.c
+@@ -4453,8 +4453,8 @@ ice_read_phy_tstamp_ll_e810(struct ice_hw *hw, u8 idx, u8 *hi, u32 *lo)
+ 
+ 	/* Wait for any pending in-progress low latency interrupt */
+ 	err = wait_event_interruptible_locked_irq(params->atqbal_wq,
+-						  !(params->atqbal_flags &
+-						    ATQBAL_FLAGS_INTR_IN_PROGRESS));
++						  !test_bit(ATQBAL_FLAGS_INTR_IN_PROGRESS,
++							    params->atqbal_flags));
+ 	if (err) {
+ 		spin_unlock_irq(&params->atqbal_wq.lock);
+ 		return err;
+@@ -4683,8 +4683,8 @@ static int ice_ptp_prep_phy_adj_ll_e810(struct ice_hw *hw, s32 adj)
+ 
+ 	/* Wait for any pending in-progress low latency interrupt */
+ 	err = wait_event_interruptible_locked_irq(params->atqbal_wq,
+-						  !(params->atqbal_flags &
+-						    ATQBAL_FLAGS_INTR_IN_PROGRESS));
++						  !test_bit(ATQBAL_FLAGS_INTR_IN_PROGRESS,
++							    params->atqbal_flags));
+ 	if (err) {
+ 		spin_unlock_irq(&params->atqbal_wq.lock);
+ 		return err;
+@@ -4774,8 +4774,8 @@ static int ice_ptp_prep_phy_incval_ll_e810(struct ice_hw *hw, u64 incval)
+ 
+ 	/* Wait for any pending in-progress low latency interrupt */
+ 	err = wait_event_interruptible_locked_irq(params->atqbal_wq,
+-						  !(params->atqbal_flags &
+-						    ATQBAL_FLAGS_INTR_IN_PROGRESS));
++						  !test_bit(ATQBAL_FLAGS_INTR_IN_PROGRESS,
++							    params->atqbal_flags));
+ 	if (err) {
+ 		spin_unlock_irq(&params->atqbal_wq.lock);
+ 		return err;
+diff --git a/src/ice_trace.h b/src/ice_trace.h
+index 836abaa..ed5de5a 100644
+--- a/src/ice_trace.h
++++ b/src/ice_trace.h
+@@ -283,7 +283,7 @@ DECLARE_EVENT_CLASS(ice_tx_tstamp_template,
+ 				     __field(int, len)
+ 				     __field(int, in_use)
+ 				     __field(u8, init)
+-				     __field(u8, calibrating)),
++				     __field(u8, disabled)),
+ 
+ 		    TP_fast_assign(lockdep_assert_held(&tx->lock);
+ #ifdef HAVE_ASSIGN_STR_2_PARAMS
+@@ -295,7 +295,7 @@ DECLARE_EVENT_CLASS(ice_tx_tstamp_template,
+ 				   __assign_str(netdev_name);
+ #endif /* HAVE_ASSIGN_STR_2_PARAMS */
+ 				   __entry->skb = skb;
+-				   __entry->seq = ice_ptp_get_seq_id(skb);
++				   __entry->seq = ice_ptp_get_tx_seq_id(skb);
+ 				   __entry->idx = idx;
+ 				   __entry->block = tx->block;
+ 				   __entry->offset = tx->offset;
+@@ -303,14 +303,14 @@ DECLARE_EVENT_CLASS(ice_tx_tstamp_template,
+ 				   __entry->in_use = bitmap_weight(tx->in_use,
+ 								   tx->len);
+ 				   __entry->init = tx->init;
+-				   __entry->calibrating = tx->calibrating;),
++				   __entry->disabled = tx->disabled;),
+ 
+-		    TP_printk("dev=%s netdev=%s skb=%p sequence_id=%d block=%d offset=%d len=%d in_use=%d init=%d calibrating=%d idx=%d",
++		    TP_printk("dev=%s netdev=%s skb=%p sequence_id=%d block=%d offset=%d len=%d in_use=%d init=%d disabled=%d idx=%d",
+ 			      __get_str(dev_name), __get_str(netdev_name),
+ 			      __entry->skb, __entry->seq,
+ 			      __entry->block, __entry->offset, __entry->len,
+ 			      __entry->in_use, __entry->init,
+-			      __entry->calibrating, __entry->idx));
++			      __entry->disabled, __entry->idx));
+ #define DEFINE_TX_TSTAMP_OP_EVENT(name) \
+ DEFINE_EVENT(ice_tx_tstamp_template, name, \
+ 	     TP_PROTO(struct device *dev, struct ice_ptp_tx *tx, \
+@@ -346,7 +346,7 @@ DECLARE_EVENT_CLASS(ice_tx_tstamp_with_value_template,
+ 				     __field(int, len)
+ 				     __field(int, in_use)
+ 				     __field(u8, init)
+-				     __field(u8, calibrating)),
++				     __field(u8, disabled)),
+ 
+ 		    TP_fast_assign(lockdep_assert_held(&tx->lock);
+ #ifdef HAVE_ASSIGN_STR_2_PARAMS
+@@ -358,7 +358,7 @@ DECLARE_EVENT_CLASS(ice_tx_tstamp_with_value_template,
+ 				   __assign_str(netdev_name);
+ #endif /* HAVE_ASSIGN_STR_2_PARAMS */
+ 				   __entry->skb = skb;
+-				   __entry->seq = ice_ptp_get_seq_id(skb);
++				   __entry->seq = ice_ptp_get_tx_seq_id(skb);
+ 				   __entry->raw_tstamp = raw_tstamp;
+ 				   __entry->tstamp = tstamp;
+ 				   __entry->idx = idx;
+@@ -368,15 +368,15 @@ DECLARE_EVENT_CLASS(ice_tx_tstamp_with_value_template,
+ 				   __entry->in_use = bitmap_weight(tx->in_use,
+ 								   tx->len);
+ 				   __entry->init = tx->init;
+-				   __entry->calibrating = tx->calibrating;),
++				   __entry->disabled = tx->disabled;),
+ 
+-		    TP_printk("dev=%s netdev=%s skb=%p sequence_id=%d raw_tstamp=%llu tstamp=%llu block=%d offset=%d len=%d in_use=%d init=%d calibrating=%d idx=%d",
++		    TP_printk("dev=%s netdev=%s skb=%p sequence_id=%d raw_tstamp=%llu tstamp=%llu block=%d offset=%d len=%d in_use=%d init=%d disabled=%d idx=%d",
+ 			      __get_str(dev_name), __get_str(netdev_name),
+ 			      __entry->skb, __entry->seq,
+ 			      __entry->raw_tstamp, __entry->tstamp,
+ 			      __entry->block, __entry->offset, __entry->len,
+ 			      __entry->in_use, __entry->init,
+-			      __entry->calibrating, __entry->idx));
++			      __entry->disabled, __entry->idx));
+ 
+ #define DEFINE_TX_TSTAMP_OP_EVENT_WITH_VALUE(name) \
+ DEFINE_EVENT(ice_tx_tstamp_with_value_template, name, \
+@@ -389,6 +389,40 @@ DEFINE_TX_TSTAMP_OP_EVENT_WITH_VALUE(ice_tx_tstamp_complete);
+ DEFINE_TX_TSTAMP_OP_EVENT_WITH_VALUE(ice_tx_tstamp_invalid);
+ DEFINE_TX_TSTAMP_OP_EVENT_WITH_VALUE(ice_tx_tstamp_dropped);
+ 
++/* Trace event for Rx timestamp */
++TRACE_EVENT(ice_rx_hwtstamp,
++	    TP_PROTO(struct device *dev, struct sk_buff *skb,
++		     u64 cached_time, u32 ts_high, u64 ts_ns),
++
++	    TP_ARGS(dev, skb, cached_time, ts_high, ts_ns),
++
++	    TP_STRUCT__entry(__string(dev_name, dev_name(dev))
++			     __string(netdev_name, netdev_name(skb->dev))
++			     __field(void *, skb)
++			     __field(int, seq)
++			     __field(u64, cached_time)
++			     __field(u32, ts_high)
++			     __field(u64, ts_ns)),
++
++	    TP_fast_assign(__entry->skb = skb;
++			   __entry->seq = ice_ptp_get_rx_seq_id(skb);
++			   __entry->cached_time = cached_time;
++			   __entry->ts_high = ts_high;
++			   __entry->ts_ns = ts_ns;
++#ifdef HAVE_ASSIGN_STR_2_PARAMS
++			   __assign_str(dev_name, dev_name(dev));
++			   __assign_str(netdev_name, netdev_name(skb->dev));
++#else
++			   __assign_str(dev_name);
++			   __assign_str(netdev_name);
++#endif /* HAVE_ASSIGN_STR_2_PARAMS */
++			   ),
++
++	    TP_printk("dev=%s netdev=%s skb=%pK sequence_id=%d cached_time=%llu ts_high=%u ts_ns=%llu",
++		      __get_str(dev_name), __get_str(netdev_name),
++		      __entry->skb, __entry->seq,
++		      __entry->cached_time, __entry->ts_high, __entry->ts_ns));
++
+ /* Trace events for the miscellaneous (OICR) interrupt handler */
+ TRACE_EVENT(ice_misc_intr_begin,
+ 	    TP_PROTO(struct ice_pf *pf, u32 oicr, u32 ena_mask),
+diff --git a/src/ice_type.h b/src/ice_type.h
+index c2bf987..079806c 100644
+--- a/src/ice_type.h
++++ b/src/ice_type.h
+@@ -1417,12 +1417,16 @@ enum ice_sma_pins {
+ 	ICE_SMA_PINS_NUM
+ };
+ 
+-#define ATQBAL_FLAGS_INTR_IN_PROGRESS	BIT(0)
++enum ice_atqbal_flags {
++	ATQBAL_FLAGS_INTR_IN_PROGRESS,
++
++	ATQBAL_FLAGS_NBITS, /* must be last */
++};
+ 
+ struct ice_e810_params {
+ 	/* The wait queue lock also protects the low latency interface */
+ 	wait_queue_head_t atqbal_wq;
+-	unsigned int atqbal_flags;
++	DECLARE_BITMAP(atqbal_flags, ATQBAL_FLAGS_NBITS);
+ };
+ 
+ enum ice_eth56g_link_spd {
+diff --git a/src/ice_vf_lib.c b/src/ice_vf_lib.c
+index d95f91b..c32756b 100644
+--- a/src/ice_vf_lib.c
++++ b/src/ice_vf_lib.c
+@@ -890,7 +890,12 @@ void ice_reset_all_vfs(struct ice_pf *pf)
+ 		ice_vf_fsub_init(vf);
+ 
+ 		ice_vf_pre_vsi_rebuild(vf);
+-		ice_vf_rebuild_vsi(vf);
++		if (ice_vf_rebuild_vsi(vf)) {
++			dev_err(dev, "VF %u VSI rebuild failed, leaving VF disabled\n",
++				vf->vf_id);
++			mutex_unlock(&vf->cfg_lock);
++			continue;
++		}
+ 		ice_vf_post_vsi_rebuild(vf);
+ 
+ 		ice_eswitch_attach(pf, vf);
+@@ -1215,20 +1220,6 @@ static int ice_init_vf_rss_lut_sysfs(struct ice_vf *vf)
+ 	return device_create_file(&vf->vfdev->dev, &vf->rss_lut_attr);
+ }
+ 
+-static bool
+-ice_is_transmit_lldp_enabled(struct ice_pf *pf)
+-{
+-	struct ice_vf *vf;
+-	unsigned int bkt;
+-
+-	ice_for_each_vf(pf, bkt, vf) {
+-		if (vf->transmit_lldp)
+-			return true;
+-	}
+-
+-	return false;
+-}
+-
+ /**
+  * ice_ena_vf_rx_lldp
+  * @vf: VF to configure Rx LLDP for
+@@ -1314,11 +1305,6 @@ int ice_handle_vf_tx_lldp(struct ice_vf *vf, bool ena)
+ 		return -EPERM;
+ 	}
+ 
+-	if (ena && ice_is_transmit_lldp_enabled(pf)) {
+-		dev_err(dev, "Only a single VF per port is allowed to transmit LLDP packets, ignoring the settings");
+-		return -EPERM;
+-	}
+-
+ 	allow_override = ena ? ice_vsi_ctx_set_allow_override
+ 			     : ice_vsi_ctx_clear_allow_override;
+ 
+@@ -1327,16 +1313,6 @@ int ice_handle_vf_tx_lldp(struct ice_vf *vf, bool ena)
+ 
+ 	vf->transmit_lldp = ena;
+ 
+-	vsi = ice_get_main_vsi(pf);
+-	if (!vsi)
+-		return -ENOENT;
+-	/* If VF can transmit LLDP, then PF cannot and vice versa */
+-	allow_override = ena ? ice_vsi_ctx_clear_allow_override
+-			     : ice_vsi_ctx_set_allow_override;
+-
+-	if (ice_vsi_update_security(vsi, allow_override))
+-		return -ENOENT;
+-
+ 	return 0;
+ }
+ 
+-- 
+2.47.3
+
