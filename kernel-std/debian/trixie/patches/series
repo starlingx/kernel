@@ -14,6 +14,8 @@
 0014-PCI-Fix-alignment-calculation-for-resource-size-larg.patch
 0015-Revert-ACPI-processor-Update-cpuidle-driver-check-in.patch
 fpga/0001-fpga-m10bmc-sec-add-image_load-sysfs-for-N3000-and-D.patch
+kexec/0001-x86-crash-reserve-elfcorehdr-for-CONFIG_NR_CPUS-not-.patch
+kexec/0002-crash-update-stale-NR_CPUS_DEFAULT-references-in-elf.patch
 scsi/0001-scsi-sas-Skip-opt_sectors-when-DMA-reports-no-real-o.patch
 scsi/0002-dma-mapping-make-dma_max_mapping_size-return-0-for-n.patch
 scsi/0003-scsi-core-Drop-dev-dma_mask-check-in-evaluating-max_.patch
