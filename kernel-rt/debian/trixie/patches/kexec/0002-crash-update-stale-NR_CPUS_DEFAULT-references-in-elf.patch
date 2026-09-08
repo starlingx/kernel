@@ -1,0 +1,50 @@
+From b5f5b9b9ac9d5f8ce56375573a593fa99cec6cc6 Mon Sep 17 00:00:00 2001
+From: Ionut Nechita <ionut.nechita@windriver.com>
+Date: Thu, 27 Aug 2026 10:08:22 +0300
+Subject: [PATCH 2/2] crash: update stale NR_CPUS_DEFAULT references in
+ elfcorehdr sizing docs
+
+The elfcorehdr reservation is now sized with NR_CPUS, but two comments
+still name NR_CPUS_DEFAULT: the one above crash_handle_hotplug_event()
+and the CRASH_MAX_MEMORY_RANGES help text.
+
+Update both.  Documentation only, no functional change.
+
+Suggested-by: Jinjie Ruan <ruanjinjie@huawei.com>
+Suggested-by: Bradley Morgan <include@grrlz.net>
+Assisted-by: LLM
+Signed-off-by: Ionut Nechita <ionut.nechita@windriver.com>
+Reviewed-by: Bradley Morgan <include@grrlz.net>
+---
+ kernel/Kconfig.kexec | 2 +-
+ kernel/crash_core.c  | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/kernel/Kconfig.kexec b/kernel/Kconfig.kexec
+index 54e5810726176..61b9b18a0f9ec 100644
+--- a/kernel/Kconfig.kexec
++++ b/kernel/Kconfig.kexec
+@@ -191,7 +191,7 @@ config CRASH_MAX_MEMORY_RANGES
+ 	  memory regions that the elfcorehdr buffer/segment can accommodate.
+ 	  These regions are obtained via walk_system_ram_res(); eg. the
+ 	  'System RAM' entries in /proc/iomem.
+-	  This value is combined with NR_CPUS_DEFAULT and multiplied by
++	  This value is combined with NR_CPUS and multiplied by
+ 	  sizeof(Elf64_Phdr) to determine the final elfcorehdr memory buffer/
+ 	  segment size.
+ 	  The value 8192, for example, covers a (sparsely populated) 1TiB system
+diff --git a/kernel/crash_core.c b/kernel/crash_core.c
+index 99dac1aa972af..6242b5bb30fcc 100644
+--- a/kernel/crash_core.c
++++ b/kernel/crash_core.c
+@@ -558,7 +558,7 @@ int crash_check_hotplug_support(void)
+  * new list of CPUs and memory. To make changes to the elfcorehdr, it
+  * should be large enough to permit a growing number of CPU and Memory
+  * resources. One can estimate the elfcorehdr memory size based on
+- * NR_CPUS_DEFAULT and CRASH_MAX_MEMORY_RANGES. The elfcorehdr is
++ * NR_CPUS and CRASH_MAX_MEMORY_RANGES. The elfcorehdr is
+  * excluded from SHA verification by default if the architecture
+  * supports crash hotplug.
+  */
+-- 
+2.43.0
