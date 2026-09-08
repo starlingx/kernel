@@ -1,0 +1,13 @@
+---
+debver: 24.10@
+debname: mlnx-tools
+dl_path:
+  name: mlnx-tools-24.10.tar.gz
+  url: "https://linux.mellanox.com/public/repo/mlnx_ofed/\
+    24.10-1.1.4.0/SRPMS/mlnx-tools-24.10.tar.gz"
+  sha256sum: 7459a03eebc0c7f939ff9356dc0bcca4ad64120f957623f03f74523d62ee392d
+revision:
+  dist: $STX_DIST
+  GITREVCOUNT:
+    BASE_SRCREV: e42c4c49aa62d86c180c8430ea4dcf6a221ba805
+    SRC_DIR: ${MY_REPO}/stx/kernel/userspace/mellanox/mlnx-tools

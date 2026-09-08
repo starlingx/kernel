@@ -1,0 +1,29 @@
+From 0ef40a6c28d2538a558f215e32db3e3a1ef5819b Mon Sep 17 00:00:00 2001
+From: Li Zhou <li.zhou@windriver.com>
+Date: Thu, 16 Sep 2021 07:42:24 +0000
+Subject: [PATCH] rdma-core: add python3-dev to depends list for building error
+
+Add python3-dev to Build-Depends to solve below building error:
+CMake Error at /usr/share/cmake-3.18/Modules/FindPackageHandleStandardArgs.cmake:165 (message):
+  Could NOT find PythonLibs (missing: PYTHON_LIBRARIES PYTHON_INCLUDE_DIRS)
+
+Signed-off-by: Li Zhou <li.zhou@windriver.com>
+---
+ debian/control | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/debian/control b/debian/control
+index bf945b4..fba039d 100644
+--- a/debian/control
++++ b/debian/control
+@@ -6,6 +6,7 @@ Section: net
+ Priority: optional
+ Build-Depends: cmake (>= 2.8.11),
+                cython3 (>= 0.25) | python,
++               python3-dev,
+                debhelper (>= 10),
+                dh-python,
+                dpkg-dev (>= 1.17),
+-- 
+2.43.0
+

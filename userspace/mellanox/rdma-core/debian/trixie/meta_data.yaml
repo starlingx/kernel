@@ -1,6 +1,6 @@
 ---
 debver: 3.3.0@
-debname: doca-mlnx-tools
+debname: doca-mlnx-rdma-core
 dl_hook: dl_hook
 dl_path:
   name: doca-mlnx-ofed-3.3.0.tgz

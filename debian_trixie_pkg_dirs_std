@@ -8,6 +8,8 @@ kernel-modules/intel-qv
 kernel-modules/doca-mlnx-ofed
 kernel-modules/octeon_ep
 userspace/broadcom/libbnxt_re
+userspace/mellanox/rdma-core
+userspace/mellanox/mstflint
 userspace/mellanox/mlnx-tools
 userspace/opae-sdk
 userspace/initramfs-trigger
