@@ -1,0 +1,52 @@
+From 622ebaf1e6e7feb3218e3643d0104ee919e35af2 Mon Sep 17 00:00:00 2001
+From: Iulian Mocanu <iulian.mocanu@windriver.com>
+Date: Tue, 28 Jul 2026 09:53:53 -0400
+Subject: [PATCH 1/1] Change to lowercase all network interface names
+
+This fix compute the lowercase form of the systemd-assigned name once, then
+apply it to BOTH the kernel device name (NAME -- what the interface is
+actually called and what sysinv reads) and the predictable-name
+property (ENV{ID_NET_NAME}) so the two stay consistent for any later
+rule or consumer that keys off the property
+---
+ ofed_scripts/83-mlnx-sf-name.rules | 27 +++++++++++++++++++++++++++
+ 1 file changed, 27 insertions(+)
+
+diff --git a/ofed_scripts/83-mlnx-sf-name.rules b/ofed_scripts/83-mlnx-sf-name.rules
+index fb64b75..76eefd0 100644
+--- a/ofed_scripts/83-mlnx-sf-name.rules
++++ b/ofed_scripts/83-mlnx-sf-name.rules
+@@ -5,3 +5,30 @@ SUBSYSTEM=="net", ACTION=="add", ATTR{phys_switch_id}!="", ATTR{phys_port_name}!
+ SUBSYSTEM=="net", SUBSYSTEMS=="auxiliary", ACTION=="add", ATTRS{sfnum}!="", \
+ 	IMPORT{program}="auxdev-sf-netdev-rename $attr{sfnum} $attr{ifindex}" \
+ 	NAME="$env{SF_NETDEV_NAME}"
++
++# Change to lowercase all network interface names.
++#
++# After systemd has computed the predictable name (80-net-setup-link
++# .rules / net_setup_link builtin populates ID_NET_NAME), rename any
++# interface whose name still contains an uppercase letter to its
++# all-lowercase equivalent.  enP1p21s0f0 -> enp1p21s0f0.
++
++ACTION=="remove", GOTO="all_lowercase_end"
++SUBSYSTEM!="net", GOTO="all_lowercase_end"
++
++# Only physical netdevs that systemd actually named (skip virtual /
++# already-renamed devices that carry no predictable name).
++ENV{ID_NET_NAME}=="", GOTO="all_lowercase_end"
++
++# Act only when the predictable name still contains an uppercase letter.
++ENV{ID_NET_NAME}!="*[A-Z]*", GOTO="all_lowercase_end"
++
++# Compute the lowercase form of the systemd-assigned name once, then
++# apply it to BOTH the kernel device name (NAME -- what the interface is
++# actually called and what sysinv reads) and the predictable-name
++# property (ENV{ID_NET_NAME}) so the two stay consistent for any later
++# rule or consumer that keys off the property.
++#     enP1p21s0f0 -> enp1p21s0f0
++PROGRAM="/bin/sh -c 'printf %%s \"$env{ID_NET_NAME}\" | tr A-Z a-z'", ENV{ID_NET_NAME}="%c", NAME="%c"
++
++LABEL="all_lowercase_end"
+-- 
+2.47.3
+
