@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DOCA_PKG=doca-mlnx-ofed-3.3.0.tgz
+DOCA_PKG=doca-mlnx-ofed.tgz
 
 tar zxvf ${DOCA_PKG}
 if [ $? -ne 0 ]
@@ -9,19 +9,19 @@ then
     exit 1
 fi
 
-cd MLNX_OFED_SRC-26.01-1.0.0.0/SOURCES
+cd OFED-internal-debian-*/SOURCES
 if [ $? -ne 0 ]
 then
     echo "SOURCES failed: DOCA_PKG source!"
     exit 1
 fi
 
-cp mlnx-tools_2601.0.2.orig.tar.gz ../../
-tar zxvf mlnx-tools_2601.0.2.orig.tar.gz
+cp mlnx-tools_*.orig.tar.gz ../../
+tar zxvf mlnx-tools_*.orig.tar.gz
 if [ $? -ne 0 ]
 then
     echo "tar failed: DOCA_PKG source!"
     exit 1
 fi
 
-cp -r mlnx-tools-2601.0.2 ../../doca-mlnx-tools-3.3.0
+cp -r mlnx-tools-2510.0.16 ../../mlnx-tools-3.2lts
