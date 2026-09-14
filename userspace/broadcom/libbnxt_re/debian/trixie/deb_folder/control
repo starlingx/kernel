@@ -1,0 +1,15 @@
+Source: libbnxt-re
+Section: net
+Priority: optional
+Maintainer: StarlingX Developers <starlingx-discuss@lists.starlingx.io>
+Build-Depends: debhelper-compat (= 13), libibverbs-dev
+Standards-Version: 4.5.1
+Rules-Requires-Root: no
+
+Package: libbnxt-re
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: libbnxt_re Infiniband verbs library
+ libbnxt_re provides a device-specific userspace driver for
+ Broadcom NetXtreme RoCE Adapters for use with the libibverbs
+ library.
