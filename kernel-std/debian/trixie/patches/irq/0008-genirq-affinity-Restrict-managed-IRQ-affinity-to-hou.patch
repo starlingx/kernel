@@ -1,0 +1,116 @@
+From bcdced74673df35ca84ef305bf54ad52d992f03f Mon Sep 17 00:00:00 2001
+From: Aaron Tomlin <atomlin@atomlin.com>
+Date: Mon, 14 Sep 2026 16:05:00 +0300
+Subject: [PATCH 08/9] genirq/affinity: Restrict managed IRQ affinity to
+ housekeeping CPUs
+
+At present, the managed interrupt spreading algorithm distributes vectors
+across all available CPUs within a given node or system. On systems
+employing CPU isolation (e.g. "isolcpus=managed_irq_strict"), this
+behaviour defeats the primary purpose of isolation by routing hardware
+interrupts (such as NVMe completion queues) directly to isolated cores.
+
+Update irq_create_affinity_masks() to respect the housekeeping CPU mask.
+By passing the HK_TYPE_MANAGED_IRQ_STRICT mask directly to the
+topological distribution function (group_mask_cpus_evenly()), we ensure
+that managed interrupts are kept strictly off isolated CPUs.
+
+This patch additionally addresses the architectural constraints of
+restricted vector distribution: bounding the vector count to the
+housekeeping weight for single-set drivers, padding multi-set masks with
+the housekeeping mask to prevent interrupt leaks onto isolated CPUs, and
+adding a minimum vector safety net so heavily isolated systems do not
+abort device probes with -ENOSPC.
+
+[ Commit message abridged from the upstream v16 posting. The original
+  breaks the above down into the individual constraints (vector limits
+  and multi-set scaling, multi-set alignment and leak prevention,
+  minimum vector safety net, and zero overhead when isolation is
+  disabled); see:
+  https://lore.kernel.org/lkml/20260910164237.500196-9-atomlin@atomlin.com/ ]
+
+Signed-off-by: Aaron Tomlin <atomlin@atomlin.com>
+Signed-off-by: Ionut Nechita <ionut.nechita@windriver.com>
+[ backported to v6.18.15: retain cpus_read_lock() around the
+  cpu_possible_mask weight calculation present in this tree ]
+---
+ kernel/irq/affinity.c | 29 ++++++++++++++++++++++-------
+ 1 file changed, 22 insertions(+), 7 deletions(-)
+
+diff --git a/kernel/irq/affinity.c b/kernel/irq/affinity.c
+index 4013e6ad2..8a7e68843 100644
+--- a/kernel/irq/affinity.c
++++ b/kernel/irq/affinity.c
+@@ -8,6 +8,7 @@
+ #include <linux/slab.h>
+ #include <linux/cpu.h>
+ #include <linux/group_cpus.h>
++#include <linux/sched/isolation.h>
+ 
+ static void default_calc_sets(struct irq_affinity *affd, unsigned int affvecs)
+ {
+@@ -25,8 +26,10 @@ static void default_calc_sets(struct irq_affinity *affd, unsigned int affvecs)
+ struct irq_affinity_desc *
+ irq_create_affinity_masks(unsigned int nvecs, struct irq_affinity *affd)
+ {
+-	unsigned int affvecs, curvec, usedvecs, i;
++	unsigned int affvecs, curvec, usedvecs, i, j;
+ 	struct irq_affinity_desc *masks = NULL;
++	const struct cpumask *hk_mask = housekeeping_cpumask(HK_TYPE_MANAGED_IRQ_STRICT);
++	bool hk_enabled = housekeeping_enabled(HK_TYPE_MANAGED_IRQ_STRICT);
+ 
+ 	/*
+ 	 * Determine the number of vectors which need interrupt affinities
+@@ -70,19 +73,29 @@ irq_create_affinity_masks(unsigned int nvecs, struct irq_affinity *affd)
+ 	 */
+ 	for (i = 0, usedvecs = 0; i < affd->nr_sets; i++) {
+ 		unsigned int nr_masks, this_vecs = affd->set_size[i];
+-		struct cpumask *result = group_cpus_evenly(this_vecs, &nr_masks);
++		struct cpumask *result;
++		const struct cpumask *mask;
+ 
++		if (hk_enabled)
++			mask = hk_mask;
++		else
++			mask = cpu_possible_mask;
++
++		result = group_mask_cpus_evenly(this_vecs, mask,
++						&nr_masks);
+ 		if (!result) {
+ 			kfree(masks);
+ 			return NULL;
+ 		}
+-
+-		for (int j = 0; j < nr_masks; j++)
++		for (j = 0; j < nr_masks; j++)
+ 			cpumask_copy(&masks[curvec + j].mask, &result[j]);
++		for (j = nr_masks; j < this_vecs; j++)
++			cpumask_copy(&masks[curvec + j].mask, mask);
++
+ 		kfree(result);
+ 
+-		curvec += nr_masks;
+-		usedvecs += nr_masks;
++		curvec += this_vecs;
++		usedvecs += this_vecs;
+ 	}
+ 
+ 	/* Fill out vectors at the end that don't need affinity */
+@@ -117,11 +130,13 @@ unsigned int irq_calc_affinity_vectors(unsigned int minvec, unsigned int maxvec,
+ 
+ 	if (affd->calc_sets) {
+ 		set_vecs = maxvec - resv;
++	} else if (housekeeping_enabled(HK_TYPE_MANAGED_IRQ_STRICT)) {
++		set_vecs = cpumask_weight(housekeeping_cpumask(HK_TYPE_MANAGED_IRQ_STRICT));
+ 	} else {
+ 		cpus_read_lock();
+ 		set_vecs = cpumask_weight(cpu_possible_mask);
+ 		cpus_read_unlock();
+ 	}
+ 
+-	return resv + min(set_vecs, maxvec - resv);
++	return max(minvec, resv + min(set_vecs, maxvec - resv));
+ }
+-- 
+2.47.3
+

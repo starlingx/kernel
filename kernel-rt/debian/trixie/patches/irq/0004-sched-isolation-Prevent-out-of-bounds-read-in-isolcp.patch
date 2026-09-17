@@ -1,0 +1,59 @@
+From 05b0666651f5d6b288ec3c95590b41ff35f45a09 Mon Sep 17 00:00:00 2001
+From: Aaron Tomlin <atomlin@atomlin.com>
+Date: Mon, 14 Sep 2026 15:58:21 +0300
+Subject: [PATCH 04/9] sched/isolation: Prevent out-of-bounds read in
+ isolcpus= boot parameter parser
+
+The "isolcpus=" boot parameter parser in housekeeping_isolcpus_setup()
+contains an out-of-bounds memory read bug when handling unterminated
+flags.
+
+When parsing the boot parameter string, the logic expects flags to be
+comma-separated. If a user passes an unrecognised or legitimate flag
+at the very end of the string without a trailing comma (e.g.,
+"isolcpus=unknown"), the strict strncmp() checks will fail.
+
+The execution then falls through to a fallback for loop designed to
+skip the unknown sub-parameter. This inner loop consumes characters until
+it encounters either a comma or the NULL terminator ('\0'). When the loop
+terminates due to hitting the end of the string, the str pointer rests
+exactly on the NULL terminator.
+
+However, immediately following this inner loop, the code unconditionally
+executes str++. This advances the pointer past the end of the string
+and into uninitialised memory. The outer while (isalpha(*str)) loop
+subsequently evaluates this out-of-bounds memory. If the adjacent byte
+happens to be alphabetical, the parser will continue reading garbage
+data, potentially leading to undefined behavior or boot anomalies.
+
+Fix this by adding a bounds check immediately before the pointer
+increment. This ensures the parsing loop cleanly terminates when
+reaching the end of the boot parameter string.
+
+Reported-by: sashiko-bot@kernel.org
+Fixes: 3662daf023500 ("sched/isolation: Allow "isolcpus=" to skip unknown sub-parameters")
+Cc: stable@vger.kernel.org
+Reviewed-by: Valentin Schneider <vschneid@redhat.com>
+Signed-off-by: Aaron Tomlin <atomlin@atomlin.com>
+Signed-off-by: Ionut Nechita <ionut.nechita@windriver.com>
+[ backported to v6.18.15 ]
+---
+ kernel/sched/isolation.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/kernel/sched/isolation.c b/kernel/sched/isolation.c
+index a4cf17b1f..d7fce78df 100644
+--- a/kernel/sched/isolation.c
++++ b/kernel/sched/isolation.c
+@@ -241,6 +241,8 @@ static int __init housekeeping_isolcpus_setup(char *str)
+ 		}
+ 
+ 		pr_info("isolcpus: Skipped unknown flag %.*s\n", len, par);
++		if (!*str)
++			break;
+ 		str++;
+ 	}
+ 
+-- 
+2.47.3
+

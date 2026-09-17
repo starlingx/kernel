@@ -1,0 +1,80 @@
+From 2bc562accd10f657ad06e52c2f56a99e3552ecdf Mon Sep 17 00:00:00 2001
+From: Daniel Wagner <wagi@kernel.org>
+Date: Mon, 14 Sep 2026 16:06:31 +0300
+Subject: [PATCH 09/9] docs: add managed_irq_strict flag to isolcpus
+
+The managed_irq_strict flag informs multiqueue device drivers where to
+place hardware queues and managed interrupt vectors. Document this new
+flag in the isolcpus command-line argument description, and describe its
+relationship and precedence with respect to the legacy managed_irq flag.
+
+Signed-off-by: Daniel Wagner <wagi@kernel.org>
+Reviewed-by: Hannes Reinecke <hare@suse.de>
+Co-developed-by: Aaron Tomlin <atomlin@atomlin.com>
+Signed-off-by: Aaron Tomlin <atomlin@atomlin.com>
+Signed-off-by: Ionut Nechita <ionut.nechita@windriver.com>
+[ backported to v6.18.15: Documentation/core-api/housekeeping.rst does
+  not exist in this tree, so the HK_TYPE_MANAGED_IRQ_STRICT entry in
+  that guide is omitted ]
+---
+ .../admin-guide/kernel-parameters.txt         | 37 ++++++++++++++++++-
+ 1 file changed, 36 insertions(+), 1 deletion(-)
+
+diff --git a/Documentation/admin-guide/kernel-parameters.txt b/Documentation/admin-guide/kernel-parameters.txt
+index 6c42061ca..4325d3460 100644
+--- a/Documentation/admin-guide/kernel-parameters.txt
++++ b/Documentation/admin-guide/kernel-parameters.txt
+@@ -2676,7 +2676,6 @@
+ 			  "number of CPUs in system - 1".
+ 
+ 			managed_irq
+-
+ 			  Isolate from being targeted by managed interrupts
+ 			  which have an interrupt mask containing isolated
+ 			  CPUs. The affinity of managed interrupts is
+@@ -2699,6 +2698,42 @@
+ 			  housekeeping CPUs has no influence on those
+ 			  queues.
+ 
++			managed_irq_strict
++			  Strictly restrict multiqueue hardware queue
++			  allocation and managed interrupt affinity to
++			  housekeeping CPUs. Unlike the best-effort
++			  managed_irq flag, this option guarantees that
++			  managed interrupts and multiqueue block device
++			  queues are never created for or mapped to isolated
++			  CPUs.
++
++			  In the block layer (blk-mq), device queue allocation
++			  and CPU-to-queue mappings are restricted to
++			  housekeeping CPUs. For devices using managed
++			  interrupts, hardware completion interrupts are routed
++			  exclusively to housekeeping cores, shielding isolated
++			  CPUs from I/O interruptions even if they initiated the
++			  request.
++
++			  If both managed_irq and managed_irq_strict are
++			  specified, managed_irq_strict takes precedence.
++
++			  Note: Using managed_irq_strict restricts the number
++			  of allocated hardware queues to match the number of
++			  housekeeping CPUs for single-set drivers. This
++			  prevents MSI-X vector exhaustion and forces isolated
++			  CPUs to share submission queues.
++
++			  Note: Offlining housekeeping CPUs which serve
++			  isolated CPUs will fail. The isolated CPUs must
++			  be offlined before offlining the housekeeping
++			  CPUs.
++
++			  Note: When I/O is submitted by an application on
++			  an isolated CPU, the hardware completion
++			  interrupt is handled entirely by a housekeeping
++			  CPU.
++
+ 			The format of <cpu-list> is described above.
+ 
+ 	iucv=		[HW,NET]
+-- 
+2.47.3
+

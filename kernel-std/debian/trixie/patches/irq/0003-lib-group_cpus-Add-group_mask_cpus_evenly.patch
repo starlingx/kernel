@@ -1,0 +1,162 @@
+From 1e6c7ab6c37bf20371adacaae9cf4920c30d0315 Mon Sep 17 00:00:00 2001
+From: Daniel Wagner <wagi@kernel.org>
+Date: Mon, 14 Sep 2026 15:57:53 +0300
+Subject: [PATCH 03/9] lib/group_cpus: Add group_mask_cpus_evenly()
+
+This commit introduces group_mask_cpus_evenly(), which allows callers to
+distribute a specific CPU mask evenly across groups. It serves as a bounded
+version of group_cpus_evenly().
+
+While group_cpus_evenly() operates on the global cpu_possible_mask,
+group_mask_cpus_evenly() confines the distribution strictly within the
+boundaries of the caller-provided mask. It preserves the kernel's native
+two-stage spreading logic-first prioritising CPUs that are physically
+present (cpu_present_mask) to prevent I/O starvation, and then distributing
+any remaining vectors to non-present CPUs to maintain hotplug safety.
+
+Signed-off-by: Daniel Wagner <wagi@kernel.org>
+Reviewed-by: Hannes Reinecke <hare@suse.de>
+Co-developed-by: Aaron Tomlin <atomlin@atomlin.com>
+Signed-off-by: Aaron Tomlin <atomlin@atomlin.com>
+Signed-off-by: Ionut Nechita <ionut.nechita@windriver.com>
+[ backported to v6.18.15: use kcalloc() instead of kzalloc_objs()
+  which is not present in this tree ]
+---
+ include/linux/group_cpus.h |   3 +
+ lib/group_cpus.c           | 110 +++++++++++++++++++++++++++++++++++++
+ 2 files changed, 113 insertions(+)
+
+diff --git a/include/linux/group_cpus.h b/include/linux/group_cpus.h
+index 9d4e5ab6c..defab4123 100644
+--- a/include/linux/group_cpus.h
++++ b/include/linux/group_cpus.h
+@@ -10,5 +10,8 @@
+ #include <linux/cpu.h>
+ 
+ struct cpumask *group_cpus_evenly(unsigned int numgrps, unsigned int *nummasks);
++struct cpumask *group_mask_cpus_evenly(unsigned int numgrps,
++				       const struct cpumask *mask,
++				       unsigned int *nummasks);
+ 
+ #endif
+diff --git a/lib/group_cpus.c b/lib/group_cpus.c
+index f254b2325..90d275955 100644
+--- a/lib/group_cpus.c
++++ b/lib/group_cpus.c
+@@ -424,3 +424,113 @@ struct cpumask *group_cpus_evenly(unsigned int numgrps, unsigned int *nummasks)
+ 	return masks;
+ }
+ EXPORT_SYMBOL_GPL(group_cpus_evenly);
++
++/**
++ * group_mask_cpus_evenly - Group all CPUs evenly per NUMA/CPU locality
++ * @numgrps: number of cpumasks to create
++ * @mask: CPUs to consider for the grouping
++ * @nummasks: number of initialized cpumasks
++ *
++ * Return: cpumask array if successful, NULL otherwise. Only the CPUs
++ * marked in the mask will be considered for the grouping. And each
++ * element includes CPUs assigned to this group. nummasks contains the
++ * number of initialized masks which can be less than numgrps.
++ *
++ * Try to put close CPUs from viewpoint of CPU and NUMA locality into
++ * the same group.
++ *
++ * We guarantee in the resulting grouping that all CPUs specified in the
++ * provided mask are covered, and no same CPU is assigned to multiple
++ * groups.
++ */
++struct cpumask *group_mask_cpus_evenly(unsigned int numgrps,
++				       const struct cpumask *mask,
++				       unsigned int *nummasks)
++{
++	unsigned int curgrp = 0, nr_present = 0, nr_others = 0;
++	cpumask_var_t *node_to_cpumask;
++	cpumask_var_t nmsk, local_mask, npresmsk;
++	int ret = -ENOMEM;
++	struct cpumask *masks = NULL;
++
++	if (numgrps == 0)
++		return NULL;
++
++	if (!zalloc_cpumask_var(&nmsk, GFP_KERNEL))
++		return NULL;
++
++	if (!zalloc_cpumask_var(&local_mask, GFP_KERNEL))
++		goto fail_nmsk;
++
++	if (!zalloc_cpumask_var(&npresmsk, GFP_KERNEL))
++		goto fail_local_mask;
++
++	node_to_cpumask = alloc_node_to_cpumask();
++	if (!node_to_cpumask)
++		goto fail_npresmsk;
++
++	masks = kcalloc(numgrps, sizeof(*masks), GFP_KERNEL);
++	if (!masks)
++		goto fail_node_to_cpumask;
++
++	build_node_to_cpumask(node_to_cpumask);
++
++	/*
++	 * Create a stable snapshot of the mask. The grouping algorithm
++	 * requires the CPU count to remain constant across its multiple
++	 * passes. This prevents allocation failures if the caller passes a
++	 * dynamic mask (e.g., cpu_online_mask) that changes concurrently.
++	 */
++	cpumask_copy(local_mask, mask);
++
++	/*
++	 * Grouping present CPUs first. We intersect the provided mask with
++	 * cpu_present_mask to ensure that we prioritise physically
++	 * available CPUs for the initial distribution.
++	 */
++	cpumask_and(npresmsk, local_mask, cpu_present_mask);
++	ret = __group_cpus_evenly(curgrp, numgrps, node_to_cpumask,
++				  npresmsk, nmsk, masks);
++	if (ret < 0)
++		goto fail_node_to_cpumask;
++	nr_present = ret;
++
++	/*
++	 * Allocate non-present CPUs starting from the next group to be
++	 * handled. If the grouping of present CPUs already exhausted the
++	 * group space, assign the non-present CPUs to the already
++	 * allocated out groups.
++	 */
++	if (nr_present >= numgrps)
++		curgrp = 0;
++	else
++		curgrp = nr_present;
++	cpumask_andnot(npresmsk, local_mask, npresmsk);
++	ret = __group_cpus_evenly(curgrp, numgrps, node_to_cpumask,
++				  npresmsk, nmsk, masks);
++	if (ret >= 0)
++		nr_others = ret;
++
++fail_node_to_cpumask:
++	free_node_to_cpumask(node_to_cpumask);
++
++fail_npresmsk:
++	free_cpumask_var(npresmsk);
++
++fail_local_mask:
++	free_cpumask_var(local_mask);
++
++fail_nmsk:
++	free_cpumask_var(nmsk);
++	if (ret < 0) {
++		kfree(masks);
++		return NULL;
++	}
++	*nummasks = min(nr_present + nr_others, numgrps);
++	if (*nummasks == 0) {
++		kfree(masks);
++		return NULL;
++	}
++	return masks;
++}
++EXPORT_SYMBOL_GPL(group_mask_cpus_evenly);
+-- 
+2.47.3
+

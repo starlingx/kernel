@@ -1,0 +1,69 @@
+From 23689a473e1bc9f1f7a470f102dd0e343e41bbd3 Mon Sep 17 00:00:00 2001
+From: Daniel Wagner <wagi@kernel.org>
+Date: Mon, 14 Sep 2026 15:56:51 +0300
+Subject: [PATCH 02/9] lib/group_cpus: remove dead !SMP code
+
+The core scheduler recently transitioned to compiling SMP data
+structures unconditionally to reduce code complexity - see commit
+cac5cefbade9 ("sched/smp: Make SMP unconditional").
+
+In alignment with this philosophy of reducing dual-path maintenance,
+this patch removes the #ifdef CONFIG_SMP guards and the dedicated !SMP
+fallback logic here.
+
+While the !SMP path provided a slightly simpler execution flow for
+uniprocessor kernels (avoiding SMP-specific overhead), maintaining these
+separate code paths adds unnecessary complexity and testing burden.
+Removing these guards simplifies the codebase by standardizing entirely
+on the SMP logic, which safely resolves to single-CPU operations on UP
+configurations.
+
+Signed-off-by: Daniel Wagner <wagi@kernel.org>
+Reviewed-by: Martin K. Petersen <martin.petersen@oracle.com>
+Reviewed-by: Hannes Reinecke <hare@suse.de>
+Signed-off-by: Aaron Tomlin <atomlin@atomlin.com>
+Signed-off-by: Ionut Nechita <ionut.nechita@windriver.com>
+[ backported to v6.18.15 ]
+---
+ lib/group_cpus.c | 20 --------------------
+ 1 file changed, 20 deletions(-)
+
+diff --git a/lib/group_cpus.c b/lib/group_cpus.c
+index 6d08ac05f..f254b2325 100644
+--- a/lib/group_cpus.c
++++ b/lib/group_cpus.c
+@@ -9,8 +9,6 @@
+ #include <linux/sort.h>
+ #include <linux/group_cpus.h>
+ 
+-#ifdef CONFIG_SMP
+-
+ static void grp_spread_init_one(struct cpumask *irqmsk, struct cpumask *nmsk,
+ 				unsigned int cpus_per_grp)
+ {
+@@ -425,22 +423,4 @@ struct cpumask *group_cpus_evenly(unsigned int numgrps, unsigned int *nummasks)
+ 	*nummasks = min(nr_present + nr_others, numgrps);
+ 	return masks;
+ }
+-#else /* CONFIG_SMP */
+-struct cpumask *group_cpus_evenly(unsigned int numgrps, unsigned int *nummasks)
+-{
+-	struct cpumask *masks;
+-
+-	if (numgrps == 0)
+-		return NULL;
+-
+-	masks = kcalloc(numgrps, sizeof(*masks), GFP_KERNEL);
+-	if (!masks)
+-		return NULL;
+-
+-	/* assign all CPUs(cpu 0) to the 1st group only */
+-	cpumask_copy(&masks[0], cpu_possible_mask);
+-	*nummasks = 1;
+-	return masks;
+-}
+-#endif /* CONFIG_SMP */
+ EXPORT_SYMBOL_GPL(group_cpus_evenly);
+-- 
+2.47.3
+
