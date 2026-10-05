@@ -1,0 +1,135 @@
+From: Sai sirisha <SaiSirisha.Nagarakanti@windriver.com>
+Date: Mon, 5 Oct 2026 17:54:10 +0530
+Subject: [PATCH] scst_pres: Ignore PREEMPT TYPE when only removing
+ registrations
+
+PERSISTENT RESERVE OUT with the PREEMPT service action lets an
+initiator take over from another one. Depending on the state of the
+device, it either removes the registrations that match the service
+action reservation key, or it also makes the caller the reservation
+holder. The TYPE field in the CDB selects the kind of reservation to
+install.
+
+SPC-4 (5.14.11.4) uses TYPE only when the command installs a
+reservation. If no reservation is held, or the service action key does
+not identify the current holder, the command only removes registrations
+and TYPE is ignored.
+
+scst_pr_do_preempt() validated TYPE first, for every PREEMPT. A reserved
+TYPE value was rejected with ILLEGAL REQUEST (invalid field in CDB) even
+when the command was only going to remove registrations, so the stale
+registration stayed in place. A cluster node that clears a failed peer's
+registration can be refused because of a field it is not required to
+set.
+
+Check TYPE only on the two paths that install a reservation: the
+all-registrants case with a zero service action key, and the transfer of
+the reservation to the caller. An invalid TYPE is still rejected there.
+
+Report an invalid TYPE at byte 2 of the CDB, where TYPE is, instead of
+byte 1, which holds the service action.
+
+Remove the caller's own registration as well when the service action
+key is its own key, in the branch where no reservation is held and in
+the all-registrants branch with a non-zero service action key. Only the
+unit attention is skipped for the caller. Now that a reserved TYPE no
+longer fails these branches, such a command would otherwise return GOOD
+and leave the caller registered.
+
+Upstream: merged as commit 0db25f70 (SCST master), from
+https://github.com/SCST-project/scst/pull/433
+
+Assisted-By: Kiro (claude-opus-4.8)
+Signed-off-by: Sai sirisha <SaiSirisha.Nagarakanti@windriver.com>
+---
+ scst/src/scst_pres.c | 45 ++++++++++++++++++++++++++++++++++-----------
+ 1 file changed, 34 insertions(+), 11 deletions(-)
+
+diff --git a/scst/src/scst_pres.c b/scst/src/scst_pres.c
+index a10be41e..d5ce83e0 100644
+--- a/scst/src/scst_pres.c
++++ b/scst/src/scst_pres.c
+@@ -2086,11 +2086,12 @@ static void scst_pr_do_preempt(struct scst_cmd *cmd, uint8_t *buffer, int buffer
+ 	scope = cmd->cdb[2] >> 4;
+ 	type = cmd->cdb[2] & 0x0f;
+ 
+-	if (!scst_pr_type_valid(type)) {
+-		TRACE_PR("Invalid reservation type %d", type);
+-		scst_set_invalid_field_in_cdb(cmd, 1, SCST_INVAL_FIELD_BIT_OFFS_VALID | 0);
+-		goto out;
+-	}
++	/*
++	 * TYPE is validated only on the paths that establish a reservation.
++	 * When PREEMPT merely removes registrations (no reservation is held, or
++	 * the service action key does not identify the holder), SPC-4 ignores
++	 * TYPE, so a reserved value must not fail the command.
++	 */
+ 
+ 	reg = tgt_dev->registrant;
+ 
+@@ -2115,11 +2116,11 @@ static void scst_pr_do_preempt(struct scst_cmd *cmd, uint8_t *buffer, int buffer
+ 		list_for_each_entry_safe(r, rt, &preempt_list, aux_list_entry) {
+ 			if (abort)
+ 				scst_pr_abort_reg(dev, cmd, r);
+-			if (r != reg) {
++			/* Only the unit attention is skipped for the caller. */
++			if (r != reg)
+ 				scst_pr_send_ua_reg(dev, r,
+ 						    SCST_LOAD_SENSE(scst_sense_registrations_preempted));
+-				scst_pr_remove_registrant(dev, r);
+-			}
++			scst_pr_remove_registrant(dev, r);
+ 		}
+ 		goto done;
+ 	}
+@@ -2127,6 +2128,17 @@ static void scst_pr_do_preempt(struct scst_cmd *cmd, uint8_t *buffer, int buffer
+ 	if (dev->pr_type == TYPE_WRITE_EXCLUSIVE_ALL_REG ||
+ 	    dev->pr_type == TYPE_EXCLUSIVE_ACCESS_ALL_REG) {
+ 		if (action_key == 0) {
++			/*
++			 * All-registrants case with a zero service action key:
++			 * the caller becomes the reservation holder with this
++			 * TYPE, so it must be valid.
++			 */
++			if (!scst_pr_type_valid(type)) {
++				TRACE_PR("Invalid reservation type %d", type);
++				scst_set_invalid_field_in_cdb(cmd, 2,
++							      SCST_INVAL_FIELD_BIT_OFFS_VALID | 0);
++				goto out;
++			}
+ 			scst_pr_find_registrants_list_all(dev, reg, &preempt_list);
+ 			list_for_each_entry_safe(r, rt, &preempt_list, aux_list_entry) {
+ 				sBUG_ON(r == reg);
+@@ -2144,11 +2156,11 @@ static void scst_pr_do_preempt(struct scst_cmd *cmd, uint8_t *buffer, int buffer
+ 			list_for_each_entry_safe(r, rt, &preempt_list, aux_list_entry) {
+ 				if (abort)
+ 					scst_pr_abort_reg(dev, cmd, r);
+-				if (r != reg) {
++				/* Only the unit attention is skipped for the caller. */
++				if (r != reg)
+ 					scst_pr_send_ua_reg(dev, r,
+ 							    SCST_LOAD_SENSE(scst_sense_registrations_preempted));
+-					scst_pr_remove_registrant(dev, r);
+-				}
++				scst_pr_remove_registrant(dev, r);
+ 			}
+ 		}
+ 		goto done;
+@@ -2174,6 +2186,17 @@ static void scst_pr_do_preempt(struct scst_cmd *cmd, uint8_t *buffer, int buffer
+ 		}
+ 	}
+ 
++	/*
++	 * Reservation transfer: the key identifies the holder, so the caller
++	 * takes over the reservation with this TYPE and it must be valid.
++	 */
++	if (!scst_pr_type_valid(type)) {
++		TRACE_PR("Invalid reservation type %d", type);
++		scst_set_invalid_field_in_cdb(cmd, 2,
++					      SCST_INVAL_FIELD_BIT_OFFS_VALID | 0);
++		goto out;
++	}
++
+ 	scst_pr_find_registrants_list_key(dev, action_key, &preempt_list);
+ 
+ 	list_for_each_entry_safe(r, rt, &preempt_list, aux_list_entry) {
