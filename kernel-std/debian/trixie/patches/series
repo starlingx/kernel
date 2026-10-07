@@ -5,7 +5,7 @@
 0005-Revert-PCI-IOV-Add-PCI-rescan-remove-locking-when-en.patch
 0006-PCI-IOV-Fix-race-between-SR-IOV-enable-disable-and-h.patch
 0007-drbd-fix-false-positive-resync-throttling-in-drbd_rs.patch
-0008-sched-deadline-arm-fair-server-on-nohz_full-when-RT-.patch
+0008-sched-deadline-keep-nohz_full-tickless-while-the-fai.patch
 0009-drbd-increase-maximum-CPU-mask-size.patch
 0010-PCI-Fix-bridge-window-alignment-with-optional-resour.patch
 0011-PCI-Don-t-claim-disabled-bridge-windows.patch

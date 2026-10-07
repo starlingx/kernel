@@ -1,0 +1,134 @@
+From 21c3bfbafac3c23c276b3cc8bb2b18c5d807e46e Mon Sep 17 00:00:00 2001
+From: Ionut Nechita <ionut.nechita@windriver.com>
+Date: Thu, 24 Sep 2026 14:39:00 +0300
+Subject: [PATCH] sched/deadline: keep nohz_full tickless while the fair server
+ is deferred
+
+On a nohz_full core, arming the fair (dl-)server when an RT task coexists
+with runnable CFS tasks is needed so CFS still gets its reserved
+bandwidth (default 50ms/1s). Doing that from sched_can_stop_tick() by
+returning false, however, keeps the tick running for the whole time the
+CFS task waits, not just while the server runs.
+
+The deferred server spends most of its period in the zero-laxity wait
+state: throttled, off the dl_rq, waiting for dl_timer. That wait is
+driven by an hrtimer and needs no tick. Measured on an isolated
+nohz_full core with a SCHED_RR hog and a CFS task visiting the core
+about once per second, the tick never stopped again: 200
+irq_vectors:local_timer_entry per second, with tick_stop reporting
+dependency=SCHED, against ~19/s with the fair server disabled
+(fair_server/cpuX/runtime=0).
+
+Split the two concerns:
+
+  - sched_can_stop_tick() arms rq->fair_server when RT and CFS coexist
+    and a runtime is configured, but does not force the tick for a
+    merely deferred server. A non-deferred dl_server_start() enqueues
+    the server immediately, which is rechecked right after and does
+    keep the tick.
+
+  - inc_dl_tasks()/dec_dl_tasks() call sched_update_tick_dependency()
+    for dl_server entities. Servers skip add_nr_running()/
+    sub_nr_running(), so until now nothing re-evaluated the tick when
+    dl_timer enqueued the server or when it was throttled again. The
+    tick is now started when the server is enqueued, so its runtime is
+    enforced from the tick, and dropped again once it leaves the dl_rq.
+
+The server is deliberately never stopped from sched_can_stop_tick().
+dl_server_start()/dl_server_stop() carry the GRUB accounting of
+rq->dl.running_bw through the "active contending" / "active non
+contending" state machine, with an inactive_timer in between. Stopping
+the server from a path that runs on every enqueue and dequeue cycles
+that state machine at a rate it is not meant for: a stop that finds
+the inactive timer still armed subtracts running_bw that the matching
+start did not add back, which underflows running_bw and trips
+WARN_ON_ONCE() in __sub_running_bw() and WARN_ON() in
+task_non_contending(). Teardown is left to the existing lazy path in
+__pick_task_dl(), which stops the server when it has no fair task to
+pick. The cost is that a tickless core keeps taking the server's defer
+and inactive timers, which is a few interrupts per period, not a tick.
+
+All of this is confined to nohz_full CPUs: sched_update_tick_dependency()
+returns early for housekeeping CPUs, so sched_can_stop_tick() (and with
+it the new arming) only runs where the tick can be stopped.
+
+Based on the upstream proposal "sched/deadline: Make dl-server nohz full
+aware" by Juri Lelli, adapted to this tree, which has the fair server but
+not the SCX ext_server.
+
+Ref (upstream proposal, v2):
+https://lore.kernel.org/lkml/20260513-upstream-fix-dlserver-nohzfull-b4-v2-1-d3e9cbe5c845@redhat.com/
+https://lore.kernel.org/lkml/20261005132038.353661-1-ionut.nechita@windriver.com/
+
+Fixes: 557a6bfc662c ("sched/fair: Add trivial fair server")
+Signed-off-by: Ionut Nechita <ionut.nechita@windriver.com>
+---
+ kernel/sched/core.c     | 26 +++++++++++++++++++++++++-
+ kernel/sched/deadline.c |  4 ++++
+ 2 files changed, 29 insertions(+), 1 deletion(-)
+
+diff --git a/kernel/sched/core.c b/kernel/sched/core.c
+index 582c3847f483a..944aa45e10670 100644
+--- a/kernel/sched/core.c
++++ b/kernel/sched/core.c
+@@ -1340,10 +1340,34 @@ bool sched_can_stop_tick(struct rq *rq)
+ {
+ 	int fifo_nr_running;
+ 
+-	/* Deadline tasks, even if single, need the tick */
++	/*
++	 * Deadline tasks, even if single, need the tick. This includes the
++	 * fair server while it is enqueued and serving CFS: its runtime is
++	 * enforced from the tick.
++	 */
+ 	if (rq->dl.dl_nr_running)
+ 		return false;
+ 
++	/*
++	 * RT and CFS coexist: make sure the fair server is armed, so CFS gets
++	 * its reserved bandwidth even though the tick is about to be stopped.
++	 * While the server is only deferred (throttled, waiting for its timer)
++	 * it is not on the dl_rq and needs no tick; once the timer enqueues it,
++	 * inc_dl_tasks() re-evaluates the dependency.
++	 *
++	 * dl_server_start() is a no-op for an already active server, and the
++	 * server is never stopped from here: its start/stop pair carries the
++	 * GRUB accounting of rq->dl.running_bw, which must not be cycled at
++	 * enqueue/dequeue rate.
++	 */
++	if (rq->rt.rt_nr_running && rq->cfs.h_nr_queued &&
++	    rq->fair_server.dl_runtime) {
++		dl_server_start(&rq->fair_server);
++		/* A non-deferred start enqueues the server right away. */
++		if (rq->dl.dl_nr_running)
++			return false;
++	}
++
+ 	/*
+ 	 * If there are more than one RR tasks, we need the tick to affect the
+ 	 * actual RR behaviour.
+diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
+index 72499cf2a1db5..3e50a59d16b52 100644
+--- a/kernel/sched/deadline.c
++++ b/kernel/sched/deadline.c
+@@ -2036,6 +2036,8 @@ void inc_dl_tasks(struct sched_dl_entity *dl_se, struct dl_rq *dl_rq)
+ 
+ 	if (!dl_server(dl_se))
+ 		add_nr_running(rq_of_dl_rq(dl_rq), 1);
++	else
++		sched_update_tick_dependency(rq_of_dl_rq(dl_rq));
+ 
+ 	inc_dl_deadline(dl_rq, deadline);
+ }
+@@ -2048,6 +2050,8 @@ void dec_dl_tasks(struct sched_dl_entity *dl_se, struct dl_rq *dl_rq)
+ 
+ 	if (!dl_server(dl_se))
+ 		sub_nr_running(rq_of_dl_rq(dl_rq), 1);
++	else
++		sched_update_tick_dependency(rq_of_dl_rq(dl_rq));
+ 
+ 	dec_dl_deadline(dl_rq, dl_se->deadline);
+ }
+-- 
+2.43.0
+
