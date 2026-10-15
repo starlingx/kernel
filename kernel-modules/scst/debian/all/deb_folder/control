@@ -22,3 +22,14 @@ Description: SCST common configuration files for StarlingX
  This package provides the common configuration files for the SCST
  iSCSI target kernel modules. It includes the modules-load.d configuration
  for auto-loading SCST modules at boot.
+
+Package: scst-userspace
+Architecture: amd64
+Depends: ${shlibs:Depends}, ${misc:Depends}, perl
+Description: SCST iSCSI userspace daemon and admin tools for StarlingX
+ This package provides the SCST iSCSI userspace components built from the
+ same SCST source as the scst kernel modules, guaranteeing the daemon's
+ interface version matches the loaded modules. It installs iscsi-scstd,
+ iscsi-scst-adm, the scstadmin tool and the SCST.pm Perl module, for use
+ by the scst-iscsi-gateway container (apt-installed instead of compiled in
+ the image).

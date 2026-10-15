@@ -33,6 +33,7 @@ kmod_name=scst
 version=$(shell dpkg-parsechangelog | sed -n 's/^Version: *\([^-]\+\)-.\+/\1/p')
 pkg_name=scst@KERNEL_TYPE@
 pkg_common_name=scst-common
+pkg_userspace_name=scst-userspace
 
 _sysconfdir=/etc
 _defaultdocdir=/usr/share/doc
@@ -76,6 +77,13 @@ override_dh_auto_install:
 	# policy).
 	install -d debian/$(pkg_common_name)/lib/systemd/system-preset
 	install -m 644 debian/extra/50-scst.preset debian/$(pkg_common_name)/lib/systemd/system-preset/50-scst.preset
+	# scst-userspace: iscsi-scstd, iscsi-scst-adm, scstadmin, SCST.pm
+	install -d debian/$(pkg_userspace_name)/usr/sbin
+	install -m 755 iscsi-scst/usr/iscsi-scstd debian/$(pkg_userspace_name)/usr/sbin/iscsi-scstd
+	install -m 755 iscsi-scst/usr/iscsi-scst-adm debian/$(pkg_userspace_name)/usr/sbin/iscsi-scst-adm
+	install -m 755 scstadmin/scstadmin.sysfs/scstadmin debian/$(pkg_userspace_name)/usr/sbin/scstadmin
+	install -d debian/$(pkg_userspace_name)/usr/share/perl5/SCST
+	install -m 644 scstadmin/scstadmin.sysfs/scst-1.0.0/lib/SCST/SCST.pm debian/$(pkg_userspace_name)/usr/share/perl5/SCST/SCST.pm
 
 override_dh_install:
 	@true
