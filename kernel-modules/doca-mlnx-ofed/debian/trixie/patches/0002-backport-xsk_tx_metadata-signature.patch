@@ -1,0 +1,139 @@
+diff --git a/backports/0378-BACKPORT-xsk_tx_metadata.patch b/backports/0378-BACKPORT-xsk_tx_metadata.patch
+new file mode 100644
+index 0000000..6aa3cc4
+--- /dev/null
++++ b/backports/0378-BACKPORT-xsk_tx_metadata.patch
+@@ -0,0 +1,133 @@
++From f43ded266eeb113f284d6d8949fb95e9da910638 Mon Sep 17 00:00:00 2001
++From: Iulian Mocanu <iulian.mocanu@windriver.com>
++Date: Wed, 18 Nov 2026 17:59:04 +0200
++Subject: [PATCH] backport xsk_tx_metadata signature
++
++Upstream commit 849b1664dbda ("xsk: validate metadata when processing requests")
++is fixing CVE-2026-74707 (time-of-check time-of-use race condition
++in the Linux kernel's AF_XDP (XSK) zero-copy transmit path)
++
++Following patches from NVIDIA DOCA 3.5 (26.07) backport the CVE-2026-74707 fix
++into the mlx5 driver by adapting it to the new xsk_tx_metadata_request() signature
++
++backports/0321-BACKPORT-drivers-net-ethernet-mellanox-mlx5-core-en-.patch
++- passing sq->xsk_pool so xsk_tx_metadata_request() can validate against
++the pool and produce the one-time flags snapshot, instead of the driver reading meta->flags itself.
++backports/0292-BACKPORT-drivers-net-ethernet-mellanox-mlx5-core-en-.patch
++- declares mlx5e_xmit_xdp_frame_mpwqe()/mlx5e_xmit_xdp_frame() with struct xsk_tx_metadata **meta
++backports/0124-BACKPORT-drivers-net-ethernet-mellanox-mlx5-core-en-.patch
++- updates the call into those functions to pass &meta (matching the new **meta signature)
++so the now-nullable pointer propagates correctly to completion handling
++---
++ drivers/net/ethernet/mellanox/mlx5/core/en.h      |  2 +-
++ drivers/net/ethernet/mellanox/mlx5/core/en/xdp.c  | 15 ++++++++++-----
++ drivers/net/ethernet/mellanox/mlx5/core/en/xdp.h  |  4 ++--
++ .../net/ethernet/mellanox/mlx5/core/en/xsk/tx.c   |  4 ++--
++ 4 files changed, 15 insertions(+), 10 deletions(-)
++
++diff --git a/drivers/net/ethernet/mellanox/mlx5/core/en.h b/drivers/net/ethernet/mellanox/mlx5/core/en.h
++index 314d7fb..b287c83 100644
++--- a/drivers/net/ethernet/mellanox/mlx5/core/en.h
+++++ b/drivers/net/ethernet/mellanox/mlx5/core/en.h
++@@ -554,7 +554,7 @@ typedef int (*mlx5e_fp_xmit_xdp_frame_check)(struct mlx5e_xdpsq *);
++ typedef bool (*mlx5e_fp_xmit_xdp_frame)(struct mlx5e_xdpsq *,
++ 					struct mlx5e_xmit_data *,
++ 					int,
++-					struct xsk_tx_metadata *);
+++					struct xsk_tx_metadata **);
++ 
++ struct mlx5e_xdpsq {
++ 	/* data path */
++diff --git a/drivers/net/ethernet/mellanox/mlx5/core/en/xdp.c b/drivers/net/ethernet/mellanox/mlx5/core/en/xdp.c
++index 36fe0e0..335a438 100644
++--- a/drivers/net/ethernet/mellanox/mlx5/core/en/xdp.c
+++++ b/drivers/net/ethernet/mellanox/mlx5/core/en/xdp.c
++@@ -625,11 +625,11 @@ INDIRECT_CALLABLE_SCOPE int mlx5e_xmit_xdp_frame_check_mpwqe(struct mlx5e_xdpsq
++ 
++ INDIRECT_CALLABLE_SCOPE bool
++ mlx5e_xmit_xdp_frame(struct mlx5e_xdpsq *sq, struct mlx5e_xmit_data *xdptxd,
++-		     int check_result, struct xsk_tx_metadata *meta);
+++		     int check_result, struct xsk_tx_metadata **meta);
++ 
++ INDIRECT_CALLABLE_SCOPE bool
++ mlx5e_xmit_xdp_frame_mpwqe(struct mlx5e_xdpsq *sq, struct mlx5e_xmit_data *xdptxd,
++-			   int check_result, struct xsk_tx_metadata *meta)
+++			   int check_result, struct xsk_tx_metadata **meta)
++ {
++ 	struct mlx5e_tx_mpwqe *session = &sq->mpwqe;
++ 	struct mlx5e_xdpsq_stats *stats = sq->stats;
++@@ -680,7 +680,10 @@ mlx5e_xmit_xdp_frame_mpwqe(struct mlx5e_xdpsq *sq, struct mlx5e_xmit_data *xdptx
++ 		 */
++ 		mlx5e_xdp_mpwqe_session_start(sq);
++ #ifdef HAVE_XSK_TX_METADATA_OPS
++-		xsk_tx_metadata_request(meta, &mlx5e_xsk_tx_metadata_ops, &session->wqe->eth);
+++		if (meta)
+++			xsk_tx_metadata_request(sq->xsk_pool, meta,
+++						&mlx5e_xsk_tx_metadata_ops,
+++						&session->wqe->eth);
++ #endif
++ 	}
++ 
++@@ -712,7 +715,7 @@ INDIRECT_CALLABLE_SCOPE int mlx5e_xmit_xdp_frame_check(struct mlx5e_xdpsq *sq)
++ 
++ INDIRECT_CALLABLE_SCOPE bool
++ mlx5e_xmit_xdp_frame(struct mlx5e_xdpsq *sq, struct mlx5e_xmit_data *xdptxd,
++-		     int check_result, struct xsk_tx_metadata *meta)
+++		     int check_result, struct xsk_tx_metadata **meta)
++ {
++ 	struct mlx5_wq_cyc       *wq   = &sq->wq;
++ #if defined(HAVE_PAGE_POOL_DEFRAG_PAGE) || defined(HAVE_PAGE_POOL_PUT_UNREFED_PAGE)
++@@ -874,7 +877,9 @@ mlx5e_xmit_xdp_frame(struct mlx5e_xdpsq *sq, struct mlx5e_xmit_data *xdptxd,
++ 	sq->pc += num_wqebbs;
++ 
++ #ifdef HAVE_XSK_TX_METADATA_OPS
++-	xsk_tx_metadata_request(meta, &mlx5e_xsk_tx_metadata_ops, eseg);
+++	if (meta)
+++		xsk_tx_metadata_request(sq->xsk_pool, meta,
+++					&mlx5e_xsk_tx_metadata_ops, eseg);
++ #endif
++ 
++ 	sq->doorbell_cseg = cseg;
++diff --git a/drivers/net/ethernet/mellanox/mlx5/core/en/xdp.h b/drivers/net/ethernet/mellanox/mlx5/core/en/xdp.h
++index 201db2c..06f909a 100644
++--- a/drivers/net/ethernet/mellanox/mlx5/core/en/xdp.h
+++++ b/drivers/net/ethernet/mellanox/mlx5/core/en/xdp.h
++@@ -135,11 +135,11 @@ extern const struct xsk_tx_metadata_ops mlx5e_xsk_tx_metadata_ops;
++ INDIRECT_CALLABLE_DECLARE(bool mlx5e_xmit_xdp_frame_mpwqe(struct mlx5e_xdpsq *sq,
++ 							  struct mlx5e_xmit_data *xdptxd,
++ 							  int check_result,
++-							  struct xsk_tx_metadata *meta));
+++							  struct xsk_tx_metadata **meta));
++ INDIRECT_CALLABLE_DECLARE(bool mlx5e_xmit_xdp_frame(struct mlx5e_xdpsq *sq,
++ 						    struct mlx5e_xmit_data *xdptxd,
++ 						    int check_result,
++-						    struct xsk_tx_metadata *meta));
+++						    struct xsk_tx_metadata **meta));
++ INDIRECT_CALLABLE_DECLARE(int mlx5e_xmit_xdp_frame_check_mpwqe(struct mlx5e_xdpsq *sq));
++ INDIRECT_CALLABLE_DECLARE(int mlx5e_xmit_xdp_frame_check(struct mlx5e_xdpsq *sq));
++ 
++diff --git a/drivers/net/ethernet/mellanox/mlx5/core/en/xsk/tx.c b/drivers/net/ethernet/mellanox/mlx5/core/en/xsk/tx.c
++index 613aa3d..25a50ac 100644
++--- a/drivers/net/ethernet/mellanox/mlx5/core/en/xsk/tx.c
+++++ b/drivers/net/ethernet/mellanox/mlx5/core/en/xsk/tx.c
++@@ -121,7 +121,7 @@ bool mlx5e_xsk_tx(struct mlx5e_xdpsq *sq, unsigned int budget)
++ #endif
++ 		xdptxd.len = desc.len;
++ #ifdef HAVE_XSK_TX_METADATA_OPS
++-		meta = xsk_buff_get_metadata(pool, desc.addr);
+++		meta = xsk_buff_get_metadata(pool, desc.addr, desc.options);
++ #endif
++ 
++ #ifdef HAVE_XSK_BUFF_ALLOC
++@@ -134,7 +134,7 @@ bool mlx5e_xsk_tx(struct mlx5e_xdpsq *sq, unsigned int budget)
++ 
++ 		ret = INDIRECT_CALL_2(sq->xmit_xdp_frame, mlx5e_xmit_xdp_frame_mpwqe,
++ 				      mlx5e_xmit_xdp_frame, sq, &xdptxd,
++-				      check_result, meta);
+++				      check_result, &meta);
++ 		if (unlikely(!ret)) {
++ 			if (sq->mpwqe.wqe)
++ 				mlx5e_xdp_mpwqe_complete(sq);
++-- 
++2.47.3
++

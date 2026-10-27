@@ -1,14 +1,13 @@
 ---
-debver: 6.18.15
+debver: 6.18.59
 debname: linux-rt
 dl_hook: dl_hook
 dl_files:
-  linux_6.18.15.orig.tar.xz:
+  linux-6.18.59.tar.xz:
     topdir: null
     url:
-      "https://snapshot.debian.org/archive/debian/20260314T022719Z/pool/main/\
-       l/linux/linux_6.18.15.orig.tar.xz"
-    sha256sum: fdf4c4d487c95b17a41cb38003faef86669e532a44fe702eb31a3390b6a60cca
+      "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.18.59.tar.xz"
+    sha256sum: 53a55ac9863a5547e292b8e381d4e4c2240dd1127d5428a7c44dbc550be23963
   linux_6.18.15-1~bpo13%2B1.debian.tar.xz:
     topdir: null
     url:

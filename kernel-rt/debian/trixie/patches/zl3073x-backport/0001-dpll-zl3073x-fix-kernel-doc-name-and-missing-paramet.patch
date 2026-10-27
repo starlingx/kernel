@@ -1,7 +1,7 @@
-From 1978b593e4b80e38923b12e841220e93ecc531a9 Mon Sep 17 00:00:00 2001
+From 957d611c6c55e0f2940b57cae011ae8425c8a1ac Mon Sep 17 00:00:00 2001
 From: Kriish Sharma <kriish.sharma2006@gmail.com>
 Date: Wed, 12 Nov 2025 05:56:42 +0000
-Subject: [PATCH 01/27] dpll: zl3073x: fix kernel-doc name and missing
+Subject: [PATCH 01/18] dpll: zl3073x: fix kernel-doc name and missing
  parameter in fw.c
 
 Documentation build reported:
@@ -25,7 +25,7 @@ Signed-off-by: Jakub Kicinski <kuba@kernel.org>
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/drivers/dpll/zl3073x/fw.c b/drivers/dpll/zl3073x/fw.c
-index def37fe8d9b0..55b638247f4b 100644
+index def37fe8d9b03..55b638247f4bb 100644
 --- a/drivers/dpll/zl3073x/fw.c
 +++ b/drivers/dpll/zl3073x/fw.c
 @@ -352,12 +352,12 @@ struct zl3073x_fw *zl3073x_fw_load(struct zl3073x_dev *zldev, const char *data,
@@ -44,6 +44,3 @@ index def37fe8d9b0..55b638247f4b 100644
   */
  static int
  zl3073x_fw_component_flash(struct zl3073x_dev *zldev,
--- 
-2.43.0
-

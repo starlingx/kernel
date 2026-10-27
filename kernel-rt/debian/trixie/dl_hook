@@ -5,10 +5,16 @@
 # be put at the same path where this script is located.
 # Tools needed: tar
 
-KERNEL_DIR=linux-6.18.15
+KERNEL_DIR=linux-6.18.59
 DEBIAN_FILE=linux_6.18.15-1~bpo13%2B1.debian.tar.xz
 
-tar xvf linux_6.18.15.orig.tar.xz
+# The kernel source is the upstream tarball from kernel.org. Make the
+# orig tarball under the name that dpkg-source expects for the package.
+UPSTREAM_FILE=linux-6.18.59.tar.xz
+ORIG_FILE=linux_6.18.59.orig.tar.xz
+cp ${UPSTREAM_FILE} ${ORIG_FILE}
+
+tar xvf ${UPSTREAM_FILE}
 if [ $? -ne 0 ]
 then
     echo "tar failed: linux kernel source!"

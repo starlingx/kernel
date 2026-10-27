@@ -1,3 +1,11 @@
+linux-rt (6.18.59-1) unstable; urgency=medium
+  * New upstream version 6.18.59 from:
+    https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.18.59.tar.xz
+  * Debian packaging base remains linux 6.18.15-1~bpo13+1.
+  * Dropped the 28 stx patches already included in 6.18.59 (PCI, xfrm esp,
+    scsi sas, serial 8250, dpll/zl3073x) and refreshed 0001-Notification-of-death.
+ -- Viorel-Catalin Rapiteanu <viorel-catalin.rapiteanu@windriver.com>  Mon, 26 Oct 2026 16:55:00 +0000
+
 linux-rt (6.18.15-1) unstable; urgency=medium
   * New upstream version 6.18.15 from:
     https://snapshot.debian.org/archive/debian/20260314T022719Z/pool/main/l/linux/linux_6.18.15.orig.tar.xz

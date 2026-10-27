@@ -40,14 +40,14 @@ scst-common
 libbnxt-re
 
 #kernel-std/kernel-rt
-linux-headers-6.18.15+deb13-amd64
-linux-rt-headers-6.18.15+deb13-rt-amd64
-linux-headers-6.18.15+deb13-common
-linux-rt-headers-6.18.15+deb13-rt-common
-linux-image-6.18.15+deb13-amd64-unsigned
-linux-rt-image-6.18.15+deb13-rt-amd64-unsigned
-linux-kbuild-6.18.15+deb13
-linux-rt-kbuild-6.18.15+deb13-rt
+linux-headers-6.18.59+deb13-amd64
+linux-rt-headers-6.18.59+deb13-rt-amd64
+linux-headers-6.18.59+deb13-common
+linux-rt-headers-6.18.59+deb13-rt-common
+linux-image-6.18.59+deb13-amd64-unsigned
+linux-rt-image-6.18.59+deb13-rt-amd64-unsigned
+linux-kbuild-6.18.59+deb13
+linux-rt-kbuild-6.18.59+deb13-rt
 linux-libc-dev
 linux-perf
 linux-cpupower

@@ -434,7 +434,6 @@ index 0000000..14a0995
 +#endif
 +
 diff --git a/kernel/exit.c b/kernel/exit.c
-index 9f74e8f..bf18864 100644
 --- a/kernel/exit.c
 +++ b/kernel/exit.c
 @@ -78,6 +78,9 @@
@@ -447,8 +446,8 @@ index 9f74e8f..bf18864 100644
  
  /*
   * The default value should be high enough to not crash a system that randomly
-@@ -263,6 +266,9 @@ repeat:
- 	thread_pid = task_pid(p);
+@@ -271,6 +274,9 @@ repeat:
+ 	thread_pid = get_pid(task_pid(p));
  
  	write_lock_irq(&tasklist_lock);
 +#ifdef CONFIG_SIGEXIT
@@ -458,19 +457,18 @@ index 9f74e8f..bf18864 100644
  	__exit_signal(&post, p);
  
 diff --git a/kernel/fork.c b/kernel/fork.c
-index 3da0f08..1bf0b80 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -2144,6 +2144,10 @@ __latent_entropy struct task_struct *copy_process(
- 	RCU_INIT_POINTER(p->bpf_storage, NULL);
- 	p->bpf_ctx = NULL;
+@@ -2147,6 +2147,10 @@ __latent_entropy struct task_struct *cop
+ 	p->softirqs_enabled		= 1;
+ 	p->softirq_context		= 0;
  #endif
 +#ifdef CONFIG_SIGEXIT
 +	INIT_LIST_HEAD(&p->notify);
 +	INIT_LIST_HEAD(&p->monitor);
 +#endif
  
- 	unwind_task_init(p);
+ 	p->pagefault_disabled = 0;
  
 diff --git a/kernel/signal.c b/kernel/signal.c
 index fe9190d..78c495e 100644
