@@ -1,0 +1,5885 @@
+From 36708e0253166e1abe30f634edb9da59907aa77a Mon Sep 17 00:00:00 2001
+From: Cristian Chitaru <cristian.chitaru@windriver.com>
+Date: Wed, 28 Oct 2026 10:30:36 +0200
+Subject: [PATCH] intel-ice: update out-of-tree driver to 2.6.6.8
+
+Update the Intel ICE out-of-tree driver to version 2.6.6.8
+
+- ice 2.6.6.8 was provided by Intel
+
+The 2.6.6.8 new update is a debug drop
+delivered to investigate the E825 PF VSI rebuild failure (-EIO)
+and PHY stall seen under sustained SR-IOV RFC2544 traffic. Over
+base 2.6.6.4.1 it adds:
+- VF VSI rebuild hardening: a failed VF rebuild is isolated and
+  logged instead of cascading across the PF
+- flex-pipe fixes: a use-after-free fix and mid-removal guards in
+  the profile code
+- E825C PHY stuck-state detection with an automatic PHY soft-reset
+  recovery path and PHY-to-PHC timestamp-offset handling
+- debug instrumentation: new debugfs controls (trigger_phy_soft_reset,
+  automatic_phy_soft_reset_enable/_threshold, ptp_read_phy_and_phc_time)
+  and an ICE_ADD_PROBES "_probes" build option
+
+Test Plan:
+Pass: downloader
+Pass: build-pkgs --clean intel-ice
+Pass: build image
+Pass: boot
+Pass: check driver version (modinfo ice / cat /sys/module/ice/version)
+
+Signed-off-by: Cristian Chitaru <cristian.chitaru@windriver.com>
+---
+ README              |    2 +-
+ SUMS                |  430 +++++++-------
+ ice.7               | 1389 +++++++++++++++----------------------------
+ ice.spec            |    5 +-
+ src/ice_debugfs.c   |  141 +++++
+ src/ice_dpll.c      |    3 +
+ src/ice_ethtool.c   |    1 +
+ src/ice_ethtool.h   |    1 +
+ src/ice_flex_pipe.c |   13 +-
+ src/ice_main.c      |    2 +-
+ src/ice_ptp.c       |  465 ++++++++++++++-
+ src/ice_ptp.h       |   54 +-
+ src/ice_ptp_hw.c    |  439 ++++----------
+ src/ice_ptp_hw.h    |    6 +
+ src/ice_trace.h     |   54 +-
+ src/ice_type.h      |    8 +-
+ src/ice_vf_lib.c    |   36 +-
+ 17 files changed, 1506 insertions(+), 1543 deletions(-)
+
+diff --git a/README b/README
+index c3f8f76..b2ab481 100644
+--- a/README
++++ b/README
+@@ -1,7 +1,7 @@
+ ice Linux* Base Driver for the Intel(R) Ethernet 800 Series
+ ***********************************************************
+ 
+-June 01, 2026
++October 02, 2026
+ 
+ 
+ Contents
+diff --git a/SUMS b/SUMS
+index ce4052b..20087a9 100644
+--- a/SUMS
++++ b/SUMS
+@@ -1,215 +1,215 @@
+-53906     8 ice-2.6.6/kcompat-gen/kcompat_generated_keep_flags_ice.mk
+-12529    18 ice-2.6.6/COPYING
+-58559     9 ice-2.6.6/src/devlink/health.c
+-58396     2 ice-2.6.6/src/devlink/health.h
+-54804    58 ice-2.6.6/src/ice.h
+-41448    10 ice-2.6.6/src/ice_acl_main.c
+-23656     4 ice-2.6.6/src/ice_adapter.c
+-29666     2 ice-2.6.6/src/ice_adapter.h
+-27727    22 ice-2.6.6/src/ice_arfs.c
+-31455     3 ice-2.6.6/src/ice_arfs.h
+-07362     1 ice-2.6.6/src/ice_aux_support.c
+-00198     1 ice-2.6.6/src/ice_aux_support.h
+-29077    42 ice-2.6.6/src/ice_base.c
+-31905     2 ice-2.6.6/src/ice_base.h
+-64319    31 ice-2.6.6/src/ice_dcb_lib.c
+-31002     5 ice-2.6.6/src/ice_dcb_lib.h
+-32219    33 ice-2.6.6/src/ice_dcb_nl.c
+-28235     1 ice-2.6.6/src/ice_dcb_nl.h
+-35038    32 ice-2.6.6/src/ice_dcf.c
+-54798     4 ice-2.6.6/src/ice_dcf.h
+-22599    51 ice-2.6.6/src/ice_debugfs.c
+-41432   102 ice-2.6.6/src/ice_devlink.c
+-59107     3 ice-2.6.6/src/ice_devlink.h
+-53228   113 ice-2.6.6/src/ice_dpll.c
+-18011     6 ice-2.6.6/src/ice_dpll.h
+-46163    15 ice-2.6.6/src/ice_eswitch.c
+-60058     3 ice-2.6.6/src/ice_eswitch.h
+-06821   194 ice-2.6.6/src/ice_ethtool.c
+-49039    27 ice-2.6.6/src/ice_ethtool.h
+-43573     1 ice-2.6.6/src/ice_ethtool_common.h
+-63693    63 ice-2.6.6/src/ice_ethtool_fdir.c
+-32871    16 ice-2.6.6/src/ice_fltr.c
+-04887     2 ice-2.6.6/src/ice_fltr.h
+-18729    35 ice-2.6.6/src/ice_fw_update.c
+-57363     1 ice-2.6.6/src/ice_fw_update.h
+-59054    11 ice-2.6.6/src/ice_gnss.c
+-62465     2 ice-2.6.6/src/ice_gnss.h
+-01782     3 ice-2.6.6/src/ice_hwmon.c
+-54943     1 ice-2.6.6/src/ice_hwmon.h
+-25599    29 ice-2.6.6/src/ice_idc.c
+-44985     2 ice-2.6.6/src/ice_idc_int.h
+-64531    35 ice-2.6.6/src/ice_ieps.c
+-15112     1 ice-2.6.6/src/ice_ieps.h
+-61935    30 ice-2.6.6/src/ice_ieps_lm.c
+-02463    19 ice-2.6.6/src/ice_irq.c
+-23673     1 ice-2.6.6/src/ice_irq.h
+-29888   113 ice-2.6.6/src/ice_lag.c
+-17489     4 ice-2.6.6/src/ice_lag.h
+-60831   129 ice-2.6.6/src/ice_lib.c
+-29414     6 ice-2.6.6/src/ice_lib.h
+-09148   365 ice-2.6.6/src/ice_main.c
+-09336    20 ice-2.6.6/src/ice_migration.c
+-35134     2 ice-2.6.6/src/ice_migration.h
+-47724     2 ice-2.6.6/src/ice_migration_private.h
+-55877     7 ice-2.6.6/src/ice_osdep.h
+-23966     2 ice-2.6.6/src/ice_pf_vsi_vlan_ops.c
+-18780     1 ice-2.6.6/src/ice_pf_vsi_vlan_ops.h
+-19744   166 ice-2.6.6/src/ice_ptp.c
+-37932    19 ice-2.6.6/src/ice_ptp.h
+-45513    18 ice-2.6.6/src/ice_repr.c
+-43826     2 ice-2.6.6/src/ice_repr.h
+-32356    65 ice-2.6.6/src/ice_sriov.c
+-03845     7 ice-2.6.6/src/ice_sriov.h
+-04579    82 ice-2.6.6/src/ice_tc_lib.c
+-04083     8 ice-2.6.6/src/ice_tc_lib.h
+-33437    17 ice-2.6.6/src/ice_trace.h
+-19931    35 ice-2.6.6/src/ice_tspll.c
+-63408     4 ice-2.6.6/src/ice_tspll.h
+-21239   118 ice-2.6.6/src/ice_txrx.c
+-17429    18 ice-2.6.6/src/ice_txrx.h
+-00156    13 ice-2.6.6/src/ice_txrx_lib.c
+-31136     4 ice-2.6.6/src/ice_txrx_lib.h
+-03516    43 ice-2.6.6/src/ice_vf_adq.c
+-09379     2 ice-2.6.6/src/ice_vf_adq.h
+-62803    50 ice-2.6.6/src/ice_vf_lib.c
+-11400    14 ice-2.6.6/src/ice_vf_lib.h
+-48993     2 ice-2.6.6/src/ice_vf_lib_private.h
+-23209     9 ice-2.6.6/src/ice_vf_vsi_vlan_ops.c
+-10055     1 ice-2.6.6/src/ice_vf_vsi_vlan_ops.h
+-01321    23 ice-2.6.6/src/ice_vfio_pci.c
+-32175   250 ice-2.6.6/src/ice_virtchnl.c
+-14817     7 ice-2.6.6/src/ice_virtchnl.h
+-54771     9 ice-2.6.6/src/ice_virtchnl_allowlist.c
+-53170     1 ice-2.6.6/src/ice_virtchnl_allowlist.h
+-23682   129 ice-2.6.6/src/ice_virtchnl_fdir.c
+-64394     2 ice-2.6.6/src/ice_virtchnl_fdir.h
+-36504    21 ice-2.6.6/src/ice_virtchnl_fsub.c
+-08706     1 ice-2.6.6/src/ice_virtchnl_fsub.h
+-48894     1 ice-2.6.6/src/ice_vlan.h
+-01311    22 ice-2.6.6/src/ice_vsi_vlan_lib.c
+-06568     2 ice-2.6.6/src/ice_vsi_vlan_lib.h
+-13789     3 ice-2.6.6/src/ice_vsi_vlan_ops.c
+-19904     1 ice-2.6.6/src/ice_vsi_vlan_ops.h
+-39126    32 ice-2.6.6/src/ice_xsk.c
+-40050     4 ice-2.6.6/src/ice_xsk.h
+-03123     9 ice-2.6.6/src/ieps_peer.h
+-43801    18 ice-2.6.6/src/ice_acl.c
+-53096     7 ice-2.6.6/src/ice_acl.h
+-03574    34 ice-2.6.6/src/ice_acl_ctrl.c
+-42414   146 ice-2.6.6/src/ice_adminq_cmd.h
+-59082    10 ice-2.6.6/src/ice_bst_tcam.c
+-14724     1 ice-2.6.6/src/ice_bst_tcam.h
+-51244   242 ice-2.6.6/src/ice_common.c
+-25206    16 ice-2.6.6/src/ice_common.h
+-59400    35 ice-2.6.6/src/ice_controlq.c
+-33028     6 ice-2.6.6/src/ice_controlq.h
+-58730    10 ice-2.6.6/src/ice_cpi.c
+-22664     5 ice-2.6.6/src/ice_cpi.h
+-15909    48 ice-2.6.6/src/ice_dcb.c
+-59724     7 ice-2.6.6/src/ice_dcb.h
+-50110    70 ice-2.6.6/src/ice_ddp.c
+-18463    13 ice-2.6.6/src/ice_ddp.h
+-58399     1 ice-2.6.6/src/ice_defs.h
+-62154     5 ice-2.6.6/src/ice_devids.h
+-42503   184 ice-2.6.6/src/ice_fdir.c
+-29400    10 ice-2.6.6/src/ice_fdir.h
+-32882   123 ice-2.6.6/src/ice_flex_pipe.c
+-26124     4 ice-2.6.6/src/ice_flex_pipe.h
+-51289    20 ice-2.6.6/src/ice_flex_type.h
+-00280     2 ice-2.6.6/src/ice_flg_rd.c
+-59188     1 ice-2.6.6/src/ice_flg_rd.h
+-01263   148 ice-2.6.6/src/ice_flow.c
+-52434    21 ice-2.6.6/src/ice_flow.h
+-28062    13 ice-2.6.6/src/ice_fwlog.c
+-18879     3 ice-2.6.6/src/ice_fwlog.h
+-26220    42 ice-2.6.6/src/ice_hw_autogen.h
+-58974     9 ice-2.6.6/src/ice_imem.c
+-57324     2 ice-2.6.6/src/ice_imem.h
+-55024    44 ice-2.6.6/src/ice_lan_tx_rx.h
+-59592     6 ice-2.6.6/src/ice_metainit.c
+-08896     1 ice-2.6.6/src/ice_metainit.h
+-38204     2 ice-2.6.6/src/ice_mk_grp.c
+-02420     1 ice-2.6.6/src/ice_mk_grp.h
+-48076    53 ice-2.6.6/src/ice_nvm.c
+-53595     5 ice-2.6.6/src/ice_nvm.h
+-36399    15 ice-2.6.6/src/ice_parser.c
+-56770     5 ice-2.6.6/src/ice_parser.h
+-62563    21 ice-2.6.6/src/ice_parser_rt.c
+-25505     2 ice-2.6.6/src/ice_parser_rt.h
+-23768     1 ice-2.6.6/src/ice_parser_util.h
+-26612    12 ice-2.6.6/src/ice_pg_cam.c
+-32368     2 ice-2.6.6/src/ice_pg_cam.h
+-19406     3 ice-2.6.6/src/ice_proto_grp.c
+-08726     1 ice-2.6.6/src/ice_proto_grp.h
+-35693    15 ice-2.6.6/src/ice_protocol_type.h
+-48369    12 ice-2.6.6/src/ice_ptp_consts.h
+-37825   174 ice-2.6.6/src/ice_ptp_hw.c
+-08439    25 ice-2.6.6/src/ice_ptp_hw.h
+-63123     3 ice-2.6.6/src/ice_ptype_mk.c
+-52436     1 ice-2.6.6/src/ice_ptype_mk.h
+-09281     2 ice-2.6.6/src/ice_sbq_cmd.h
+-44148   166 ice-2.6.6/src/ice_sched.c
+-38080    11 ice-2.6.6/src/ice_sched.h
+-07393   250 ice-2.6.6/src/ice_switch.c
+-38645    17 ice-2.6.6/src/ice_switch.h
+-24737     1 ice-2.6.6/src/ice_tmatch.h
+-05745    61 ice-2.6.6/src/ice_type.h
+-50682    15 ice-2.6.6/src/ice_vf_mbx.c
+-14231     2 ice-2.6.6/src/ice_vf_mbx.h
+-44070    13 ice-2.6.6/src/ice_vlan_mode.c
+-01160     1 ice-2.6.6/src/ice_vlan_mode.h
+-64989     7 ice-2.6.6/src/ice_xlt_kb.c
+-58095     1 ice-2.6.6/src/ice_xlt_kb.h
+-40824     2 ice-2.6.6/src/siov_regs.h
+-42272   143 ice-2.6.6/src/virtchnl.h
+-05569     8 ice-2.6.6/src/auxiliary.c
+-37127     6 ice-2.6.6/src/idc_generic.h
+-10250     9 ice-2.6.6/src/iidc.h
+-12845     2 ice-2.6.6/src/iidc_rdma_idpf.h
+-35915     4 ice-2.6.6/src/kcompat_gcc.h
+-26932    98 ice-2.6.6/src/kcompat.h
+-57072   110 ice-2.6.6/src/kcompat_impl.h
+-46335    38 ice-2.6.6/src/kcompat-generator.sh
+-26160    15 ice-2.6.6/src/kcompat-lib.sh
+-11195     1 ice-2.6.6/src/kcompat_defs.h
+-19826     6 ice-2.6.6/src/kcompat_sles_defs.h
+-19711     5 ice-2.6.6/src/kcompat_rhel_defs.h
+-19599     2 ice-2.6.6/src/kcompat_ubuntu_defs.h
+-01412     8 ice-2.6.6/src/kcompat_std_defs.h
+-60222    36 ice-2.6.6/src/kcompat.c
+-23911    17 ice-2.6.6/src/kcompat_overflow.h
+-04817     9 ice-2.6.6/src/kcompat_cleanup.h
+-32136    59 ice-2.6.6/src/kcompat_xarray.h
+-58734    62 ice-2.6.6/src/kcompat_xarray.c
+-30941    17 ice-2.6.6/src/kcompat_packing.h
+-42934    17 ice-2.6.6/src/kcompat_packing.c
+-55539     5 ice-2.6.6/src/auxiliary_compat.h
+-34539    33 ice-2.6.6/src/kcompat_pldmfw.c
+-06462     6 ice-2.6.6/src/kcompat_pldmfw.h
+-51630    10 ice-2.6.6/src/kcompat_dim.h
+-62449     3 ice-2.6.6/src/kcompat_dim.c
+-20043     7 ice-2.6.6/src/kcompat_net_dim.c
+-53599     3 ice-2.6.6/src/kcompat_kthread.h
+-13721     3 ice-2.6.6/src/kcompat_gnss.h
+-11078    10 ice-2.6.6/src/kcompat_gnss.c
+-63988    10 ice-2.6.6/src/Makefile
+-21698    18 ice-2.6.6/src/common.mk
+-21462     1 ice-2.6.6/src/Module.supported
+-44929     4 ice-2.6.6/src/linux/auxiliary_bus.h
+-46856     6 ice-2.6.6/pci.updates
+-48164   163 ice-2.6.6/ice.7
+-25543   139 ice-2.6.6/README
+-56935     1 ice-2.6.6/security.md
+-63462     4 ice-2.6.6/scripts/sutinfo.sh
+-58887     9 ice-2.6.6/scripts/set_irq_affinity
+-13644     2 ice-2.6.6/scripts/set_xps_rxqs
+-05086     3 ice-2.6.6/scripts/set_arfs
+-51628     2 ice-2.6.6/scripts/adqsetup/LICENSE
+-06241     9 ice-2.6.6/scripts/adqsetup/README.md
+-06426   148 ice-2.6.6/scripts/adqsetup/adqsetup.py
+-21632     8 ice-2.6.6/scripts/check_aux_bus
+-29613    13 ice-2.6.6/ice.spec
+-54583  1329 ice-2.6.6/ddp/ice-1.3.59.0.pkg
+-60368     3 ice-2.6.6/ddp/LICENSE
+-06531    12 ice-2.6.6/ddp/README
++53906     8 ice-2.6.6.8/kcompat-gen/kcompat_generated_keep_flags_ice.mk
++12529    18 ice-2.6.6.8/COPYING
++58559     9 ice-2.6.6.8/src/devlink/health.c
++58396     2 ice-2.6.6.8/src/devlink/health.h
++54804    58 ice-2.6.6.8/src/ice.h
++41448    10 ice-2.6.6.8/src/ice_acl_main.c
++23656     4 ice-2.6.6.8/src/ice_adapter.c
++29666     2 ice-2.6.6.8/src/ice_adapter.h
++27727    22 ice-2.6.6.8/src/ice_arfs.c
++31455     3 ice-2.6.6.8/src/ice_arfs.h
++07362     1 ice-2.6.6.8/src/ice_aux_support.c
++00198     1 ice-2.6.6.8/src/ice_aux_support.h
++29077    42 ice-2.6.6.8/src/ice_base.c
++31905     2 ice-2.6.6.8/src/ice_base.h
++64319    31 ice-2.6.6.8/src/ice_dcb_lib.c
++31002     5 ice-2.6.6.8/src/ice_dcb_lib.h
++32219    33 ice-2.6.6.8/src/ice_dcb_nl.c
++28235     1 ice-2.6.6.8/src/ice_dcb_nl.h
++35038    32 ice-2.6.6.8/src/ice_dcf.c
++54798     4 ice-2.6.6.8/src/ice_dcf.h
++03446    55 ice-2.6.6.8/src/ice_debugfs.c
++41432   102 ice-2.6.6.8/src/ice_devlink.c
++59107     3 ice-2.6.6.8/src/ice_devlink.h
++36365   113 ice-2.6.6.8/src/ice_dpll.c
++18011     6 ice-2.6.6.8/src/ice_dpll.h
++46163    15 ice-2.6.6.8/src/ice_eswitch.c
++60058     3 ice-2.6.6.8/src/ice_eswitch.h
++45658   194 ice-2.6.6.8/src/ice_ethtool.c
++16578    27 ice-2.6.6.8/src/ice_ethtool.h
++43573     1 ice-2.6.6.8/src/ice_ethtool_common.h
++63693    63 ice-2.6.6.8/src/ice_ethtool_fdir.c
++32871    16 ice-2.6.6.8/src/ice_fltr.c
++04887     2 ice-2.6.6.8/src/ice_fltr.h
++18729    35 ice-2.6.6.8/src/ice_fw_update.c
++57363     1 ice-2.6.6.8/src/ice_fw_update.h
++59054    11 ice-2.6.6.8/src/ice_gnss.c
++62465     2 ice-2.6.6.8/src/ice_gnss.h
++01782     3 ice-2.6.6.8/src/ice_hwmon.c
++54943     1 ice-2.6.6.8/src/ice_hwmon.h
++25599    29 ice-2.6.6.8/src/ice_idc.c
++44985     2 ice-2.6.6.8/src/ice_idc_int.h
++64531    35 ice-2.6.6.8/src/ice_ieps.c
++15112     1 ice-2.6.6.8/src/ice_ieps.h
++61935    30 ice-2.6.6.8/src/ice_ieps_lm.c
++02463    19 ice-2.6.6.8/src/ice_irq.c
++23673     1 ice-2.6.6.8/src/ice_irq.h
++29888   113 ice-2.6.6.8/src/ice_lag.c
++17489     4 ice-2.6.6.8/src/ice_lag.h
++60831   129 ice-2.6.6.8/src/ice_lib.c
++29414     6 ice-2.6.6.8/src/ice_lib.h
++59773   365 ice-2.6.6.8/src/ice_main.c
++09336    20 ice-2.6.6.8/src/ice_migration.c
++35134     2 ice-2.6.6.8/src/ice_migration.h
++47724     2 ice-2.6.6.8/src/ice_migration_private.h
++55877     7 ice-2.6.6.8/src/ice_osdep.h
++23966     2 ice-2.6.6.8/src/ice_pf_vsi_vlan_ops.c
++18780     1 ice-2.6.6.8/src/ice_pf_vsi_vlan_ops.h
++23531   180 ice-2.6.6.8/src/ice_ptp.c
++18814    20 ice-2.6.6.8/src/ice_ptp.h
++45513    18 ice-2.6.6.8/src/ice_repr.c
++43826     2 ice-2.6.6.8/src/ice_repr.h
++32356    65 ice-2.6.6.8/src/ice_sriov.c
++03845     7 ice-2.6.6.8/src/ice_sriov.h
++04579    82 ice-2.6.6.8/src/ice_tc_lib.c
++04083     8 ice-2.6.6.8/src/ice_tc_lib.h
++26766    18 ice-2.6.6.8/src/ice_trace.h
++19931    35 ice-2.6.6.8/src/ice_tspll.c
++63408     4 ice-2.6.6.8/src/ice_tspll.h
++21239   118 ice-2.6.6.8/src/ice_txrx.c
++17429    18 ice-2.6.6.8/src/ice_txrx.h
++00156    13 ice-2.6.6.8/src/ice_txrx_lib.c
++31136     4 ice-2.6.6.8/src/ice_txrx_lib.h
++03516    43 ice-2.6.6.8/src/ice_vf_adq.c
++09379     2 ice-2.6.6.8/src/ice_vf_adq.h
++59217    49 ice-2.6.6.8/src/ice_vf_lib.c
++11400    14 ice-2.6.6.8/src/ice_vf_lib.h
++48993     2 ice-2.6.6.8/src/ice_vf_lib_private.h
++23209     9 ice-2.6.6.8/src/ice_vf_vsi_vlan_ops.c
++10055     1 ice-2.6.6.8/src/ice_vf_vsi_vlan_ops.h
++01321    23 ice-2.6.6.8/src/ice_vfio_pci.c
++32175   250 ice-2.6.6.8/src/ice_virtchnl.c
++14817     7 ice-2.6.6.8/src/ice_virtchnl.h
++54771     9 ice-2.6.6.8/src/ice_virtchnl_allowlist.c
++53170     1 ice-2.6.6.8/src/ice_virtchnl_allowlist.h
++23682   129 ice-2.6.6.8/src/ice_virtchnl_fdir.c
++64394     2 ice-2.6.6.8/src/ice_virtchnl_fdir.h
++36504    21 ice-2.6.6.8/src/ice_virtchnl_fsub.c
++08706     1 ice-2.6.6.8/src/ice_virtchnl_fsub.h
++48894     1 ice-2.6.6.8/src/ice_vlan.h
++01311    22 ice-2.6.6.8/src/ice_vsi_vlan_lib.c
++06568     2 ice-2.6.6.8/src/ice_vsi_vlan_lib.h
++13789     3 ice-2.6.6.8/src/ice_vsi_vlan_ops.c
++19904     1 ice-2.6.6.8/src/ice_vsi_vlan_ops.h
++39126    32 ice-2.6.6.8/src/ice_xsk.c
++40050     4 ice-2.6.6.8/src/ice_xsk.h
++03123     9 ice-2.6.6.8/src/ieps_peer.h
++43801    18 ice-2.6.6.8/src/ice_acl.c
++53096     7 ice-2.6.6.8/src/ice_acl.h
++03574    34 ice-2.6.6.8/src/ice_acl_ctrl.c
++42414   146 ice-2.6.6.8/src/ice_adminq_cmd.h
++59082    10 ice-2.6.6.8/src/ice_bst_tcam.c
++14724     1 ice-2.6.6.8/src/ice_bst_tcam.h
++51244   242 ice-2.6.6.8/src/ice_common.c
++25206    16 ice-2.6.6.8/src/ice_common.h
++59400    35 ice-2.6.6.8/src/ice_controlq.c
++33028     6 ice-2.6.6.8/src/ice_controlq.h
++58730    10 ice-2.6.6.8/src/ice_cpi.c
++22664     5 ice-2.6.6.8/src/ice_cpi.h
++15909    48 ice-2.6.6.8/src/ice_dcb.c
++59724     7 ice-2.6.6.8/src/ice_dcb.h
++50110    70 ice-2.6.6.8/src/ice_ddp.c
++18463    13 ice-2.6.6.8/src/ice_ddp.h
++58399     1 ice-2.6.6.8/src/ice_defs.h
++62154     5 ice-2.6.6.8/src/ice_devids.h
++42503   184 ice-2.6.6.8/src/ice_fdir.c
++29400    10 ice-2.6.6.8/src/ice_fdir.h
++43316   123 ice-2.6.6.8/src/ice_flex_pipe.c
++26124     4 ice-2.6.6.8/src/ice_flex_pipe.h
++51289    20 ice-2.6.6.8/src/ice_flex_type.h
++00280     2 ice-2.6.6.8/src/ice_flg_rd.c
++59188     1 ice-2.6.6.8/src/ice_flg_rd.h
++01263   148 ice-2.6.6.8/src/ice_flow.c
++52434    21 ice-2.6.6.8/src/ice_flow.h
++28062    13 ice-2.6.6.8/src/ice_fwlog.c
++18879     3 ice-2.6.6.8/src/ice_fwlog.h
++26220    42 ice-2.6.6.8/src/ice_hw_autogen.h
++58974     9 ice-2.6.6.8/src/ice_imem.c
++57324     2 ice-2.6.6.8/src/ice_imem.h
++55024    44 ice-2.6.6.8/src/ice_lan_tx_rx.h
++59592     6 ice-2.6.6.8/src/ice_metainit.c
++08896     1 ice-2.6.6.8/src/ice_metainit.h
++38204     2 ice-2.6.6.8/src/ice_mk_grp.c
++02420     1 ice-2.6.6.8/src/ice_mk_grp.h
++48076    53 ice-2.6.6.8/src/ice_nvm.c
++53595     5 ice-2.6.6.8/src/ice_nvm.h
++36399    15 ice-2.6.6.8/src/ice_parser.c
++56770     5 ice-2.6.6.8/src/ice_parser.h
++62563    21 ice-2.6.6.8/src/ice_parser_rt.c
++25505     2 ice-2.6.6.8/src/ice_parser_rt.h
++23768     1 ice-2.6.6.8/src/ice_parser_util.h
++26612    12 ice-2.6.6.8/src/ice_pg_cam.c
++32368     2 ice-2.6.6.8/src/ice_pg_cam.h
++19406     3 ice-2.6.6.8/src/ice_proto_grp.c
++08726     1 ice-2.6.6.8/src/ice_proto_grp.h
++35693    15 ice-2.6.6.8/src/ice_protocol_type.h
++48369    12 ice-2.6.6.8/src/ice_ptp_consts.h
++49575   168 ice-2.6.6.8/src/ice_ptp_hw.c
++49960    25 ice-2.6.6.8/src/ice_ptp_hw.h
++63123     3 ice-2.6.6.8/src/ice_ptype_mk.c
++52436     1 ice-2.6.6.8/src/ice_ptype_mk.h
++09281     2 ice-2.6.6.8/src/ice_sbq_cmd.h
++44148   166 ice-2.6.6.8/src/ice_sched.c
++38080    11 ice-2.6.6.8/src/ice_sched.h
++07393   250 ice-2.6.6.8/src/ice_switch.c
++38645    17 ice-2.6.6.8/src/ice_switch.h
++24737     1 ice-2.6.6.8/src/ice_tmatch.h
++08195    61 ice-2.6.6.8/src/ice_type.h
++50682    15 ice-2.6.6.8/src/ice_vf_mbx.c
++14231     2 ice-2.6.6.8/src/ice_vf_mbx.h
++44070    13 ice-2.6.6.8/src/ice_vlan_mode.c
++01160     1 ice-2.6.6.8/src/ice_vlan_mode.h
++64989     7 ice-2.6.6.8/src/ice_xlt_kb.c
++58095     1 ice-2.6.6.8/src/ice_xlt_kb.h
++40824     2 ice-2.6.6.8/src/siov_regs.h
++42272   143 ice-2.6.6.8/src/virtchnl.h
++05569     8 ice-2.6.6.8/src/auxiliary.c
++37127     6 ice-2.6.6.8/src/idc_generic.h
++10250     9 ice-2.6.6.8/src/iidc.h
++12845     2 ice-2.6.6.8/src/iidc_rdma_idpf.h
++35915     4 ice-2.6.6.8/src/kcompat_gcc.h
++26932    98 ice-2.6.6.8/src/kcompat.h
++57072   110 ice-2.6.6.8/src/kcompat_impl.h
++46335    38 ice-2.6.6.8/src/kcompat-generator.sh
++26160    15 ice-2.6.6.8/src/kcompat-lib.sh
++11195     1 ice-2.6.6.8/src/kcompat_defs.h
++19826     6 ice-2.6.6.8/src/kcompat_sles_defs.h
++19711     5 ice-2.6.6.8/src/kcompat_rhel_defs.h
++19599     2 ice-2.6.6.8/src/kcompat_ubuntu_defs.h
++01412     8 ice-2.6.6.8/src/kcompat_std_defs.h
++60222    36 ice-2.6.6.8/src/kcompat.c
++23911    17 ice-2.6.6.8/src/kcompat_overflow.h
++04817     9 ice-2.6.6.8/src/kcompat_cleanup.h
++32136    59 ice-2.6.6.8/src/kcompat_xarray.h
++58734    62 ice-2.6.6.8/src/kcompat_xarray.c
++30941    17 ice-2.6.6.8/src/kcompat_packing.h
++42934    17 ice-2.6.6.8/src/kcompat_packing.c
++55539     5 ice-2.6.6.8/src/auxiliary_compat.h
++34539    33 ice-2.6.6.8/src/kcompat_pldmfw.c
++06462     6 ice-2.6.6.8/src/kcompat_pldmfw.h
++51630    10 ice-2.6.6.8/src/kcompat_dim.h
++62449     3 ice-2.6.6.8/src/kcompat_dim.c
++20043     7 ice-2.6.6.8/src/kcompat_net_dim.c
++53599     3 ice-2.6.6.8/src/kcompat_kthread.h
++13721     3 ice-2.6.6.8/src/kcompat_gnss.h
++11078    10 ice-2.6.6.8/src/kcompat_gnss.c
++63988    10 ice-2.6.6.8/src/Makefile
++21698    18 ice-2.6.6.8/src/common.mk
++21462     1 ice-2.6.6.8/src/Module.supported
++44929     4 ice-2.6.6.8/src/linux/auxiliary_bus.h
++46856     6 ice-2.6.6.8/pci.updates
++22137   160 ice-2.6.6.8/ice.7
++34674   139 ice-2.6.6.8/README
++56935     1 ice-2.6.6.8/security.md
++63462     4 ice-2.6.6.8/scripts/sutinfo.sh
++58887     9 ice-2.6.6.8/scripts/set_irq_affinity
++13644     2 ice-2.6.6.8/scripts/set_xps_rxqs
++05086     3 ice-2.6.6.8/scripts/set_arfs
++51628     2 ice-2.6.6.8/scripts/adqsetup/LICENSE
++06241     9 ice-2.6.6.8/scripts/adqsetup/README.md
++06426   148 ice-2.6.6.8/scripts/adqsetup/adqsetup.py
++21632     8 ice-2.6.6.8/scripts/check_aux_bus
++09778    13 ice-2.6.6.8/ice.spec
++54583  1329 ice-2.6.6.8/ddp/ice-1.3.59.0.pkg
++60368     3 ice-2.6.6.8/ddp/LICENSE
++06531    12 ice-2.6.6.8/ddp/README
+diff --git a/ice.7 b/ice.7
+index 39de69b..e2ac24e 100644
+--- a/ice.7
++++ b/ice.7
+@@ -1,3 +1,4 @@
++'\" t
+ .\" Man page generated from reStructuredText.
+ .
+ .
+@@ -27,7 +28,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
+ .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
+ .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
+ ..
+-.TH "ICE" "7" "June 01, 2026" "" "Linux ice readme"
++.TH "ICE" "7" "October 02, 2026" "" "Linux ice readme"
+ .SH NAME
+ ice \- ice Linux* Base Driver for the Intel(R) Ethernet 800 Series
+ .SS Contents
+@@ -204,11 +205,9 @@ driver tar file:
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ tar zxf ice\-<x.x.x>.tar.gz
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .IP 3. 3
+@@ -217,11 +216,9 @@ for the driver tar:
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ cd ice\-<x.x.x>/src/
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .IP 4. 3
+@@ -229,11 +226,9 @@ Compile the driver module:
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ make install
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -241,11 +236,9 @@ The binary will be installed as:
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ /lib/modules/<KERNEL VER>/updates/drivers/net/ethernet/intel/ice/ice.ko
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -260,11 +253,9 @@ use the following command:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ make CFLAGS_EXTRA=\(aq\-DUNIFIED_STATS\(aq install
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .UNINDENT
+@@ -279,11 +270,9 @@ cores:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ make \-j<nproc> CFLAGS_EXTRA=\(aq\-DADQ_PERF_COUNTERS\(aq install
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -317,12 +306,10 @@ To check the version of the driver and then load it:
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ modinfo ice
+ modprobe ice
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -331,11 +318,9 @@ kernel before loading the new module:
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ rmmod ice; modprobe ice
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -354,11 +339,9 @@ modprobe:
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ip address add <IP_address>/<netmask bits> dev <ethX>
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .IP 7. 3
+@@ -368,11 +351,9 @@ that is being tested:
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ping <IP_address>
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .UNINDENT
+@@ -391,11 +372,9 @@ driver tar file:
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ rpmbuild \-tb ice\-<x.x.x>.tar.gz
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -414,11 +393,9 @@ following commands, where \fB<RPM>\fP is the location of the RPM file:
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ rpm \-Uvh <RPM>
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -426,11 +403,9 @@ or:
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ dnf/yum localinstall <RPM>
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .IP 3. 3
+@@ -439,11 +414,9 @@ bus, you must also install the auxiliary RPM:
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ rpm \-Uvh <ice RPM> <auxiliary RPM>
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -451,11 +424,9 @@ or:
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ dnf/yum localinstall <ice RPM> <auxiliary RPM>
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -468,11 +439,9 @@ to missing kernel\-devel headers. To workaround this issue, specify
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ rpm \-Uvh auxiliary\-1.0.0\-1.x86_64.rpm \-\-excludepath=/lib/modules/3.10.0\-957.el7.x86_64/source/include/linux/auxiliary_bus.h
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .UNINDENT
+@@ -518,11 +487,9 @@ your console, set dmesg to eight by entering the following:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ dmesg \-n 8
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -605,13 +572,11 @@ command:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ lspci \-vv \-s af:00.0 | grep \-i Serial
+ 
+ Capabilities: [150 v1] Device Serial Number b8\-87\-a3\-ff\-ff\-ca\-05\-68
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -620,11 +585,9 @@ dashes:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ lspci \-vv \-s af:00.0 | grep \-i Serial | awk \(aq{print $7}\(aq | sed s/\-//g b887a3ffffca0568
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .UNINDENT
+@@ -906,9 +869,8 @@ The ice_lag DDP package is loaded
+ Firmware supports LAN VF LAG capability (minimal version):
+ .UNINDENT
+ .TS
+-center;
+-|l|l|l|.
+-_
++box center;
++l|l|l.
+ T{
+ Device
+ T}	T{
+@@ -932,7 +894,6 @@ T}	T{
+ T}	T{
+ 1.20
+ T}
+-_
+ .TE
+ .sp
+ In modes other than active\-backup (1), splitting traffic is achieved through
+@@ -949,11 +910,9 @@ Enable switchdev mode on the primary port:
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ devlink dev eswitch set <pci/0000:##:##.#> mode switchdev
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .IP 2. 3
+@@ -961,11 +920,9 @@ Create SR\-IOV VFs:
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ echo 2 > /sys/class/net/$PF1/device/sriov_numvfs
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .IP 3. 3
+@@ -974,12 +931,10 @@ above):
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ip link add bond0 type bond
+ ip link set bond0 type bond miimon 100 mode active\-backup
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .IP 4. 3
+@@ -987,15 +942,13 @@ Enslave primary and secondary port to bond:
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ip link set $PF1 down
+ ip link set $PF1 master bond0
+ 
+ ip link set $PF2 down
+ ip link set $PF2 master bond0
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .IP 5. 3
+@@ -1003,14 +956,12 @@ Add a Linux bridge. Add bond and port representors to it:
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ip link add $BR type bridge
+ ip link set $BOND master $BR
+ ip link set $VF1_PR master $BR
+ ip link set $VF2_PR master $BR
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .UNINDENT
+@@ -1026,11 +977,9 @@ enabled on the secondary uplink:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ip link set promisc on $PF2
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .SS Application Device Queues (ADQ)
+@@ -1060,13 +1009,11 @@ For example:
+ .INDENT 2.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ modprobe sch_mqprio
+ modprobe act_mirred
+ modprobe cls_flower
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .IP \(bu 2
+@@ -1076,14 +1023,12 @@ We recommend the following installation method:
+ .INDENT 2.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ cd iproute2
+ \&./configure
+ make DESTDIR=/opt/iproute2 install
+ ln \-s /opt/iproute2/sbin/tc /usr/local/sbin/tc
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .UNINDENT
+@@ -1141,11 +1086,9 @@ stop the firmware LLDP agent using the following command:
+ .INDENT 2.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-\-set\-priv\-flags <ethX> fw\-lldp\-agent off
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .IP \(bu 2
+@@ -1187,12 +1130,10 @@ Reload the ice driver to remove any previous TC configuration:
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ rmmod ice
+ modprobe ice
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .IP 2. 3
+@@ -1200,11 +1141,9 @@ Enable hardware TC offload on the interface:
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-K <ethX> hw\-tc\-offload on
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .IP 3. 3
+@@ -1212,11 +1151,9 @@ Disable LLDP on the interface, if it isn\(aqt already:
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-\-set\-priv\-flags <ethX> fw\-lldp\-agent off
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .IP 4. 3
+@@ -1224,12 +1161,10 @@ Verify settings:
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-k <ethX> | grep \(dqhw\-tc\(dq
+ ethtool \-\-show\-priv\-flags <ethX>
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .UNINDENT
+@@ -1255,11 +1190,9 @@ To set the number of queue pairs per poller, use the following:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ devlink dev param set <pci/D:b:d.f> name tc<x>_qps_per_poller value <num> cmode runtime
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -1281,11 +1214,9 @@ To set the timeout for the independent poller, use the following:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ devlink dev param set <pci/D:b:d.f> name tc<x>_poller_timeout value <num> cmode runtime
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -1309,11 +1240,9 @@ To configure 3 queues of TC1 to be polled by each independent poller:
+ .INDENT 2.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ devlink dev param set pci/0000:3b:00.0 name tc1_qps_per_poller value 3 cmode runtime
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .IP \(bu 2
+@@ -1321,11 +1250,9 @@ To set the timeout value in jiffies for TC1 when no traffic is flowing:
+ .INDENT 2.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ devlink dev param set pci/0000:3b:00.0 name tc1_poller_timeout value 1000 cmode runtime
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .UNINDENT
+@@ -1356,11 +1283,9 @@ Use the following to configure inline Intel Ethernet FD filters per TC:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ devlink dev param set <pci/D:b:d.f> name tc<x>_inline_fd value <setting> cmode runtime
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -1382,11 +1307,9 @@ For example, to enable inline Intel Ethernet FD for TC1:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ devlink dev param set pci/0000:af:00.0 name tc1_inline_fd value true cmode runtime
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -1394,11 +1317,9 @@ To show the current inline Intel Ethernet FD setting:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ devlink dev param show <pci/D:b:d.f> name tc<x>_inline_fd
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -1407,11 +1328,9 @@ specified device:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ devlink dev param show pci/0000:af:00.0 name tc2_inline_fd
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .SS Creating Traffic Classes
+@@ -1440,13 +1359,11 @@ Use the tc command to create traffic classes. You can create a maximum of
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ tc qdisc add dev <ethX> root mqprio num_tc <tcs> map <priorities>
+ queues <count1@offset1 ...> hw 1 mode channel shaper bw_rlimit
+ min_rate <min_rate1 ...> max_rate <max_rate1 ...>
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -1511,11 +1428,9 @@ Enable hardware TC offload on the interface:
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-K <ethX> hw\-tc\-offload on
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .UNINDENT
+@@ -1525,11 +1440,9 @@ Add clsact qdisc to enable adding ingress/egress filters for Rx/Tx:
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ tc qdisc add dev <ethX> clsact
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .IP 3. 3
+@@ -1537,11 +1450,9 @@ Verify successful TC creation after qdisc is created:
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ tc qdisc show dev <ethX> ingress
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .UNINDENT
+@@ -1557,12 +1468,10 @@ tc0 and 4\-7 for tc1, and max Tx rate set to 1Gbit for tc0 and 3Gbit for tc1:
+ .INDENT 2.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ tc qdisc add dev ens4f0 root mqprio num_tc 2 map 0 0 0 0 1 1 1 1 queues
+ 16@0 16@16 hw 1 mode channel shaper bw_rlimit max_rate 1Gbit 3Gbit
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -1582,12 +1491,10 @@ enabled:
+ .INDENT 2.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ tc qdisc add dev <ethX> root mqprio num_tc 8 map 0 1 2 3 4 5 6 7
+ queues 2@0 4@2 8@6 16@14 32@30 64@62 128@126 2@254 hw 1 mode channel
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .IP \(bu 2
+@@ -1595,12 +1502,10 @@ To set a minimum rate for a TC:
+ .INDENT 2.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ tc qdisc add dev ens4f0 root mqprio num_tc 2 map 0 0 0 0 1 1 1 1 queues
+ 4@0 8@4 hw 1 mode channel shaper bw_rlimit min_rate 25Gbit 50Gbit
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .IP \(bu 2
+@@ -1608,12 +1513,10 @@ To set a maximum data rate for a TC:
+ .INDENT 2.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ tc qdisc add dev ens4f0 root mqprio num_tc 2 map 0 0 0 0 1 1 1 1 queues
+ 4@0 8@4 hw 1 mode channel shaper bw_rlimit max_rate 25Gbit 50Gbit
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .IP \(bu 2
+@@ -1621,13 +1524,11 @@ To set both minimum and maximum data rates together:
+ .INDENT 2.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ tc qdisc add dev ens4f0 root mqprio num_tc 2 map 0 0 0 0 1 1 1 1 queues
+ 4@0 8@4 hw 1 mode channel shaper bw_rlimit min_rate 10Gbit 20Gbit
+ max_rate 25Gbit 50Gbit
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .UNINDENT
+@@ -1654,12 +1555,10 @@ To view all TC filters:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ tc filter show dev <ethX> ingress
+ tc filter show dev <ethX> egress
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -1714,12 +1613,10 @@ destination port to the given TC:
+ .INDENT 2.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ tc filter add dev <ethX> protocol ip ingress prio 1 flower dst_ip
+ <ip_address> ip_proto tcp dst_port <port_number> skip_sw hw_tc 1
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .IP \(bu 2
+@@ -1730,12 +1627,10 @@ source port to the given TC associated with the given priority:
+ .INDENT 2.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ tc filter add dev <ethX> protocol ip egress prio 1 flower src_ip
+ <ip_address> ip_proto tcp src_port <port_number> action skbedit priority 1
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .IP \(bu 2
+@@ -1746,13 +1641,11 @@ destination port to the given TC using the VLAN protocol (802.1Q):
+ .INDENT 2.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ tc filter add dev <ethX> protocol 802.1Q ingress prio 1 flower
+ dst_ip <ip address> eth_type ipv4 ip_proto tcp dst_port <port_number>
+ vlan_id <vlan_id> skip_sw hw_tc 1
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .IP \(bu 2
+@@ -1760,13 +1653,11 @@ To add a GTP filter:
+ .INDENT 2.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ tc filter add dev <ethX> protocol ip parent ffff: prio 1 flower
+ src_ip 16.0.0.0/16 ip_proto udp dst_port 5678 enc_dst_port 2152
+ enc_key_id <tunnel_id> skip_sw hw_tc 1
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -1795,15 +1686,13 @@ but can have different match values.
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ tc filter add dev <ethX> protocol ip ingress prio 1 flower ip_proto
+ tcp dst_port <port_number> skip_sw hw_tc 1
+ 
+ tc filter add dev <ethX> protocol ip egress prio 1 flower ip_proto tcp
+ src_port <port_number> action skbedit priority 1
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -1811,15 +1700,13 @@ For example:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ tc filter add dev ens4f0 protocol ip ingress prio 1 flower ip_proto
+ tcp dst_port 5555 skip_sw hw_tc 1
+ 
+ tc filter add dev ens4f0 protocol ip egress prio 1 flower ip_proto
+ tcp src_port 5555 action skbedit priority 1
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .UNINDENT
+@@ -1847,12 +1734,10 @@ To add filters for the desired queue, use the following tc command:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ tc filter add dev <ethX> ingress prio 1 protocol all flower src_mac
+ <mac_address> skip_sw classid ffff:<queue_id>
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -1870,14 +1755,12 @@ For example, to direct a single MAC address to queue 10:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-K ens801 hw\-tc\-offload on
+ tc qdisc add dev ens801 clsact
+ tc filter add dev ens801 ingress prio 1 protocol all flower src_mac
+ 68:dd:ac:dc:19:00 skip_sw classid ffff:b
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -1885,8 +1768,7 @@ To direct 4 source MAC addresses to Rx queues 10\-13:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-K ens801 hw\-tc\-offload on
+ tc qdisc add dev ens801 clsact
+ tc filter add dev ens801 ingress prio 1 protocol all flower src_mac
+@@ -1897,8 +1779,7 @@ tc filter add dev ens801 ingress prio 1 protocol all flower src_mac
+ 68:dd:ac:dc:19:02 skip_sw classid ffff:d
+ tc filter add dev ens801 ingress prio 1 protocol all flower src_mac
+ 68:dd:ac:dc:19:03 skip_sw classid ffff:e
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .SS Intel(R) Ethernet Flow Director
+@@ -1973,11 +1854,9 @@ To enable or disable the Intel Ethernet Flow Director and these filters:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-K <ethX> ntuple <off|on>
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -1994,11 +1873,9 @@ To display all of the active filters:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-u <ethX>
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -2006,13 +1883,11 @@ To add a new filter:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-U <ethX> flow\-type <type> src\-ip <ip> [m <ip_mask>] dst\-ip <ip>
+ [m <ip_mask>] src\-port <port> [m <port_mask>] dst\-port <port> [m <port_mask>]
+ action <queue>
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -2062,11 +1937,9 @@ To delete a filter:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-U <ethX> delete <N>
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -2079,12 +1952,10 @@ To add a filter that directs packet to queue 2:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-U <ethX> flow\-type tcp4 src\-ip 192.168.10.1 dst\-ip \e
+ 192.168.10.2 src\-port 2000 dst\-port 2001 action 2 [loc 1]
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -2092,12 +1963,10 @@ To set a filter using only the source and destination IP address:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-U <ethX> flow\-type tcp4 src\-ip 192.168.10.1 dst\-ip \e
+ 192.168.10.2 action 2 [loc 1]
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -2106,12 +1975,10 @@ the \fBuser\-def\fP field contains the offset (4 bytes) and the pattern (0xffff)
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-U <ethX> flow\-type tcp4 src\-ip 192.168.10.1 dst\-ip \e
+ 192.168.10.2 user\-def 0x4FFFF action 2 [loc 1]
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -2120,12 +1987,10 @@ port 80, and then send it to queue 7:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-U enp130s0 flow\-type tcp4 src\-ip 192.168.0.1 dst\-ip 192.168.0.5 \e
+ src\-port 5300 dst\-port 80 action 7
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -2134,12 +1999,10 @@ matched src\-ip is 192.*.*.* (inverted mask):
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-U <ethX> flow\-type tcp4 src\-ip 192.168.0.0 m 0.255.255.255 dst\-ip \e
+ 192.168.5.12 src\-port 12600 dst\-port 31 action 12
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -2151,12 +2014,10 @@ input set. For example, issuing the following two commands is acceptable:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-U enp130s0 flow\-type ip4 src\-ip 192.168.0.1 src\-port 5300 action 7
+ ethtool \-U enp130s0 flow\-type ip4 src\-ip 192.168.0.5 src\-port 55 action 10
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -2165,12 +2026,10 @@ specifies \fBsrc\-ip\fP and the second specifies \fBdst\-ip\fP:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-U enp130s0 flow\-type ip4 src\-ip 192.168.0.1 src\-port 5300 action 7
+ ethtool \-U enp130s0 flow\-type ip4 dst\-ip 192.168.0.5 src\-port 55 action 10
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -2194,15 +2053,13 @@ command in the following way:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ +\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-+
+ | 31    28    24    20    16 | 15    12    8    4    0  |
+ +\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-+
+ | offset into packet payload | 2 bytes of flexible data |
+ +\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-+
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -2210,11 +2067,9 @@ For example:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ \&... user\-def 0x4FFFF ...
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -2224,11 +2079,9 @@ beginning of the packet. Thus:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ flow\-type tcp4 ... user\-def 0x8BEAF ...
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -2255,11 +2108,9 @@ more options for Receive Side Scaling (RSS) hash byte configuration.
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-N <ethX> rx\-flow\-hash <type> <option>
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -2308,11 +2159,9 @@ traffic, use the following:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-N <ethX> rx\-flow\-hash tcp4 sd
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -2321,11 +2170,9 @@ following:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-N <ethX> rx\-flow\-hash udp6 sdfn
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .SS Accelerated Receive Flow Steering (aRFS)
+@@ -2368,11 +2215,9 @@ Enable the Intel Ethernet Flow Director and ntuple filters using ethtool:
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-K <ethX> ntuple on
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .IP 2. 3
+@@ -2380,12 +2225,10 @@ Set up the number of entries in the global flow table. For example:
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ NUM_RPS_ENTRIES=16384
+ echo $NUM_RPS_ENTRIES > /proc/sys/net/core/rps_sock_flow_entries
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .IP 3. 3
+@@ -2393,14 +2236,12 @@ Set up the number of entries in the per\-queue flow table. For example:
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ NUM_RX_QUEUES=64
+ for file in /sys/class/net/$IFACE/queues/rx\-*/rps_flow_cnt; do
+ echo $(($NUM_RPS_ENTRIES/$NUM_RX_QUEUES)) > $file;
+ done
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .IP 4. 3
+@@ -2409,11 +2250,9 @@ until the next reboot):
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ systemctl stop irqbalance
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .IP 5. 3
+@@ -2421,11 +2260,9 @@ Configure the interrupt affinity:
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ set_irq_affinity <ethX>
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .UNINDENT
+@@ -2434,11 +2271,9 @@ To disable aRFS using ethtool:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-K <ethX> ntuple off
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -2457,11 +2292,9 @@ Set the server application on the desired CPU (e.g., CPU 4):
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ taskset \-c 4 netserver
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .IP 2. 3
+@@ -2470,11 +2303,9 @@ aRFS configured. This example uses TCP over IPv4:
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ netperf \-H <Host IPv4 Address> \-t TCP_STREAM
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .UNINDENT
+@@ -2486,11 +2317,9 @@ For example, you can create 4 VFs as follows:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ echo 4 > /sys/class/net/<ethX>/device/sriov_numvfs
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -2498,11 +2327,9 @@ To disable VFs, write 0 to the same file:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ echo 0 > /sys/class/net/<ethX>/device/sriov_numvfs
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -2511,11 +2338,9 @@ how many VFs each PF supports, use the following command:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ cat /sys/class/net/<ethX>/device/sriov_totalvfs
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -2554,11 +2379,9 @@ Use the following command to display the statistics for the PF and its VFs:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ip \-s link show dev <ethX>
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -2583,11 +2406,9 @@ VLAN\(dq mode).
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ip link set dev <ethX> vf <id> vlan <vlan id>
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -2595,11 +2416,9 @@ For example, the following will configure PF eth0 and the first VF on VLAN 10:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ip link set dev eth0 vf 0 vlan 10
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .SS Enabling a VF Link If the Port Is Disconnected
+@@ -2613,11 +2432,9 @@ For example, to force link up on VF 0 bound to PF eth0:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ip link set eth0 vf 0 state enable
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -2633,11 +2450,9 @@ To change the MAC address for the specified VF:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ip link set <ethX> vf 0 mac <address>
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -2645,11 +2460,9 @@ For example:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ip link set <ethX> vf 0 mac 00:01:02:03:04:05
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -2675,11 +2488,9 @@ Hypervisor:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ip link set dev <ethX> vf 1 trust [on|off]
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -2701,11 +2512,9 @@ For promiscuous all, where \fB<ethX>\fP is a VF interface in the VM:
+ .INDENT 2.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ip link set <ethX> promisc on
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .IP \(bu 2
+@@ -2713,11 +2522,9 @@ For promiscuous multicast, where \fB<ethX>\fP is a VF interface in the VM:
+ .INDENT 2.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ip link set <ethX> allmulticast on
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .UNINDENT
+@@ -2732,11 +2539,9 @@ see all ingress traffic, use the following command:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-\-set\-priv\-flags <ethX> vf\-true\-promisc\-support on
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .UNINDENT
+@@ -2751,11 +2556,9 @@ Next, add a VLAN interface on the VF interface. For example:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ip link add link eth2 name eth2.100 type vlan id 100
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -2798,11 +2601,9 @@ PF:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ echo 1 > /sys/bus/pci/devices/<VF\(aqs PCI device ID>/transmit_lldp
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -2810,11 +2611,9 @@ For example:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ echo 1 > /sys/bus/pci/devices/0000:ad:01.0/transmit_lldp
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -2824,13 +2623,11 @@ want to want to change it to port \fB0000:ad:01.1\fP:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ echo 1 > /sys/bus/pci/devices/0000:ad:01.0/transmit_lldp
+ echo 0 > /sys/bus/pci/devices/0000:ad:01.0/transmit_lldp  # disables it on this port
+ echo 1 > /sys/bus/pci/devices/0000:ad:01.1/transmit_lldp
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .SS Virtual Function (VF) Tx Rate Limit
+@@ -2842,11 +2639,9 @@ For example, to set a maximum Tx rate limit of 8000Mbps for VF 0:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ip link set eth0 vf 0 max_tx_rate 8000
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -2854,11 +2649,9 @@ For example, to set a minimum Tx rate limit of 1000Mbps for VF 0:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ip link set eth0 vf 0 min_tx_rate 1000
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .INDENT 0.0
+@@ -2903,11 +2696,9 @@ To enable or disable automatic VF resets, use the following command:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-\-set\-priv\-flags <ethX> mdd\-auto\-reset\-vf on|off
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .SS MAC and VLAN Anti\-Spoofing Feature for VFs
+@@ -2922,11 +2713,9 @@ This feature can be disabled for a specific VF:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ip link set <ethX> vf <vf id> spoofchk {off|on}
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .UNINDENT
+@@ -2965,11 +2754,9 @@ On the PF, use the following command:
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-\-set\-priv\-flags <ethX> vf\-vlan\-pruning on|off
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -3024,12 +2811,10 @@ To change the loopback setting, use the following:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ devlink dev param set <pci/D:b:d.f> name loopback value <setting> \e
+       cmode runtime
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -3063,15 +2848,13 @@ For example:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ devlink dev param set pci/0000:b2:00.3 name loopback value prioritized cmode runtime
+ 
+ devlink dev param set pci/0000:b2:00.3 name loopback value enabled cmode runtime
+ 
+ devlink dev param set pci/0000:b2:00.3 name loopback value disabled cmode runtime
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .SS Switchdev Mode
+@@ -3111,11 +2894,9 @@ To configure the device in switchdev mode, enter the following, where
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ devlink dev eswitch set <pci/0000:##:##.#> mode switchdev
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -3123,11 +2904,9 @@ For example:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ devlink dev eswitch set pci/0000:17:00.0 mode switchdev
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -3135,11 +2914,9 @@ To configure the device in legacy mode:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ devlink dev eswitch set <pci/0000:##:##.#> mode legacy
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -3147,11 +2924,9 @@ To check the current eSwitch mode:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ devlink dev eswitch show <pci/0000:##:##.#>
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -3258,11 +3033,9 @@ following command, where \fB<vf_pr>\fP is the designated VF port representor and
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-C <vf_pr> rx\-usecs\-high <N>
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .SS Traffic Mirroring of VF
+@@ -3292,11 +3065,9 @@ a minimal filter:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ tc filter add dev <VF1_PR> ingress flower skip_sw action mirred egress mirror dev <VF2_PR>
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -3372,12 +3143,10 @@ Use the following commands to set and show the hardware switch mode:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ bridge link set dev <ethX> hwmode {vepa|veb}
+ bridge link show dev <ethX>
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .SS Jumbo Frames
+@@ -3390,12 +3159,10 @@ where \fB<ethX>\fP is the interface number:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ip link set mtu 9000 dev <ethX>
+ ip link set up dev <ethX>
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -3435,11 +3202,9 @@ To see the speed configurations your device supports, run the following:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool <ethX>
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -3448,11 +3213,9 @@ is a bitmask of the desired speeds:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-s <ethX> advertise N
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -3460,11 +3223,9 @@ For example, to have your device advertise 10000baseSR Full, use:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-s <ethX> advertise 0x80000000000
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -3557,11 +3318,9 @@ The following is an example of how to map a DSCP/ToS to a TC:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ lldptool \-T \-i <ethX> \-V APP app=<prio>,<sel>,<pid>
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -3583,11 +3342,9 @@ interface eth0:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ lldptool \-T \-i eth0 \-V APP app=63,5,0
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -3595,11 +3352,9 @@ To remove a mapping, use the following:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ lldptool \-T \-I <ethX> \-V APP \-d app=<prio>,<sel>,<pid>
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -3607,11 +3362,9 @@ To view the currently configured mappings, use the following:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ lldptool \-t \-i <ethX> \-V APP \-c
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -3639,11 +3392,9 @@ To enable LLDP:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-\-set\-priv\-flags <ethX> fw\-lldp\-agent on
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -3651,11 +3402,9 @@ To disable LLDP:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-\-set\-priv\-flags <ethX> fw\-lldp\-agent off
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -3663,11 +3412,9 @@ To check the current LLDP setting:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-\-show\-priv\-flags <ethX>
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -3699,11 +3446,9 @@ is not FEC capable:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-\-set\-priv\-flags <ethX> allow\-no\-fec\-modules\-in\-auto on
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -3752,11 +3497,9 @@ To enable or disable Rx or Tx Flow Control:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-A <ethX> rx <on|off> tx <on|off>
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -3787,12 +3530,10 @@ resolve this issue, disable and reenable LFC using ethtool:
+ .INDENT 2.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-A <ethX> rx off tx off
+ ethtool \-A <ethX> rx on tx on
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .UNINDENT
+@@ -3808,11 +3549,9 @@ For example, to set the bit rate for transmit queue 1 to 300 Mbps:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ echo 300 > /sys/class/net/<ethx>/queues/tx\-1/tx_maxrate
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -3820,11 +3559,9 @@ To remove the limit:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ echo 0 > /sys/class/net/<ethx>/queues/tx\-1/tx_maxrate
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .SS NAPI
+@@ -3855,11 +3592,9 @@ Enable L2 Forwarding offload:
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-K <ethX> l2\-fwd\-offload on
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .IP 2. 3
+@@ -3889,12 +3624,10 @@ The following are examples of how to configure 802.1ad (QinQ), where \(dq24\(dq
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ip link add link eth0 eth0.24 type vlan proto 802.1ad id 24
+ ip link add link eth0.24 eth0.24.371 type vlan proto 802.1Q id 371
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -3963,12 +3696,10 @@ To enable outer or single 802.1Q VLAN insertion and stripping and disable
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-K <ethX> rxvlan on txvlan on rx\-vlan\-stag\-hw\-parse off
+ tx\-vlan\-stag\-hw\-insert off
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -3977,12 +3708,10 @@ To enable outer or single 802.1ad VLAN insertion and stripping and disable
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-K <ethX> rxvlan off txvlan off rx\-vlan\-stag\-hw\-parse on
+ tx\-vlan\-stag\-hw\-insert on
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -3990,11 +3719,9 @@ To enable outer or single VLAN filtering:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-K <ethX> rx\-vlan\-filter on rx\-vlan\-stag\-filter on
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -4002,11 +3729,9 @@ To disable outer or single VLAN filtering:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-K <ethX> rx\-vlan\-filter off rx\-vlan\-stag\-filter off
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .SS Combining QinQ with SR\-IOV VFs
+@@ -4059,11 +3784,9 @@ To see VLAN filtering and offload capabilities, use the following command:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-k <ethX> | grep vlan
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .SS IEEE 1588 Precision Time Protocol (PTP) Hardware Clock (PHC)
+@@ -4075,11 +3798,9 @@ the device:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-T <ethX>
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -4101,11 +3822,9 @@ which is available in the linuxptp utility, to enable this setting:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ hwstamp_ctl \-i <ethX> \-t 1 \-r 1
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -4174,8 +3893,7 @@ Dumping the DPLL pins
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ $ ./tools/net/ynl/cli.py \-\-spec Documentation/netlink/specs/dpll.yaml \-\-dump pin\-get
+ [{\(aqboard\-label\(aq: \(aq1588\-TIME_SYNC\(aq,
+   \(aqcapabilities\(aq: set(),
+@@ -4216,8 +3934,7 @@ $ ./tools/net/ynl/cli.py \-\-spec Documentation/netlink/specs/dpll.yaml \-\-dump
+   \(aqphase\-adjust\-max\(aq: 0,
+   \(aqphase\-adjust\-min\(aq: 0,
+   \(aqtype\(aq: \(aqint\-oscillator\(aq}]
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -4225,8 +3942,7 @@ Dumping the DPLL devices
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ $ ./tools/net/ynl/cli.py \-\-spec Documentation/netlink/specs/dpll.yaml \-\-dump device\-get
+ [{\(aqclock\-id\(aq: 282574471561216,
+   \(aqid\(aq: 6,
+@@ -4235,8 +3951,7 @@ $ ./tools/net/ynl/cli.py \-\-spec Documentation/netlink/specs/dpll.yaml \-\-dump
+   \(aqmode\-supported\(aq: [\(aqautomatic\(aq],
+   \(aqmodule\-name\(aq: \(aqice\(aq,
+   \(aqtype\(aq: \(aqeec\(aq}]
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .SS Earliest TxTime First (ETF) Offloads
+@@ -4256,13 +3971,11 @@ classes. For example:
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ tc qdisc add dev <ethX> handle 100: parent root mqprio num_tc 3 \e
+   map 2 2 1 0 2 2 2 2 2 2 2 2 2 2 2 2 \e
+   queues 1@0 1@1 2@2 \e
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -4273,12 +3986,10 @@ example, to set the ETF qdisc for traffic class number 0:
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ tc qdisc replace dev <ethX> parent 100:1 etf \e
+   clockid CLOCK_TAI delta 300000 offload
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .UNINDENT
+@@ -4294,11 +4005,9 @@ the following:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-k <ethX>
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -4306,11 +4015,9 @@ To enable or disable Tx and Rx checksum offload features, run the following:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-K <ethX> [tx|rx] [on|off]
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -4324,11 +4031,9 @@ To change Tx generic checksum offloads, use the following:
+ .INDENT 2.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-K <ethX> tx\-checksum\-ip\-generic [on|off]
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .UNINDENT
+@@ -4361,11 +4066,9 @@ To view the current state of all offloads:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-k <ethX>
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .SS UDP Segmentation Offload
+@@ -4393,11 +4096,9 @@ To enable/disable UDP Segmentation Offload, issue the following command:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-K <ethX> tx\-udp\-segmentation [off|on]
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .SS Runtime Control of CRC/FCS Stripping
+@@ -4423,11 +4124,9 @@ Use the following ethtool command to enable or disable FCS/CRC stripping:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-K <ethX> rx\-fcs on|off
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -4436,11 +4135,9 @@ reported from ethtool:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-k <ethX>
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .SS Using Devlink to update a device\(aqs NVM
+@@ -4478,11 +4175,9 @@ to update the device NVM. However, we recommend that you use NVMUpdate.
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ devlink dev flash pci/0000:3b:00.0 file filename.bin
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -4523,11 +4218,9 @@ which configuration was set. Use the following command:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ devlink port split <pci/D:b:d.f>/0 count <num>
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -4565,8 +4258,7 @@ For example, if your device had the following configurations defined in its NVM:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ice 0000:16:00.0:  Status  Split      Quad 0         Quad 1
+ ice 0000:16:00.0:          count  L0  L1  L2  L3  L4  L5  L6  L7
+ ice 0000:16:00.0: Active   2     100   \-   \-   \- 100   \-   \-   \-
+@@ -4575,8 +4267,7 @@ ice 0000:16:00.0:          4      25  25  25  25   \-   \-   \-   \-
+ ice 0000:16:00.0:          4      25  25   \-   \-  25  25   \-   \-
+ ice 0000:16:00.0:          8      10  10  10  10  10  10  10  10
+ ice 0000:16:00.0:          1     100   \-   \-   \-   \-   \-   \-   \-
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -4584,11 +4275,9 @@ If you call:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ devlink port split pci/0000.16:00.0/0 count 4
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -4596,11 +4285,9 @@ Your device will be configured for:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ice 0000:16:00.0:          4      25  25  25  25   \-   \-   \-   \-
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -4608,11 +4295,9 @@ If you call the same command again, your device will be configured for:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ice 0000:16:00.0:          4      25  25   \-   \-  25  25   \-   \-
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -4622,11 +4307,9 @@ configurations defined it its NVM) and will be set to:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ice 0000:16:00.0:          4      25  25  25  25   \-   \-   \-   \-
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .SS Firmware Logs
+@@ -4654,11 +4337,9 @@ Set log levels. For example:
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ echo normal > /sys/kernel/debug/ice/0000:18:00.0/fwlog/modules/all
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .IP 2. 3
+@@ -4666,11 +4347,9 @@ Turn on firmware logging:
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ echo 1 > /sys/kernel/debug/ice/0000:18:00.0/fwlog/enable
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .IP 3. 3
+@@ -4680,11 +4359,9 @@ Turn off firmware logging:
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ echo 0 > /sys/kernel/debug/ice/0000:18:00.0/fwlog/enable
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .IP 5. 3
+@@ -4692,11 +4369,9 @@ Save data to a file:
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ cat /sys/kernel/debug/ice/0000:18:00.0/fwlog/data > fwlog.bin
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .IP 6. 3
+@@ -4725,11 +4400,9 @@ To configure modules and verbosity levels:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ echo <log_level> > /sys/kernel/debug/ice/0000\e:18\e:00.0/fwlog/modules/<module>
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -4834,11 +4507,9 @@ To set a single module to \fBverbose\fP:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ echo verbose > /sys/kernel/debug/ice/0000\e:18\e:00.0/fwlog/modules/link
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -4846,13 +4517,11 @@ To set multiple modules and then issue the command multiple times:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ echo verbose > /sys/kernel/debug/ice/0000\e:18\e:00.0/fwlog/modules/link
+ echo warning > /sys/kernel/debug/ice/0000\e:18\e:00.0/fwlog/modules/ctrl
+ echo none > /sys/kernel/debug/ice/0000\e:18\e:00.0/fwlog/modules/dcb
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -4860,11 +4529,9 @@ To set all the modules to the same value:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ echo normal > /sys/kernel/debug/ice/0000\e:18\e:00.0/fwlog/modules/all
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -4873,11 +4540,9 @@ module):
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ cat /sys/kernel/debug/ice/0000\e:18\e:00.0/fwlog/modules/general
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -4885,11 +4550,9 @@ To read the \fBlog_level\fP of all the modules:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ cat /sys/kernel/debug/ice/0000\e:18\e:00.0/fwlog/modules/all
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -4900,11 +4563,9 @@ To enable firmware logging:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ echo 1 > /sys/kernel/debug/ice/0000\e:18\e:00.0/fwlog/enable
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -4912,11 +4573,9 @@ To disable firmware logging:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ echo 0 > /sys/kernel/debug/ice/0000\e:18\e:00.0/fwlog/enable
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -4928,11 +4587,9 @@ To retrieve the firmware log data and output it to a binary file:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ cat /sys/kernel/debug/ice/0000\e:18\e:00.0/fwlog/data > fwlog.bin
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -4940,11 +4597,9 @@ To clear the contents of the firmware log data:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ echo 0 > /sys/kernel/debug/ice/0000\e:18\e:00.0/fwlog/data
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -4977,11 +4632,9 @@ An example to set the value is:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ echo 50 > /sys/kernel/debug/ice/0000\e:18\e:00.0/fwlog/nr_messages
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -4989,11 +4642,9 @@ To see the currently configured value:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ cat /sys/kernel/debug/ice/0000\e:18\e:00.0/fwlog/nr_messages
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -5006,11 +4657,9 @@ To change the amount of memory allocated for firmware log data, write to
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ echo 128K > /sys/kernel/debug/ice/0000\e:18\e:00.0/fwlog/log_size
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -5060,11 +4709,9 @@ To dump all clusters:
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ echo > /sys/kernel/debug/ice/<pci_addr>/fw/dump_cluster_id
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .IP \(bu 2
+@@ -5072,11 +4719,9 @@ To dump a single cluster:
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ echo <cluster ID> > /sys/kernel/debug/ice/<pci_addr>/fw/dump_cluster_id
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -5084,9 +4729,8 @@ The cluster ID values vary depending on the Intel Ethernet controller family. Us
+ .sp
+ Possible values for \fB<cluster ID>\fP are:
+ .TS
+-center;
+-|l|l|l|.
+-_
++box center;
++l|l|l.
+ T{
+ Cluster Function
+ T}	T{
+@@ -5182,7 +4826,6 @@ T}	T{
+ T}	T{
+ 122
+ T}
+-_
+ .TE
+ .UNINDENT
+ .sp
+@@ -5190,11 +4833,9 @@ For example, to dump the CSR space, use the following:
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ echo 21 > /sys/kernel/debug/ice/<pci_addr>/fw/dump_cluster_id
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .IP 2. 3
+@@ -5206,11 +4847,9 @@ For a single cluster:
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ cat /sys/kernel/debug/ice/<pci_addr>/fw/debug_dump > ~/single_cluster_dump.bin
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .IP \(bu 2
+@@ -5218,11 +4857,9 @@ For all clusters:
+ .INDENT 3.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ cat /sys/kernel/debug/ice/<pci_addr>/fw/debug_dump > ~/all_cluster_dump.bin
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .UNINDENT
+@@ -5244,11 +4881,9 @@ Use ethtool to read the PHY registers:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-d <ethX> [raw on|off] [hex on|off] [file name]
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -5256,8 +4891,7 @@ The output of the command is similar to:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ Offset          Values
+ \-\-\-\-\-\-          \-\-\-\-\-\-
+ 0x0000:         00 00 00 00 0a 00 00 00 00 00 00 00 00 00 00 00
+@@ -5265,8 +4899,7 @@ Offset          Values
+ 0x0020:         b7 00 00 00 d4 00 00 00 00 00 00 00 00 00 00 00
+ 0x0030:         0a 00 00 00 19 00 00 00 00 00 00 00 0e 00 00 00
+ \&...
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -5282,11 +4915,9 @@ Use ethtool to read the RS FEC correctable and uncorrectable block counts:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-\-show\-fec <ethX>
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -5294,16 +4925,14 @@ The output of the command is similar to:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ FEC parameters for ethX:
+ Supported/Configured FEC encodings: Auto RS BaseR
+ Active FEC encoding: RS
+ Statistics:
+   corrected_blocks: 0
+   uncorrectable_blocks: 0
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .SS Hierarchical QoS (HQoS) Transmit Scheduler
+@@ -5338,11 +4967,9 @@ To create a devlink\-rate parent group:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ devlink port function rate add <dev/port>/<group>
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -5361,11 +4988,9 @@ device:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ devlink port function rate add pci/0000:03:00.0/operators
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -5373,11 +4998,9 @@ To create a new child node in a parent group:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ devlink port function rate add <dev/port>/<child> parent <group>
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -5399,11 +5022,9 @@ For example, the following creates the \fBclass_1\fP child node in the
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ devlink port function rate add pci/0000:03:00.0/class_1 parent operators
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -5412,11 +5033,9 @@ bus:device:function of the device:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ devlink port function rate show <dev/port>
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -5424,11 +5043,9 @@ For example:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ devlink port function rate show pci/0000:03:00.0
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -5436,15 +5053,13 @@ Example output:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ pci/0000:03:00.0/node_0 type node (root)
+ pci/0000:03:00.0/operators type node tx_share 20Mbit tx_max 100Mbit
+ tx_priority 2 tx_weight 5
+ pci/0000:03:00.0/class_1 type node parent operators
+ pci/0000:03:00.0/1 type leaf parent class_1
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -5458,11 +5073,9 @@ PF reset:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-\-reset <ethX> irq dma filter offload
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -5470,12 +5083,10 @@ CORE reset:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-\-reset <ethX> irq\-shared dma\-shared filter\-shared offload\-shared \e
+ ram\-shared
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -5483,12 +5094,10 @@ GLOBAL reset:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-\-reset <ethX> irq\-shared dma\-shared filter\-shared offload\-shared \e
+ mac\-shared phy\-shared ram\-shared
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -5522,11 +5131,9 @@ To set 16 queue pairs, regardless of what the previous configuration was:
+ .INDENT 2.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-L <ethX> combined 16 rx 0 tx 0
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -5538,11 +5145,9 @@ the \fBrx\fP and \fBtx\fP parameters. For example:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-L <ethX> combined 16
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .UNINDENT
+@@ -5552,11 +5157,9 @@ To set 16 Tx queues and 8 Rx queues:
+ .INDENT 2.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-L <ethX> combined 8 tx 8
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .UNINDENT
+@@ -5594,11 +5197,9 @@ evenly:
+ .INDENT 2.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ scripts/set_irq_affinity \-x all <interface1> , [ <interface2>, ... ]
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .IP \(bu 2
+@@ -5607,11 +5208,9 @@ are local to the adapter (same NUMA node):
+ .INDENT 2.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ scripts/set_irq_affinity \-x local <interface1> ,[ <interface2>, ... ]
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .IP \(bu 2
+@@ -5629,11 +5228,9 @@ Check if the interface is dropping Rx packets due to buffers being full
+ .INDENT 2.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-S <ethX> | grep \(dqrx_dropped\(dq
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .IP \(bu 2
+@@ -5643,11 +5240,9 @@ number of ring entries/descriptors:
+ .INDENT 2.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-G <ethX> rx <N>
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -5665,11 +5260,9 @@ To set the interrupt rate manually, you must disable adaptive mode:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-C <ethX> adaptive\-rx off adaptive\-tx off
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -5684,11 +5277,9 @@ Setting \fBrx\-usecs\fP and \fBtx\-usecs\fP to 80 will limit interrupts to about
+ .INDENT 2.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-C <ethX> adaptive\-rx off adaptive\-tx off rx\-usecs 80 tx\-usecs 80
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .UNINDENT
+@@ -5701,11 +5292,9 @@ using ethtool:
+ .INDENT 2.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-C <ethX> adaptive\-rx off adaptive\-tx off rx\-usecs 0 tx\-usecs 0
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .UNINDENT
+@@ -5721,11 +5310,9 @@ about 100,000 interrupts/second, for queues 1 and 3:
+ .INDENT 2.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-\-per\-queue <ethX> queue_mask 0xa \-\-coalesce adaptive\-rx off rx\-usecs 10
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .IP \(bu 2
+@@ -5733,11 +5320,9 @@ To show the current coalesce settings for queues 1 and 3:
+ .INDENT 2.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-\-per\-queue <ethX> queue_mask 0xa \-\-show\-coalesce
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .UNINDENT
+@@ -5762,12 +5347,10 @@ second, it limits total interrupts per second to 50,000 via the
+ .INDENT 2.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-C <ethX> adaptive\-rx off adaptive\-tx off rx\-usecs\-high 20
+ rx\-usecs 5 tx\-usecs 5
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .UNINDENT
+@@ -5783,11 +5366,9 @@ device\(aqs \fBlocal_cpulist\fP:
+ .INDENT 2.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ /sys/class/net/<ethX>/device/local_cpulist
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .IP \(bu 2
+@@ -5796,11 +5377,9 @@ documentation for the number of queues supported.) For example:
+ .INDENT 2.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-L <virt_interface> rx <max> tx <max>
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .UNINDENT
+@@ -5824,8 +5403,7 @@ when the system is sending traffic to 9 queues:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ | tx_queue_0_packets: 24163396
+ | tx_queue_1_packets: 24164623
+ | tx_queue_2_packets: 24163188
+@@ -5835,8 +5413,7 @@ when the system is sending traffic to 9 queues:
+ | tx_queue_6_packets: 23327200
+ | tx_queue_7_packets: 24163853
+ | tx_queue_8_packets: 91101417 < Too much traffic is sent from 9th
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -5852,12 +5429,10 @@ For example:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ devlink dev param set pci/0000:16:00.0 name tx_scheduling_layers
+ value 5 cmode permanent
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -5868,11 +5443,9 @@ To verify that value has been set:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ devlink dev param show pci/0000:16:00.0 name tx_scheduling_layers
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .SS MSI\-X Vector Allocation
+@@ -5892,11 +5465,9 @@ bound to a PF:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ devlink resource set <pci/D:b:d.f> path msix/<parameter> size <num>
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -5925,11 +5496,9 @@ For example, to set a PF to use 320 MSI\-X vectors:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ devlink resource set pci/0000:31:00.1 path msix/msix_eth size 320
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -5948,11 +5517,9 @@ sysfs parameter:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ echo <num> > /sys/bus/pci/devices/D:b:d.f/sriov_vf_msix_count
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -5970,11 +5537,9 @@ For example, to set a VF to 64 MSI\-X vectors, use:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ echo 64 > /sys/bus/pci/devices/0000:31:00.2/sriov_vf_msix_count
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -5991,11 +5556,9 @@ resource show\fP parameter. For example:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ devlink resource show pci/0000:31:00.1
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -6003,16 +5566,14 @@ Might return:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ name: msix size 520 occ 262 unit entry dpipe_tables none
+ resources:
+   name msix_misc size 4 unit entry dpipe_tables none
+   name: msix_eth size 48 occ 24 unit
+   name: msix_vf size 48 occ 24 unit
+   name: msix_rdma size 48 occ 24 unit
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -6063,12 +5624,10 @@ To set a VF\(aqs queue pair limit up to 64, using the global LUT:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ echo 0 > /sys/bus/pci/devices/<ethx>/sriov_drivers_autoprobe
+ echo 512 > /sys/bus/pci/devices/<ethx>/rss_lut_vf_attr
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -6076,13 +5635,11 @@ To set a VF to use its PF\(aqs LUT:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ echo 0 > /sys/bus/pci/devices/<ethx>/sriov_drivers_autoprobe
+ echo 512 > /sys/bus/pci/devices/<ethx>/rss_lut_pf_attr
+ echo 2048 > /sys/bus/pci/devices/<ethx>/rss_lut_vf_attr
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -6090,13 +5647,11 @@ To set a PF back to using its PF LUT:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ echo 0 > /sys/bus/pci/devices/<ethx>/sriov_drivers_autoprobe
+ echo 64 > /sys/bus/pci/devices/<ethx>/rss_lut_vf_attr
+ echo 2048 > /sys/bus/pci/devices/<ethx>/rss_lut_pf_attr
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -6107,11 +5662,9 @@ For example use:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ tree /sys/class/hwmon/
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -6119,12 +5672,10 @@ Might return:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ /sys/class/hwmon/
+ ├── <hwmonX> \-> ../../devices/pci0000:<bus>/<pci\-addresss\-id>/hwmon/hwmon0
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -6132,11 +5683,9 @@ The temperature data can be accessed through the sysfs interface:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ cat /sys/class/hwmon/<hwmonX>/temp1_input
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -6158,11 +5707,9 @@ parameter:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ modprobe ice dyndbg=+p
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -6176,11 +5723,9 @@ command:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ echo \(dqmodule ice +p\(dq > /sys/kernel/debug/dynamic_debug/control
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -6257,12 +5802,10 @@ the following returns a bad syntax error:
+ .INDENT 2.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ ethtool \-U p1p1 flow\-type tcp6 src\-ip 3001:1::2:1:1 dst\-ip 3001:1::1:1:1
+ src\-port 22 dst\-port 23 action 10
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .UNINDENT
+@@ -6333,15 +5876,13 @@ missing symbols after loading out\-of\-tree ice driver:
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ irdma: Unknown symbol ice_del_rdma_qset
+ irdma: Unknown symbol ice_add_rdma_qset
+ irdma: Unknown symbol ice_rdma_update_vsi_filter
+ irdma: Unknown symbol ice_rdma_request_reset
+ irdma: Unknown symbol ice_get_qos_params
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+@@ -6351,16 +5892,14 @@ and RHEL distributions):
+ .INDENT 0.0
+ .INDENT 3.5
+ .sp
+-.nf
+-.ft C
++.EX
+ Warning: weak\-updates symlinks might not be created
+ depmod: WARNING: /lib/modules/5.14.21\-150400.22\-default/kernel/drivers/infiniband/hw/irdma/irdma.ko.zst needs unknown symbol ice_del_rdma_qset
+ depmod: WARNING: /lib/modules/5.14.21\-150400.22\-default/kernel/drivers/infiniband/hw/irdma/irdma.ko.zst needs unknown symbol ice_add_rdma_qset
+ depmod: WARNING: /lib/modules/5.14.21\-150400.22\-default/kernel/drivers/infiniband/hw/irdma/irdma.ko.zst needs unknown symbol ice_rdma_update_vsi_filter
+ depmod: WARNING: /lib/modules/5.14.21\-150400.22\-default/kernel/drivers/infiniband/hw/irdma/irdma.ko.zst needs unknown symbol ice_rdma_request_reset
+ depmod: WARNING: /lib/modules/5.14.21\-150400.22\-default/kernel/drivers/infiniband/hw/irdma/irdma.ko.zst needs unknown symbol ice_get_qos_params
+-.ft P
+-.fi
++.EE
+ .UNINDENT
+ .UNINDENT
+ .sp
+diff --git a/ice.spec b/ice.spec
+index 1d94583..7efb397 100644
+--- a/ice.spec
++++ b/ice.spec
+@@ -1,6 +1,6 @@
+ Name: ice
+ Summary: Intel(R) Ethernet Connection E800 Series Linux Driver
+-Version: 2.6.6
++Version: 2.6.6.8
+ Release: 1
+ Source: %{name}-%{version}.tar.gz
+ Vendor: Intel Corporation
+@@ -110,9 +110,6 @@ done
+ rm -rf %{buildroot}
+ 
+ %files -f file.list
+-/lib/firmware/updates/intel/ice/ddp/ice-1.3.59.0.pkg
+-/lib/firmware/updates/intel/ice/ddp/ice.pkg
+-/lib/firmware/updates/intel/ice/ddp/LICENSE
+ 
+ %defattr(-,root,root)
+ %{_mandir}/man7/ice.7.gz
+diff --git a/src/ice_debugfs.c b/src/ice_debugfs.c
+index dacc5d0..94916a7 100644
+--- a/src/ice_debugfs.c
++++ b/src/ice_debugfs.c
+@@ -1365,6 +1365,31 @@ err_create_module_files:
+ 	kfree(fw_modules);
+ }
+ 
++/**
++ * ice_debugfs_port_phy_offset - Read a logical port's cached PHY offset
++ * @pf: pointer to pf struct
++ * @port_num: logical port to look up
++ * @phy_offset: on return, the port's cached PHY to PHC nanosecond distance
++ *
++ * Return: 0 on success, -ENODEV if no driver is bound to @port_num.
++ */
++static int ice_debugfs_port_phy_offset(struct ice_pf *pf, u8 port_num,
++				       u32 *phy_offset)
++{
++	struct ice_ptp_port *port;
++	int err = -ENODEV;
++
++	rcu_read_lock();
++	port = xa_load(&pf->adapter->ptp_ports, port_num);
++	if (port) {
++		*phy_offset = READ_ONCE(port->phy_time_offset);
++		err = 0;
++	}
++	rcu_read_unlock();
++
++	return err;
++}
++
+ /**
+  * ice_debugfs_command_write - write into command datum
+  * @file: the opened file
+@@ -1431,6 +1456,115 @@ ice_debugfs_command_write(struct file *file, const char __user *buf,
+ 		} else {
+ 			goto command_help;
+ 		}
++	} else if (argc == 1 &&
++		   !strncmp(argv[0], "ptp_read_phy_and_phc_time", 25)) {
++		u8 port;
++
++		for (port = 0; port < hw->ptp.num_lports; port++) {
++			u32 phy_offset = 0;
++			u64 phc, phy;
++			if (!ice_ptp_lock(hw)) {
++				dev_err(dev, "Failed to acquire PTP semaphore on debugfs PHC/PHY read\n");
++				continue;
++			}
++
++			switch (hw->mac_type) {
++			case ICE_MAC_GENERIC:
++				ret = ice_read_phy_and_phc_time_e82x(hw, port,
++								     &phy,
++								     &phc);
++				break;
++			case ICE_MAC_GENERIC_3K_E825:
++				ret = ice_read_phy_and_phc_time_eth56g(hw, port,
++								       &phy,
++								       &phc);
++				break;
++			default:
++				ret = -EIO;
++				dev_err(dev, "Only E82X devices are supported\n");
++				ice_ptp_unlock(hw);
++				goto command_write_error;
++			}
++
++			ice_ptp_unlock(hw);
++
++			if (ret)
++				goto command_write_error;
++
++			/* The PHY timer may free run, so shift the capture
++			 * into the PHC time base. Nanoseconds sit in the
++			 * upper 32 bits of both captures.
++			 */
++			ice_debugfs_port_phy_offset(pf, port, &phy_offset);
++			phy += (u64)phy_offset << 32;
++
++			dev_info(dev, "ptp_read_phy_and_phc_time: port %d PHY time: 0x%llx, PHC time: 0x%llx, PHY-PHC: %d ns\n",
++				 port, phy, phc,
++				 (s32)((u32)(phy >> 32) - (u32)(phc >> 32)));
++		}
++	} else if (argc == 1 && !strncmp(argv[0], "trigger_phy_soft_reset", 22)) {
++		struct ice_ptp_port *ptp_port = &pf->ptp.port;
++
++		if (hw->mac_type != ICE_MAC_GENERIC_3K_E825 ||
++		    pf->ptp.state != ICE_PTP_READY)
++			goto command_help;
++
++		dev_warn_ratelimited(dev, "Initiating manual PHY soft reset on port %d\n",
++				     ptp_port->port_num);
++
++		ice_port_perform_phy_soft_reset(pf, ptp_port->port_num, ptp_port);
++	} else if ((argc == 1 || argc == 2) && !strncmp(argv[0], "automatic_phy_soft_reset_enable", 31)) {
++		struct ice_ptp_port *ptp_port = &pf->ptp.port;
++
++		if (hw->mac_type != ICE_MAC_GENERIC_3K_E825 ||
++		    pf->ptp.state != ICE_PTP_READY)
++			goto command_help;
++
++		if (argc == 1) {
++			dev_info(dev, "Automatic PHY soft reset for port %d is %s\n",
++				 ptp_port->port_num,
++				 str_enabled_disabled(ptp_port->phy_soft_reset_enabled));
++		} else {
++			bool enable;
++
++			ret = kstrtobool(argv[1], &enable);
++			if (ret)
++				goto command_help;
++
++			dev_info(dev, "Automatic PHY soft reset for port %d is now %s\n",
++				 ptp_port->port_num,
++				 str_enabled_disabled(enable));
++
++			ptp_port->phy_soft_reset_enabled = enable;
++		}
++	} else if ((argc == 1 || argc == 2) && !strncmp(argv[0], "automatic_phy_soft_reset_threshold", 35)) {
++		struct ice_ptp_port *ptp_port = &pf->ptp.port;
++
++		if (hw->mac_type != ICE_MAC_GENERIC_3K_E825 ||
++		    pf->ptp.state != ICE_PTP_READY)
++			goto command_help;
++
++		if (argc == 1) {
++			dev_info(dev, "Automatic PHY soft reset threshold for port %d is %u\n",
++				 ptp_port->port_num,
++				 ptp_port->phy_soft_reset_threshold);
++		} else {
++			u32 threshold;
++
++			ret = kstrtou32(argv[1], 0, &threshold);
++			if (ret)
++				goto command_help;
++
++			/* The threshold cannot be zero */
++			if (!threshold)
++				goto command_help;
++
++			dev_info(dev, "Automatic PHY soft reset threshold for port %d is now %u\n",
++				 ptp_port->port_num,
++				 threshold);
++
++			ptp_port->phy_soft_reset_threshold = threshold;
++		}
+ 	} else if (argc == 2 && !strncmp(argv[0], "dump", 4) &&
+ 		   !strncmp(argv[1], "switch", 6)) {
+ 		ret = ice_dump_sw_cfg(hw);
+@@ -1591,6 +1725,13 @@ command_help:
+ #endif /* ICE_ADD_PROBES */
+ 		if (ice_is_feature_supported(pf, ICE_F_PHY_RCLK))
+ 			dev_info(dev, "\t dump rclk_status\n");
++		if (hw->mac_type == ICE_MAC_GENERIC_3K_E825 &&
++		    pf->ptp.state == ICE_PTP_READY) {
++			dev_info(dev, "\t trigger_phy_soft_reset\n");
++			dev_info(dev, "\t automatic_phy_soft_reset_enable [0|1]\n");
++			dev_info(dev, "\t automatic_phy_soft_reset_threshold [threshold]\n");
++		}
++		dev_info(dev, "\t ptp_read_phy_and_phc_time\n");
+ 		ret = -EINVAL;
+ 		goto command_write_error;
+ 	}
+diff --git a/src/ice_dpll.c b/src/ice_dpll.c
+index c788854..e01bc69 100644
+--- a/src/ice_dpll.c
++++ b/src/ice_dpll.c
+@@ -3208,6 +3208,9 @@ static void ice_dpll_deinit_worker(struct ice_pf *pf)
+ {
+ 	struct ice_dplls *d = &pf->dplls;
+ 
++	if (!d->kworker)
++		return;
++
+ 	kthread_cancel_delayed_work_sync(&d->work);
+ 	kthread_destroy_worker(d->kworker);
+ }
+diff --git a/src/ice_ethtool.c b/src/ice_ethtool.c
+index 394d663..38e83e4 100644
+--- a/src/ice_ethtool.c
++++ b/src/ice_ethtool.c
+@@ -232,6 +232,7 @@ static const struct ice_stats ice_gstrings_pf_stats[] = {
+ 	ICE_PF_STAT(ICE_TX_HWTSTAMP_FLUSHED, ptp.tx_hwtstamp_flushed),
+ 	ICE_PF_STAT(ICE_TX_HWTSTAMP_DISCARDED, ptp.tx_hwtstamp_discarded),
+ 	ICE_PF_STAT(ICE_LATE_CACHED_PHC_UPDATES, ptp.late_cached_phc_updates),
++	ICE_PF_STAT(ICE_PTP_PHY_SOFT_RESETS, ptp.port.phy_soft_resets),
+ };
+ 
+ static const u32 ice_regs_dump_list[] = {
+diff --git a/src/ice_ethtool.h b/src/ice_ethtool.h
+index 28d1fbd..9a5de5b 100644
+--- a/src/ice_ethtool.h
++++ b/src/ice_ethtool.h
+@@ -210,6 +210,7 @@ struct ice_stats {
+ #define ICE_TX_HWTSTAMP_FLUSHED		"tx_hwtstamp_flushed"
+ #define ICE_TX_HWTSTAMP_DISCARDED	"tx_hwtstamp_discarded"
+ #define ICE_LATE_CACHED_PHC_UPDATES	"late_cached_phc_updates"
++#define ICE_PTP_PHY_SOFT_RESETS		"ptp_phy_soft_resets"
+ 
+ struct ice_phy_type_to_ethtool {
+ 	u64 aq_link_speed;
+diff --git a/src/ice_flex_pipe.c b/src/ice_flex_pipe.c
+index 739ba3f..22548e6 100644
+--- a/src/ice_flex_pipe.c
++++ b/src/ice_flex_pipe.c
+@@ -1531,7 +1531,7 @@ ice_adapter_find_prof_id_with_mask(struct ice_hw *hw, enum ice_block blk,
+ {
+ 	struct ice_hw *adapter_hw = ice_get_primary_hw(
+ hw->back);
+-	struct ice_es *es = &adapter_hw->blk[blk].es;
++	struct ice_es *es;
+ 
+ 	/* For FD, we don't want to reuse an existing profile with the same
+ 	 * field vector and mask. This will cause rule interference.
+@@ -1539,6 +1539,12 @@ hw->back);
+ 	if (blk == ICE_BLK_FD)
+ 		return -ENOENT;
+ 
++	/* Guard against the primary port being mid-removal */
++	if (!adapter_hw || !adapter_hw->blk[blk].es.t)
++		return -ENOENT;
++
++	es = &adapter_hw->blk[blk].es;
++
+ 	for (u8 i = 0; i < es->count; i++) {
+ 		u16 off = i * es->fvw;
+ 
+@@ -2645,6 +2651,7 @@ void ice_free_hw_tbls(struct ice_hw *hw)
+ 		kfree(hw->blk[i].prof.t);
+ 		kfree(hw->blk[i].prof_redir.t);
+ 		kfree(hw->blk[i].es.t);
++		hw->blk[i].es.t = NULL; /* prevent dangling pointer use after free */
+ 		kfree(hw->blk[i].es.ref_count);
+ 		kfree(hw->blk[i].es.written);
+ 		kfree(hw->blk[i].es.mask_ena);
+@@ -3466,8 +3473,8 @@ hw->back);
+ 								    es, masks,
+ 								    &prof_id);
+ 			if (status)
+-				status = ice_alloc_prof_id(primary, blk,
+-							   &prof_id);
++				status = ice_alloc_prof_id(primary ? primary : hw,
++							   blk, &prof_id);
+ 			else
+ 				status = ice_subscribe_prof_id(hw, blk,
+ 							       prof_id);
+diff --git a/src/ice_main.c b/src/ice_main.c
+index 14eebe1..3cfdf24 100644
+--- a/src/ice_main.c
++++ b/src/ice_main.c
+@@ -33,7 +33,7 @@
+ #define DRV_VERSION_MINOR 6
+ #define DRV_VERSION_BUILD 6
+ 
+-#define DRV_VERSION	"2.6.6"
++#define DRV_VERSION	"2.6.6.8"
+ #define DRV_SUMMARY	"Intel(R) Ethernet Connection E800 Series Linux Driver"
+ #ifdef ICE_ADD_PROBES
+ #define DRV_VERSION_EXTRA "_probes"
+diff --git a/src/ice_ptp.c b/src/ice_ptp.c
+index c359606..d3876af 100644
+--- a/src/ice_ptp.c
++++ b/src/ice_ptp.c
+@@ -2247,6 +2247,33 @@ static u64 ice_ptp_extend_32b_ts(u64 cached_phc_time, u32 in_tstamp)
+ 	return ns;
+ }
+ 
++/**
++ * ice_ptp_phy_time_offset - Read the cached PHY to PHC nanosecond distance
++ * @pf: Board private structure
++ */
++static u32 ice_ptp_phy_time_offset(struct ice_pf *pf)
++{
++	return READ_ONCE(pf->ptp.port.phy_time_offset);
++}
++
++/**
++ * ice_ptp_extend_phy_32b_ts - Extend a PHY timestamp into PHC time
++ * @cached_phc_time: recently cached copy of PHC time
++ * @in_tstamp: 32b nominal nanoseconds timestamp captured by the PHY
++ * @phy_offset: cached nanosecond distance from the PHY timer to the PHC
++ *
++ * On E825 the PHY timer is never programmed and free runs in its own time
++ * base. Shift the capture into the PHC time base first, which only needs the
++ * offset modulo 2^32, then extend it as usual. @phy_offset is zero on devices
++ * whose PHY timer tracks the PHC, making this equivalent to calling
++ * ice_ptp_extend_32b_ts() directly.
++ */
++static u64 ice_ptp_extend_phy_32b_ts(u64 cached_phc_time, u32 in_tstamp,
++				     u32 phy_offset)
++{
++	return ice_ptp_extend_32b_ts(cached_phc_time, in_tstamp + phy_offset);
++}
++
+ /**
+  * ice_ptp_extend_40b_ts - Convert a 40b timestamp to 64b nanoseconds
+  * @pf: Board private structure
+@@ -2286,8 +2313,9 @@ static u64 ice_ptp_extend_40b_ts(struct ice_pf *pf, u64 in_tstamp)
+ 		return 0;
+ 	}
+ 
+-	ticks = ice_ptp_extend_32b_ts(READ_ONCE(pf->ptp.cached_phc_time),
+-				      (in_tstamp >> 8) & mask);
++	ticks = ice_ptp_extend_phy_32b_ts(READ_ONCE(pf->ptp.cached_phc_time),
++					  (in_tstamp >> 8) & mask,
++					  ice_ptp_phy_time_offset(pf));
+ 	return ice_tspll_ticks2ns(&pf->hw, ticks);
+ }
+ 
+@@ -2305,7 +2333,7 @@ ice_ptp_is_tx_tracker_up(struct ice_ptp_tx *tx)
+ {
+ 	lockdep_assert_held(&tx->lock);
+ 
+-	return tx->init && !tx->calibrating;
++	return tx->init && !tx->disabled;
+ }
+ 
+ /**
+@@ -2319,6 +2347,7 @@ void ice_ptp_req_tx_single_tstamp(struct ice_ptp_tx *tx, u8 idx)
+ 	struct ice_ptp_port *ptp_port;
+ 	unsigned long flags;
+ 	struct sk_buff *skb;
++	struct device *dev;
+ 	struct ice_pf *pf;
+ 
+ 	if (!tx->init)
+@@ -2326,6 +2355,7 @@ void ice_ptp_req_tx_single_tstamp(struct ice_ptp_tx *tx, u8 idx)
+ 
+ 	ptp_port = container_of(tx, struct ice_ptp_port, tx);
+ 	pf = ptp_port_to_pf(ptp_port);
++	dev = ice_pf_to_dev(pf);
+ 	params = &pf->hw.ptp.phy.e810;
+ 
+ 	/* Drop packets which have waited for more than 2 seconds */
+@@ -2348,7 +2378,13 @@ void ice_ptp_req_tx_single_tstamp(struct ice_ptp_tx *tx, u8 idx)
+ 
+ 	spin_lock_irqsave(&params->atqbal_wq.lock, flags);
+ 
+-	params->atqbal_flags |= ATQBAL_FLAGS_INTR_IN_PROGRESS;
++	if (test_and_set_bit(ATQBAL_FLAGS_INTR_IN_PROGRESS,
++			     params->atqbal_flags)) {
++		dev_dbg(dev, "%s: low latency interrupt request already in progress?\n",
++			__func__);
++		spin_unlock_irqrestore(&params->atqbal_wq.lock, flags);
++		return;
++	}
+ 
+ 	/* Write TS index to read to the PF register so the FW can read it */
+ 	wr32(&pf->hw, PF_SB_ATQBAL,
+@@ -2391,7 +2427,8 @@ void ice_ptp_complete_tx_single_tstamp(struct ice_ptp_tx *tx)
+ 
+ 	spin_lock_irqsave(&params->atqbal_wq.lock, flags);
+ 
+-	if (!(params->atqbal_flags & ATQBAL_FLAGS_INTR_IN_PROGRESS))
++	if (!test_and_clear_bit(ATQBAL_FLAGS_INTR_IN_PROGRESS,
++				params->atqbal_flags))
+ 		dev_dbg(dev, "%s: low latency interrupt request not in progress?\n",
+ 			__func__);
+ 
+@@ -2399,8 +2436,6 @@ void ice_ptp_complete_tx_single_tstamp(struct ice_ptp_tx *tx)
+ 	hi = rd32(&pf->hw, PF_SB_ATQBAH);
+ 
+ 	/* Wake up threads waiting on low latency interface */
+-	params->atqbal_flags &= ~ATQBAL_FLAGS_INTR_IN_PROGRESS;
+-
+ 	wake_up_locked(&params->atqbal_wq);
+ 
+ 	spin_unlock_irqrestore(&params->atqbal_wq.lock, flags);
+@@ -2755,7 +2790,7 @@ ice_ptp_alloc_tx_tracker(struct ice_ptp_tx *tx)
+ 	tx->tstamps = tstamps;
+ 	tx->in_use = in_use;
+ 	tx->init = 1;
+-	tx->calibrating = 0;
++	tx->disabled = 0;
+ 	tx->last_ll_ts_idx_read = -1;
+ 
+ 	spin_lock_init(&tx->lock);
+@@ -3195,13 +3230,13 @@ static void ice_ptp_wait_for_offsets(struct work_struct *work)
+ 	if (ice_is_reset_in_progress(pf->state))
+ 		goto err;
+ 
+-	if (port->tx.calibrating) {
++	if (port->tx.disabled) {
+ 		tx_err = ice_ptp_check_tx_fifo(port);
+ 		if (!tx_err)
+ 			tx_err = ice_phy_cfg_tx_offset_e82x(&pf->hw,
+ 							    port->port_num);
+ 		if (!tx_err)
+-			port->tx.calibrating = false;
++			port->tx.disabled = false;
+ 	}
+ 
+ 	if (port->rx_calibrating) {
+@@ -3255,6 +3290,43 @@ static int ice_ptp_port_phy_stop(struct ice_ptp_port *ptp_port)
+ 	return err;
+ }
+ 
++/**
++ * ice_ptp_update_phy_offset - Cache the PHC to PHY timer difference
++ * @pf: Board private structure
++ *
++ * The E825 PHY port timer is left free running, so capture how far it is from
++ * the PHC and cache the difference. Only that difference is needed to rebuild
++ * a full 64 bit timestamp from the 32 bits the PHY reports.
++ */
++static int ice_ptp_update_phy_offset(struct ice_pf *pf)
++{
++	struct ice_ptp_port *ptp_port = &pf->ptp.port;
++	struct ice_hw *hw = &pf->hw;
++	u64 phy_time, phc_time;
++	int err;
++
++	if (hw->mac_type != ICE_MAC_GENERIC_3K_E825)
++		return 0;
++
++	if (!ice_ptp_lock(hw))
++		return -EBUSY;
++
++	err = ice_read_phy_and_phc_time_eth56g(hw, ptp_port->port_num,
++					       &phy_time, &phc_time);
++	ice_ptp_unlock(hw);
++	if (err) {
++		dev_err(ice_pf_to_dev(pf), "PTP failed to read PHY time on port %u, err %d\n",
++			ptp_port->port_num, err);
++		return err;
++	}
++
++	/* Both captures carry nanoseconds in their upper 32 bits */
++	WRITE_ONCE(ptp_port->phy_time_offset,
++		   (u32)(phc_time >> 32) - (u32)(phy_time >> 32));
++
++	return 0;
++}
++
+ /**
+  * ice_ptp_port_phy_restart - (Re)start and calibrate PHY timestamping
+  * @ptp_port: PTP port for which the PHY start is set
+@@ -3287,7 +3359,7 @@ static int ice_ptp_port_phy_restart(struct ice_ptp_port *ptp_port)
+ 		 * PHY offset
+ 		 */
+ 		spin_lock(&ptp_port->tx.lock);
+-		ptp_port->tx.calibrating = true;
++		ptp_port->tx.disabled = true;
+ 		spin_unlock(&ptp_port->tx.lock);
+ 		ptp_port->tx_fifo_busy_cnt = 0;
+ 		ptp_port->rx_calibrating = true;
+@@ -3299,9 +3371,19 @@ static int ice_ptp_port_phy_restart(struct ice_ptp_port *ptp_port)
+ 
+ 		queue_delayed_work(system_unbound_wq, &ptp_port->ov_work, 0);
+ 		break;
+-	case ICE_MAC_GENERIC_3K_E825:
++	case ICE_MAC_GENERIC_3K_E825: {
++		int offset_err;
++
+ 		err = ice_start_phy_timer_eth56g(hw, port);
++		/* The start above soft resets the free running port timer, so
++		 * its distance to the PHC has to be recaptured even when the
++		 * start failed partway through.
++		 */
++		offset_err = ice_ptp_update_phy_offset(pf);
++		if (!err)
++			err = offset_err;
+ 		break;
++	}
+ 	default:
+ 		err = -ENODEV;
+ 	}
+@@ -3427,8 +3509,10 @@ skip_unused_txclk_disable:
+ 		ice_ptp_port_phy_restart(ptp_port);
+ 		return;
+ 	case ICE_MAC_GENERIC_3K_E825:
+-		if (linkup)
++		if (linkup) {
++			ice_ptp_phy_soft_reset_eth56g(hw, ptp_port->port_num);
+ 			ice_ptp_port_phy_restart(ptp_port);
++		}
+ 		return;
+ 	default:
+ 		dev_warn(ice_pf_to_dev(pf), "%s: Unknown PHY type\n", __func__);
+@@ -3530,6 +3614,30 @@ static void ice_ptp_restart_all_phy(struct ice_pf *pf)
+ 	rcu_read_unlock();
+ }
+ 
++/**
++ * ice_ptp_update_phy_offset_all - Refresh cached PHY offset on all ports
++ * @pf: Board private structure
++ */
++static void ice_ptp_update_phy_offset_all(struct ice_pf *pf)
++{
++	struct ice_ptp_port *port;
++	unsigned long port_num;
++
++	rcu_read_lock();
++	xa_for_each(&pf->adapter->ptp_ports, port_num, port) {
++		if (!kref_get_unless_zero(&port->ref))
++			continue;
++		rcu_read_unlock();
++
++		if (port->link_up)
++			ice_ptp_update_phy_offset(ptp_port_to_pf(port));
++
++		kref_put(&port->ref, ice_ptp_release_port_rcu);
++		rcu_read_lock();
++	}
++	rcu_read_unlock();
++}
++
+ /**
+  * ice_ptp_adjfine - Adjust clock increment rate
+  * @info: the driver's PTP info structure
+@@ -4149,8 +4257,13 @@ ice_ptp_settime64(struct ptp_clock_info *info, const struct timespec64 *ts)
+ 	struct ice_pf *pf = ptp_info_to_pf(info);
+ 	struct timespec64 ts64 = *ts;
+ 	struct ice_hw *hw = &pf->hw;
++	ktime_t start;
++	s64 latency;
+ 	int err;
+ 
++	/* @ts is meant to land in the clock as of now, so measure from here */
++	start = ktime_get_raw();
++
+ 	/* For Vernier mode on E82X, we need to recalibrate after new settime.
+ 	 * Start with marking timestamps as invalid.
+ 	 */
+@@ -4169,6 +4282,14 @@ ice_ptp_settime64(struct ptp_clock_info *info, const struct timespec64 *ts)
+ 	ice_ptp_disable_all_perout(pf);
+ 
+ 	err = ice_ptp_write_init(pf, &ts64);
++	if (!err) {
++		/* The clock now trails @ts by the time spent programming it */
++		latency = ktime_to_ns(ktime_sub(ktime_get_raw(), start));
++		if (latency > 0 && latency <= S32_MAX &&
++		    ice_ptp_write_adj(pf, latency))
++			dev_warn(ice_pf_to_dev(pf), "Failed to compensate settime latency of %lld ns\n",
++				 latency);
++	}
+ 
+ 	/* Reenable periodic outputs */
+ 	ice_ptp_enable_all_perout(pf);
+@@ -4180,6 +4301,8 @@ ice_ptp_settime64(struct ptp_clock_info *info, const struct timespec64 *ts)
+ 	/* Recalibrate and re-enable timestamp block */
+ 	if (hw->mac_type == ICE_MAC_GENERIC)
+ 		ice_ptp_restart_all_phy(pf);
++	else if (hw->mac_type == ICE_MAC_GENERIC_3K_E825)
++		ice_ptp_update_phy_offset_all(pf);
+ exit:
+ 	if (err) {
+ 		dev_err(ice_pf_to_dev(pf), "PTP failed to set time %d\n", err);
+@@ -4275,6 +4398,10 @@ static int ice_ptp_adjtime(struct ptp_clock_info *info, s64 delta)
+ 		return err;
+ 	}
+ 
++	/* PHY timer was not adjusted, recapture its distance to the PHC */
++	if (hw->mac_type == ICE_MAC_GENERIC_3K_E825)
++		ice_ptp_update_phy_offset_all(pf);
++
+ 	ice_ptp_reset_cached_phctime(pf);
+ 
+ 	return 0;
+@@ -4476,6 +4603,12 @@ static int ice_capture_crosststamp(ktime_t *device,
+ 		return -EBUSY;
+ 	}
+ 
++	if (!ice_ptp_lock(hw)) {
++		dev_err(ice_pf_to_dev(pf), "Failed to acquire PTP hardware semaphore in capture crosststamp\n");
++		err = -EBUSY;
++		goto err_unlock;
++	}
++
+ 	/* Snapshot system time for historic interpolation */
+ 	ktime_get_snapshot(&ctx->snapshot);
+ 
+@@ -4519,6 +4652,9 @@ err_timeout:
+ 	/* Clear the master timer */
+ 	ice_ptp_src_cmd(hw, ICE_PTP_NOP);
+ 
++	ice_ptp_unlock(hw);
++
++err_unlock:
+ 	/* Release HW lock */
+ 	lock = rd32(hw, cfg->lock_reg);
+ 	lock &= ~cfg->lock_busy;
+@@ -4741,8 +4877,9 @@ void
+ ice_ptp_rx_hwtstamp(struct ice_rx_ring *rx_ring,
+ 		    union ice_32b_rx_flex_desc *rx_desc, struct sk_buff *skb)
+ {
+-	struct ice_hw *hw = &((struct ice_pf *)rx_ring->vsi->back)->hw;
++	struct ice_pf *pf = rx_ring->vsi->back;
+ 	struct skb_shared_hwtstamps *hwtstamps;
++	struct ice_hw *hw = &pf->hw;
+ 	u64 ts_ns, cached_time;
+ 	u32 ts_high;
+ 
+@@ -4762,9 +4899,14 @@ ice_ptp_rx_hwtstamp(struct ice_rx_ring *rx_ring,
+ 	 * bits itself.
+ 	 */
+ 	ts_high = le32_to_cpu(rx_desc->wb.flex_ts.ts_high);
+-	ts_ns = ice_ptp_extend_32b_ts(cached_time, ts_high);
++	ts_ns = ice_ptp_extend_phy_32b_ts(cached_time, ts_high,
++					  ice_ptp_phy_time_offset(pf));
+ 	ts_ns = ice_tspll_ticks2ns(hw, ts_ns);
+ 
++	ice_trace(rx_hwtstamp,
++		  ice_pf_to_dev((struct ice_pf *)rx_ring->vsi->back),
++		  skb, cached_time, ts_high, ts_ns);
++
+ 	hwtstamps = skb_hwtstamps(skb);
+ 	memset(hwtstamps, 0, sizeof(*hwtstamps));
+ 	hwtstamps->hwtstamp = ns_to_ktime(ts_ns);
+@@ -5086,6 +5228,270 @@ static void ice_ptp_maybe_trigger_tx_interrupt(struct ice_pf *pf)
+ 	}
+ }
+ 
++/**
++ * ice_port_perform_phy_soft_reset - Perform a PHY soft reset for E825C port
++ * @pf: Board private structure
++ * @port_num: The port number to reset
++ * @ptp_port: PTP port software structure if the port driver is loaded.
++ *
++ * Perform a PHY soft reset for the given port of the device. Note that we
++ * must still reset the PHY even if the PF driver for the port number is
++ * unloaded. In that case, the port structure won't exist and will be NULL.
++ *
++ * Context: if ptp_port is non-NULL, caller must have a valid reference to it.
++ */
++void ice_port_perform_phy_soft_reset(struct ice_pf *pf, u8 port_num,
++				     struct ice_ptp_port *ptp_port)
++{
++	struct device *dev = ice_pf_to_dev(pf);
++	struct ice_hw *hw = &pf->hw;
++	int err, err_count = 0;
++	unsigned long flags;
++
++	/* 1. If the port is active, disable new Tx timestamps */
++	if (ptp_port) {
++		spin_lock_irqsave(&ptp_port->tx.lock, flags);
++		ptp_port->tx.disabled = true;
++		spin_unlock_irqrestore(&ptp_port->tx.lock, flags);
++
++		/* Track how many times the PHY soft reset has occurred for
++		 * active ports.
++		 */
++		ptp_port->phy_soft_resets++;
++	}
++
++	/* 2. Disable PHY interrupts for the port */
++	err = ice_phy_cfg_intr_eth56g(hw, port_num, false, 1);
++	if (err) {
++		dev_warn(dev, "Failed to disable PHY interrupt for port %d, err %d. Continuing anyway\n",
++			 port_num, err);
++		err_count++;
++	}
++
++	/* 3. Trigger a PHY soft reset for the port. */
++	err = ice_ptp_phy_soft_reset_eth56g(hw, port_num);
++	if (err) {
++		dev_warn(dev, "Soft reset of PHY port %d failed, err %d. Continuing anyway\n",
++			 port_num, err);
++		err_count++;
++	}
++
++	/* 4. If the port is active, perform PHY reconfiguration */
++	if (ptp_port && ptp_port->link_up) {
++		mutex_lock(&ptp_port->ps_lock);
++		err = ice_start_phy_timer_eth56g(hw, port_num);
++		if (err) {
++			dev_warn(dev, "Failed to restart PHY port %d, err %d. Continuing anyway\n",
++				 port_num, err);
++			err_count++;
++		}
++
++		/* The soft reset restarted the free running port timer, so its
++		 * distance to the PHC must be recaptured. Skipping this leaves
++		 * every extended timestamp skewed by the old offset.
++		 */
++		err = ice_ptp_update_phy_offset(ptp_port_to_pf(ptp_port));
++		if (err) {
++			dev_warn(dev, "Failed to recapture PHY offset for port %d, err %d. Continuing anyway\n",
++				 port_num, err);
++			err_count++;
++		}
++		mutex_unlock(&ptp_port->ps_lock);
++	}
++
++	/* 5. Re-enable PHY interrupts */
++	err = ice_phy_cfg_intr_eth56g(hw, port_num, true, 1);
++	if (err) {
++		dev_warn(dev, "Failed to re-enable PHY interrupt for port %d, err %d\n",
++			 port_num, err);
++		err_count++;
++	}
++
++	/* 6. Re-enable Tx timestamps */
++	if (ptp_port) {
++		spin_lock_irqsave(&ptp_port->tx.lock, flags);
++		ptp_port->tx.disabled = false;
++		spin_unlock_irqrestore(&ptp_port->tx.lock, flags);
++
++		/* 7. Reset stuck count */
++		ptp_port->phy_stuck_count = 0;
++	}
++
++	if (err_count)
++		dev_warn_ratelimited(dev, "PHY soft reset for port %d attempted, but process encountered %d errors\n",
++				     port_num, err_count);
++	else
++		dev_warn_ratelimited(dev, "PHY soft reset for port %d complete\n",
++				     port_num);
++}
++
++static bool ice_ptp_has_tstamp_timeout(struct ice_ptp_tx *tx)
++{
++	unsigned long flags, idx;
++	bool timeouts = false;
++
++	spin_lock_irqsave(&tx->lock, flags);
++	for_each_set_bit(idx, tx->in_use, tx->len)
++		if (time_is_before_jiffies(tx->tstamps[idx].start + 2 * HZ)) {
++			timeouts = true;
++			break;
++		}
++	spin_unlock_irqrestore(&tx->lock, flags);
++
++	return timeouts;
++}
++
++/**
++ * ice_ptp_check_phy_interrupt_status - Check if E825C PHY interrupt is blocked
++ * @pf: Board private structure
++ *
++ * The E825C PHY timestamping block can become stuck such that no interrupts
++ * will be generated. This is known to occur due to software misconfiguration,
++ * but is suspected to possibly occur rarely during normal operation. If the
++ * PHY_PTP_INT_STATUS indicator for the port is stuck high, but the port PHY
++ * timestamp memory block is cleared, then port timestamp interrupt might be
++ * stuck.
++ *
++ * If a port appears stuck for two checks in a row, attempt to recover the
++ * timestamp block by performing a PHY soft reset for the associated port.
++ */
++static void ice_ptp_check_phy_interrupt_status(struct ice_pf *pf)
++{
++	struct device *dev = ice_pf_to_dev(pf);
++	u32 phy_ports_maybe_stuck = 0;
++	struct ice_ptp_port *ptp_port;
++	struct ice_hw *hw = &pf->hw;
++	u64 tstamp_ready;
++	u32 ts_status;
++	int err;
++
++	/* Only need to check for PHY lockup on E825-C devices */
++	if (hw->mac_type != ICE_MAC_GENERIC_3K_E825)
++		return;
++
++	err = ice_ptp_read_tx_hwtstamp_status_eth56g(hw, &ts_status);
++	if (err) {
++		dev_dbg(dev, "Failed to read PHY_PTP_INT_STATUS, err %d\n",
++			err);
++		return;
++	}
++
++	if (!ts_status)
++		return;
++
++	for (int port_num = 0; port_num < hw->ptp.num_lports; port_num++) {
++		u32 threshold;
++		bool enabled;
++		if (!(ts_status & BIT(port_num)))
++			continue;
++
++		err = ice_get_phy_tx_tstamp_ready(hw, port_num, &tstamp_ready);
++		if (err)
++			continue;
++
++		/* If the port has an active driver, it will have a PTP port
++		 * structure associated with this adapter. The hardware block
++		 * must be reset regardless, but additional steps are taken
++		 * for active ports.
++		 */
++		rcu_read_lock();
++		ptp_port = xa_load(&pf->adapter->ptp_ports, port_num);
++		if (!ptp_port || !kref_get_unless_zero(&ptp_port->ref))
++			ptp_port = NULL;
++		rcu_read_unlock();
++
++		if (ptp_port) {
++			threshold = ptp_port->phy_soft_reset_threshold;
++			enabled = ptp_port->phy_soft_reset_enabled;
++		} else {
++			/* Use the owner settings for ports which aren't
++			 * enabled in software.
++			 */
++			threshold = pf->ptp.port.phy_soft_reset_threshold;
++			enabled = pf->ptp.port.phy_soft_reset_enabled;
++		}
++
++		/* If the timestamp status bit for the PHY interrupt is read
++		 * high, and the timestamp ready bitmap is clear, the
++		 * timestamp interrupt might be stuck. When this occurs, new
++		 * interrupts cannot be generated for any port on the quad.
++		 *
++		 * For ports which are not enabled in software, there should
++		 * be no timestamps on the port and no activity. However, if
++		 * the hardware PHY interrupt becomes locked, we must still
++		 * clear the port to allow interrupts on that quad. For such
++		 * ports, immediately perform a soft reset when we detect the
++		 * locked state.
++		 *
++		 * For software-enabled ports, the detection logic may
++		 * generate false positives. This occurs because we cannot
++		 * guarantee reading the PHY interrupt status and the ready
++		 * bitmap atomically without change from hardware end.
++		 * Instead, keep track of how many consectutive stalls we
++		 * detect for the port. Once it exceeds the configured
++		 * threshold, perform a PHY soft reset and reset the count.
++		 *
++		 * Additionally, for software-enabled ports, check if we have
++		 * stalled timestamp requests. If a timestamp has been waiting
++		 * in software for too long, assume the PHY interrupt is stuck
++		 * and initiate a soft reset.
++		 *
++		 * Automatic recovery may be disabled, in which case instead
++		 * only log a warning but do not initiate the reset process.
++		 */
++		if (ptp_port && ice_ptp_has_tstamp_timeout(&ptp_port->tx)) {
++			if (enabled) {
++				dev_warn_ratelimited(dev, "Detected Tx timestamp timeouts on port %d. Attempting automatic recovery via PHY soft reset\n",
++						     port_num);
++				ice_port_perform_phy_soft_reset(pf, port_num, ptp_port);
++			} else {
++				dev_warn_ratelimited(dev, "Detected Tx timestamp timeouts on port %d, but automatic PHY soft reset is disabled.\n",
++						     port_num);
++			}
++		} else if (!tstamp_ready) {
++			if (ptp_port) {
++				ptp_port->phy_stuck_count++;
++				dev_dbg(dev, "Detected possible PHY interrupt stall %d consecutive times on port %d\n",
++					ptp_port->phy_stuck_count, port_num);
++			}
++
++			if (enabled) {
++				if (!ptp_port) {
++					dev_warn_ratelimited(dev, "Detected possible PHY interrupt stall on disabled port %d. Attempting automatic recovery via PHY soft reset\n",
++							     port_num);
++					ice_port_perform_phy_soft_reset(pf, port_num, NULL);
++				} else if (ptp_port->phy_stuck_count >= threshold) {
++					dev_warn_ratelimited(dev, "Detected possible PHY interrupt stall on port %d. Attempting automatic recovery via PHY soft reset\n",
++							     port_num);
++					ice_port_perform_phy_soft_reset(pf, port_num, ptp_port);
++				}
++			} else {
++				if (!ptp_port) {
++					dev_warn_ratelimited(dev, "Detected possible PHY interrupt stall on disabled port %d, but automatic PHY soft reset is disabled\n",
++							     port_num);
++				} else if (ptp_port->phy_stuck_count >= threshold) {
++					dev_warn_ratelimited(dev, "Detected possible PHY interrupt stall on port %d, but automatic PHY soft reset is disabled\n",
++							     port_num);
++					ptp_port->phy_stuck_count = 0;
++				}
++			}
++		} else {
++			/* Port appears to not be stuck, clear the count */
++			if (ptp_port) {
++				if (ptp_port->phy_stuck_count > 0)
++					dev_dbg(dev, "Clearing PHY stuck count on port %d with a stuck count of %d\n",
++						port_num, ptp_port->phy_stuck_count);
++				ptp_port->phy_stuck_count = 0;
++			}
++		}
++
++		if (ptp_port)
++			kref_put(&ptp_port->ref, ice_ptp_release_port_rcu);
++	}
++
++	pf->ptp.phy_ports_maybe_stuck = phy_ports_maybe_stuck;
++}
++
+ /**
+  * ice_ptp_periodic_work - Do PTP periodic work
+  * @info: Driver's PTP info structure
+@@ -5107,6 +5513,8 @@ static long ice_ptp_periodic_work(struct ptp_clock_info *info)
+ 	if (err)
+ 		retry = true;
+ 
++	ice_ptp_check_phy_interrupt_status(pf);
++
+ 	ice_ptp_maybe_trigger_tx_interrupt(pf);
+ 
+ 	if (ice_is_feature_supported(pf, ICE_F_CGU))
+@@ -5411,6 +5819,14 @@ bool ice_ptp_tx_tstamps_pending(struct ice_pf *pf)
+ 	if (pf->ptp.state != ICE_PTP_READY)
+ 		return false;
+ 
++	/* E810 devices with support for the low latency timestamp interrupt
++	 * have specialized handling for timestamps. They should not
++	 * re-schedule the miscellaneous interrupt.
++	 */
++	if (hw->mac_type == ICE_MAC_E810 &&
++	    hw->dev_caps.ts_dev_info.ts_ll_int_read)
++		return false;
++
+ 	switch (pf->ptp.tx_interrupt_mode) {
+ 	case ICE_PTP_TX_INTERRUPT_NONE:
+ 		return false;
+@@ -5875,6 +6291,10 @@ static int ice_ptp_init_port(struct ice_pf *pf, struct ice_ptp_port *ptp_port)
+ 
+ 	mutex_init(&ptp_port->ps_lock);
+ 
++	ptp_port->phy_soft_reset_enabled = false;
++	ptp_port->phy_soft_reset_threshold = 30;
++	ptp_port->phy_stuck_count = 0;
++
+ 	switch (hw->mac_type) {
+ 	case ICE_MAC_E810:
+ 	case ICE_MAC_E830:
+@@ -6040,6 +6460,18 @@ void ice_ptp_init(struct ice_pf *pf)
+ 
+ 	ptp->state = ICE_PTP_READY;
+ 
++	/* Seed the cached PTP link state from the current PHY link status.
++	 * On a fresh load the port structure is zeroed (link_up == false).
++	 * If the link is already up at this point no link-change edge will
++	 * follow to set it, and ice_ptp_link_change() is edge-driven, so the
++	 * flag would stay stale, stalling cached PHC updates and starving
++	 * Rx/Tx timestamps. Establish the initial level here.
++	 */
++	if (pf->hw.port_info)
++		ptp->port.link_up =
++			!!(pf->hw.port_info->phy.link_info.link_info &
++			   ICE_AQ_LINK_UP);
++
+ 	if (ice_pf_src_tmr_owned(pf))
+ #ifndef HAVE_PTP_CANCEL_WORKER_SYNC
+ 		ice_ptp_schedule_worker(ptp, 0);
+@@ -6073,6 +6505,9 @@ err_exit:
+ void ice_ptp_release(struct ice_pf *pf)
+ {
+ 	struct ice_ptp *ptp = &pf->ptp;
++	if (pf->adapter && pf->adapter->ctrl_pf == pf)
++		pf->adapter->ctrl_pf = NULL;
++
+ 	if (ptp->state == ICE_PTP_UNINIT)
+ 		return;
+ 
+diff --git a/src/ice_ptp.h b/src/ice_ptp.h
+index c28b424..bd61290 100644
+--- a/src/ice_ptp.h
++++ b/src/ice_ptp.h
+@@ -127,8 +127,9 @@ enum ice_tx_tstamp_work {
+  * @offset: offset into timestamp block to get the real index
+  * @len: length of the tstamps and in_use fields.
+  * @init: if true, the tracker is initialized;
+- * @calibrating: if true, the PHY is calibrating the Tx offset. During this
+- *               window, timestamps are temporarily disabled.
++ * @disabled: if true, new timestamp requests are disabled. This is set during
++ *            operations which might impact validity of Tx timestamps such as
++ *            during initial calibration of PHY timestamps on E82x.
+  * @has_ready_bitmap: if true, the hardware has a valid Tx timestamp ready
+  *                    bitmap register. If false, fall back to verifying new
+  *                    timestamp values against previously cached copy.
+@@ -142,7 +143,7 @@ struct ice_ptp_tx {
+ 	u8 offset;
+ 	u8 len;
+ 	u8 init : 1;
+-	u8 calibrating : 1;
++	u8 disabled : 1;
+ 	u8 has_ready_bitmap : 1;
+ 	s8 last_ll_ts_idx_read;
+ };
+@@ -150,7 +151,6 @@ struct ice_ptp_tx {
+ /* Quad and port information for initializing timestamp blocks */
+ #define INDEX_PER_QUAD		64
+ #define INDEX_PER_PORT_E82X	16
+-#define INDEX_PER_PORT		64
+ 
+ /**
+  * struct ice_ptp_port - data used to initialize an external port for PTP
+@@ -169,6 +169,9 @@ struct ice_ptp_tx {
+  * @port_num: the port number this structure represents
+  * @tx_clk: currently active Tx reference clock source
+  * @tx_clk_req: requested Tx reference clock source (new target)
++ * @phy_time_offset: cached nanosecond distance from the free running PHY timer
++ *                   to the PHC, used to extend timestamps on E825
++ * @phy_soft_resets: number of times port has been PHY soft reset
+  */
+ struct ice_ptp_port {
+ 	struct kref ref;
+@@ -181,6 +184,12 @@ struct ice_ptp_port {
+ 	u8 rx_calibrating : 1;
+ 	enum ice_e825c_ref_clk tx_clk;
+ 	enum ice_e825c_ref_clk tx_clk_req;
++	/* PHY soft reset configuration */
++	u32 phy_time_offset;
++	u32 phy_soft_resets;
++	u32 phy_soft_reset_threshold;
++	u32 phy_stuck_count;
++	bool phy_soft_reset_enabled;
+ };
+ 
+ enum ice_ptp_state {
+@@ -313,6 +322,7 @@ struct ice_ptp {
+ 	u32 tx_hwtstamp_flushed;
+ 	u32 tx_hwtstamp_discarded;
+ 	u32 late_cached_phc_updates;
++	u32 phy_ports_maybe_stuck;
+ };
+ 
+ static inline struct ice_ptp *__ptp_port_to_ptp(struct ice_ptp_port *p)
+@@ -331,7 +341,7 @@ static inline struct ice_ptp *__ptp_info_to_ptp(struct ptp_clock_info *i)
+ #define ptp_info_to_pf(i) \
+ 	container_of(__ptp_info_to_ptp((i)), struct ice_pf, ptp)
+ 
+-static inline int ice_ptp_get_seq_id(struct sk_buff *skb)
++static inline int ice_ptp_get_tx_seq_id(struct sk_buff *skb)
+ {
+ 	struct ptp_header *hdr;
+ 	int type;
+@@ -351,6 +361,33 @@ static inline int ice_ptp_get_seq_id(struct sk_buff *skb)
+ 	return be16_to_cpu(hdr->sequence_id);
+ }
+ 
++static inline int ice_ptp_get_rx_seq_id(struct sk_buff *skb)
++{
++	struct ptp_header *hdr;
++	unsigned int offset;
++	int type;
++
++	if (!skb || !skb_mac_header_was_set(skb))
++		return -1;
++
++	offset = skb->data - skb_mac_header(skb);
++	skb_push(skb, offset);
++
++	type = ptp_classify_raw(skb);
++
++	if (type == PTP_CLASS_NONE) {
++		skb_pull(skb, offset);
++		return -1;
++	}
++
++	hdr = ptp_parse_header(skb, type);
++	skb_pull(skb, offset);
++	if (!hdr)
++		return -1;
++
++	return be16_to_cpu(hdr->sequence_id);
++}
++
+ #define SYNC_EXEC_CMD			0x3
+ #define ICE_PTP_TS_VALID		BIT(0)
+ #define FIFO_EMPTY			BIT(2)
+@@ -428,6 +465,8 @@ int ice_ptp_get_phc_freq_ratio(struct ice_pf *pf,
+ 			       struct virtchnl_phc_freq_ratio *ratio);
+ #endif /* CONFIG_X86 && VIRTCHNL_PTP_SUPPORT */
+ int ice_ptp_clock_index(struct ice_pf *pf);
++void ice_port_perform_phy_soft_reset(struct ice_pf *pf, u8 port_num,
++				     struct ice_ptp_port *ptp_port);
+ #else /* IS_ENABLED(CONFIG_PTP_1588_CLOCK) */
+ static inline bool ice_is_ptp_supported(struct ice_pf *pf)
+ {
+@@ -529,5 +568,10 @@ static inline void ice_dpll_pin_idx_to_name(struct ice_pf *pf,
+ {
+ 	snprintf(pin_name, MAX_PIN_NAME, "Pin %i", pin);
+ }
++
++static void ice_port_perform_phy_soft_reset(struct ice_pf *pf, u8 port_num,
++					    struct ice_ptp_port *ptp_port)
++{
++}
+ #endif /* IS_ENABLED(CONFIG_PTP_1588_CLOCK) */
+ #endif /* _ICE_PTP_H_ */
+diff --git a/src/ice_ptp_hw.c b/src/ice_ptp_hw.c
+index 00b475f..8561927 100644
+--- a/src/ice_ptp_hw.c
++++ b/src/ice_ptp_hw.c
+@@ -777,19 +777,6 @@ static int ice_read_port_mem_eth56g(struct ice_hw *hw, u8 port, u16 offset,
+ 	return ice_read_port_eth56g(hw, port, offset, val, ETH56G_PHY_MEM_PTP);
+ }
+ 
+-/**
+- * ice_write_port_mem_eth56g - Write a port memory location
+- * @hw: pointer to the HW struct
+- * @port: Port number to be read
+- * @offset: Offset from PHY port register base
+- * @val: Pointer to the value to read (out param)
+- */
+-static int ice_write_port_mem_eth56g(struct ice_hw *hw, u8 port, u16 offset,
+-				     u32 val)
+-{
+-	return ice_write_port_eth56g(hw, port, offset, val, ETH56G_PHY_MEM_PTP);
+-}
+-
+ /**
+  * ice_write_quad_ptp_reg_eth56g - Write a PHY quad register
+  * @hw: pointer to the HW struct
+@@ -1019,65 +1006,6 @@ static int ice_write_40b_ptp_reg_eth56g(struct ice_hw *hw, u8 port,
+ 					    ETH56G_PHY_REG_PTP);
+ }
+ 
+-/**
+- * ice_write_64b_phy_reg_eth56g - Write a 64bit value to PHY registers
+- * @hw: pointer to the HW struct
+- * @port: PHY port to read from
+- * @low_addr: offset of the lower register to read from
+- * @val: the contents of the 64bit value to write to PHY
+- * @res_type: resource type
+- *
+- * Check if the caller has specified a known 64 bit register offset and write
+- * the 64bit value to the two associated 32bit PHY registers.
+- */
+-static int ice_write_64b_phy_reg_eth56g(struct ice_hw *hw, u8 port,
+-					u16 low_addr, u64 val,
+-					enum eth56g_res_type res_type)
+-{
+-	u16 high_addr;
+-	u32 lo, hi;
+-	int err;
+-
+-	if (!ice_is_64b_phy_reg_eth56g(low_addr, &high_addr))
+-		return -EINVAL;
+-
+-	lo = lower_32_bits(val);
+-	hi = upper_32_bits(val);
+-
+-	err = ice_write_port_eth56g(hw, port, low_addr, lo, res_type);
+-	if (err) {
+-		ice_debug(hw, ICE_DBG_PTP, "Failed to write to low register 0x%08x\n, err %d",
+-			  low_addr, err);
+-		return err;
+-	}
+-
+-	err = ice_write_port_eth56g(hw, port, high_addr, hi, res_type);
+-	if (err) {
+-		ice_debug(hw, ICE_DBG_PTP, "Failed to write to high register 0x%08x\n, err %d",
+-			  high_addr, err);
+-		return err;
+-	}
+-
+-	return 0;
+-}
+-
+-/**
+- * ice_write_64b_ptp_reg_eth56g - Write a 64bit value to PHY registers
+- * @hw: pointer to the HW struct
+- * @port: PHY port to read from
+- * @low_addr: offset of the lower register to read from
+- * @val: the contents of the 64bit value to write to PHY
+- *
+- * Check if the caller has specified a known 64 bit register offset and write
+- * the 64bit value to the two associated 32bit PHY registers.
+- */
+-static int ice_write_64b_ptp_reg_eth56g(struct ice_hw *hw, u8 port,
+-					u16 low_addr, u64 val)
+-{
+-	return ice_write_64b_phy_reg_eth56g(hw, port, low_addr, val,
+-					    ETH56G_PHY_REG_PTP);
+-}
+-
+ /**
+  * ice_read_ptp_tstamp_eth56g - Read a PHY timestamp out of the port memory
+  * @hw: pointer to the HW struct
+@@ -1133,8 +1061,8 @@ static int ice_read_ptp_tstamp_eth56g(struct ice_hw *hw, u8 port, u8 idx,
+  * internal PHYs of the 56G devices.
+  *
+  * To directly clear the contents of the timestamp block entirely, discarding
+- * all timestamp data at once, software should instead use
+- * ice_ptp_reset_ts_memory_quad_eth56g().
++ * all timestamp data at once, software should instead perform a PHY soft
++ * reset via ice_ptp_phy_soft_reset_eth56g().
+  *
+  * This function should only be called on an idx whose bit is set according to
+  * ice_get_phy_tx_tstamp_ready().
+@@ -1142,24 +1070,16 @@ static int ice_read_ptp_tstamp_eth56g(struct ice_hw *hw, u8 port, u8 idx,
+ static int ice_clear_ptp_tstamp_eth56g(struct ice_hw *hw, u8 port, u8 idx)
+ {
+ 	u64 unused_tstamp;
+-	u16 lo_addr;
+ 	int err;
+ 
+-	/* Read the timestamp register to ensure the timestamp status bit is
+-	 * cleared.
++	/* Per the PHY spec, reading the timestamp memory location is what
++	 * clears the entry's valid bit and its corresponding (read-only)
++	 * ts_memory_status bit.
+ 	 */
+ 	err = ice_read_ptp_tstamp_eth56g(hw, port, idx, &unused_tstamp);
+ 	if (err) {
+ 		ice_debug(hw, ICE_DBG_PTP, "Failed to read the PHY timestamp register for port %u, idx %u, err %d\n",
+ 			  port, idx, err);
+-	}
+-
+-	lo_addr = (u16)PHY_TSTAMP_L(idx);
+-
+-	err = ice_write_port_mem_eth56g(hw, port, lo_addr, 0);
+-	if (err) {
+-		ice_debug(hw, ICE_DBG_PTP, "Failed to clear low PTP timestamp register for port %u, idx %u, err %d\n",
+-			  port, idx, err);
+ 		return err;
+ 	}
+ 
+@@ -1167,159 +1087,36 @@ static int ice_clear_ptp_tstamp_eth56g(struct ice_hw *hw, u8 port, u8 idx)
+ }
+ 
+ /**
+- * ice_ptp_reset_ts_memory_eth56g - Clear all timestamps from the port block
++ * ice_ptp_clear_tx_memory_status_eth56g - Reset one port's Tx timestamp memory
+  * @hw: pointer to the HW struct
+- */
+-static void ice_ptp_reset_ts_memory_eth56g(struct ice_hw *hw)
+-{
+-	unsigned int port;
+-
+-	for (port = 0; port < hw->ptp.num_lports; port++) {
+-		ice_write_ptp_reg_eth56g(hw, port, PHY_REG_TX_MEMORY_STATUS_L,
+-					 0);
+-		ice_write_ptp_reg_eth56g(hw, port, PHY_REG_TX_MEMORY_STATUS_U,
+-					 0);
+-	}
+-}
+-
+-/**
+- * ice_ptp_prep_port_time_eth56g - Prepare one PHY port with initial time
+- * @hw: pointer to the HW struct
+- * @port: port number
+- * @time: time to initialize the PHY port clocks to
++ * @port: port number to clear
+  *
+- * Write a new initial time value into registers of a specific PHY port.
++ * Fully reset a single PHY port's Tx timestamp memory. Per the PHY spec, the
++ * only way to clear a timestamp valid bit (and its read-only ts_memory_status
++ * bit) is to read the timestamp memory location, so read every entry for the
++ * port (two 32-bit reads each). This discards all timestamp data on the port,
++ * so it must only be used for a full reset; callers that must preserve
++ * in-flight timestamps clear individual indices via ice_clear_phy_tstamp().
++ *
++ * Due to interactions with an internal HW counter for the number of
++ * outstanding Tx timestamps, this *must* only be called as part of the
++ * ice_ptp_phy_soft_reset_eth56g() procedure. Otherwise, the internal counter
++ * may become out of sync and prevent new timestamp interrupts.
++ *
++ * Return: 0 on success, negative error code on failure to read the PHY.
+  */
+-static int ice_ptp_prep_port_time_eth56g(struct ice_hw *hw, u8 port, u64 time)
++static int ice_ptp_clear_tx_memory_status_eth56g(struct ice_hw *hw, u8 port)
+ {
+ 	int err;
++	u8 idx;
+ 
+-	/* Tx case */
+-	err = ice_write_64b_ptp_reg_eth56g(hw, port, PHY_REG_TX_TIMER_INC_PRE_L,
+-					   time);
+-	if (err)
+-		return err;
+-	/* Rx case */
+-	return ice_write_64b_ptp_reg_eth56g(hw, port,
+-					    PHY_REG_RX_TIMER_INC_PRE_L, time);
+-}
+-
+-/**
+- * ice_ptp_prep_phy_time_eth56g - Prepare PHY port with initial time
+- * @hw: pointer to the HW struct
+- * @time: Time to initialize the PHY port clocks to
+- *
+- * Program the PHY port registers with a new initial time value. The port
+- * clock will be initialized once the driver issues an ICE_PTP_INIT_TIME sync
+- * command. The time value is the upper 32 bits of the PHY timer, usually in
+- * units of nominal nanoseconds.
+- */
+-static int ice_ptp_prep_phy_time_eth56g(struct ice_hw *hw, u32 time)
+-{
+-	u64 phy_time;
+-	u8 port;
+-
+-	/* The time represents the upper 32 bits of the PHY timer, so we need
+-	 * to shift to account for this when programming.
+-	 */
+-	phy_time = (u64)time << 32;
+-
+-	for (port = 0; port < hw->ptp.num_lports; port++) {
+-		int err;
+-
+-		err = ice_ptp_prep_port_time_eth56g(hw, port, phy_time);
+-		if (err) {
+-			ice_debug(hw, ICE_DBG_PTP, "Failed to write init time for port %u, err %d\n",
+-				  port, err);
+-			return err;
+-		}
+-	}
+-
+-	return 0;
+-}
+-
+-/**
+- * ice_ptp_prep_port_adj_eth56g - Prepare a single port for time adjust
+- * @hw: pointer to HW struct
+- * @port: Port number to be programmed
+- * @time: time in cycles to adjust the port clocks
+- *
+- * Program the port for an atomic adjustment by writing the Tx and Rx timer
+- * registers. The atomic adjustment won't be completed until the driver issues
+- * an ICE_PTP_ADJ_TIME command.
+- *
+- * Note that time is not in units of nanoseconds. It is in clock time
+- * including the lower sub-nanosecond portion of the port timer.
+- *
+- * Negative adjustments are supported using 2s complement arithmetic.
+- */
+-static int ice_ptp_prep_port_adj_eth56g(struct ice_hw *hw, u8 port, s64 time)
+-{
+-	u32 l_time, u_time;
+-	int err;
+-
+-	l_time = lower_32_bits(time);
+-	u_time = upper_32_bits(time);
+-
+-	/* Tx case */
+-	err = ice_write_ptp_reg_eth56g(hw, port, PHY_REG_TX_TIMER_INC_PRE_L,
+-				    l_time);
+-	if (err)
+-		goto exit_err;
+-
+-	err = ice_write_ptp_reg_eth56g(hw, port, PHY_REG_TX_TIMER_INC_PRE_U,
+-				    u_time);
+-	if (err)
+-		goto exit_err;
+-
+-	/* Rx case */
+-	err = ice_write_ptp_reg_eth56g(hw, port, PHY_REG_RX_TIMER_INC_PRE_L,
+-				    l_time);
+-	if (err)
+-		goto exit_err;
+-
+-	err = ice_write_ptp_reg_eth56g(hw, port, PHY_REG_RX_TIMER_INC_PRE_U,
+-				    u_time);
+-	if (err)
+-		goto exit_err;
+-
+-	return 0;
+-
+-exit_err:
+-	ice_debug(hw, ICE_DBG_PTP, "Failed to write time adjust for port %u, err %d\n",
+-		  port, err);
+-	return err;
+-}
+-
+-/**
+- * ice_ptp_prep_phy_adj_eth56g - Prep PHY ports for a time adjustment
+- * @hw: pointer to HW struct
+- * @adj: adjustment in nanoseconds
+- *
+- * Prepare the PHY ports for an atomic time adjustment by programming the PHY
+- * Tx and Rx port registers. The actual adjustment is completed by issuing an
+- * ICE_PTP_ADJ_TIME or ICE_PTP_ADJ_TIME_AT_TIME sync command.
+- */
+-static int ice_ptp_prep_phy_adj_eth56g(struct ice_hw *hw, s32 adj)
+-{
+-	int err = 0;
+-	s64 cycles;
+-	u8 port;
+-
+-	/* The port clock supports adjustment of the sub-nanosecond portion of
+-	 * the clock. We shift the provided adjustment in nanoseconds to
+-	 * calculate the appropriate adjustment to program into the PHY ports.
+-	 */
+-	cycles = (s64)adj << 32;
+-
+-	for (port = 0; port < hw->ptp.num_lports; port++) {
+-
+-		err = ice_ptp_prep_port_adj_eth56g(hw, port, cycles);
++	for (idx = 0; idx < INDEX_PER_PORT; idx++) {
++		err = ice_clear_ptp_tstamp_eth56g(hw, port, idx);
+ 		if (err)
+-			break;
++			return err;
+ 	}
+ 
+-	return err;
++	return 0;
+ }
+ 
+ /**
+@@ -1883,8 +1680,8 @@ int ice_phy_cfg_intr_eth56g(struct ice_hw *hw, u8 port, bool ena, u8 threshold)
+  * Issue a ICE_PTP_READ_TIME timer command to simultaneously capture the PHY
+  * and PHC timer values.
+  */
+-static int ice_read_phy_and_phc_time_eth56g(struct ice_hw *hw, u8 port,
+-					    u64 *phy_time, u64 *phc_time)
++int ice_read_phy_and_phc_time_eth56g(struct ice_hw *hw, u8 port, u64 *phy_time,
++				     u64 *phc_time)
+ {
+ 	struct ice_pf *pf = container_of(hw, struct ice_pf, hw);
+ 	u64 tx_time, rx_time;
+@@ -1933,72 +1730,6 @@ static int ice_read_phy_and_phc_time_eth56g(struct ice_hw *hw, u8 port,
+ 	return 0;
+ }
+ 
+-/**
+- * ice_sync_phy_timer_eth56g - Synchronize the PHY timer with PHC timer
+- * @hw: pointer to the HW struct
+- * @port: the PHY port to synchronize
+- *
+- * Perform an adjustment to ensure that the PHY and PHC timers are in sync.
+- * This is done by issuing a ICE_PTP_READ_TIME command which triggers a
+- * simultaneous read of the PHY timer and PHC timer. Then we use the
+- * difference to calculate an appropriate 2s complement addition to add
+- * to the PHY timer in order to ensure it reads the same value as the
+- * primary PHC timer.
+- */
+-static int ice_sync_phy_timer_eth56g(struct ice_hw *hw, u8 port)
+-{
+-	u64 phc_time, phy_time, difference;
+-	int err;
+-
+-	if (!ice_ptp_lock(hw)) {
+-		ice_debug(hw, ICE_DBG_PTP, "Failed to acquire PTP semaphore\n");
+-		return -EBUSY;
+-	}
+-
+-	err = ice_read_phy_and_phc_time_eth56g(hw, port, &phy_time, &phc_time);
+-	if (err)
+-		goto err_unlock;
+-
+-	/* Calculate the amount required to add to the port time in order for
+-	 * it to match the PHC time.
+-	 *
+-	 * Note that the port adjustment is done using 2s complement
+-	 * arithmetic. This is convenient since it means that we can simply
+-	 * calculate the difference between the PHC time and the port time,
+-	 * and it will be interpreted correctly.
+-	 */
+-
+-	ice_ptp_src_cmd(hw, ICE_PTP_NOP);
+-	difference = phc_time - phy_time;
+-
+-	err = ice_ptp_prep_port_adj_eth56g(hw, port, (s64)difference);
+-	if (err)
+-		goto err_unlock;
+-
+-	err = ice_ptp_one_port_cmd(hw, port, ICE_PTP_ADJ_TIME);
+-	if (err)
+-		goto err_unlock;
+-
+-	/* Issue the sync to activate the time adjustment */
+-	ice_ptp_exec_tmr_cmd(hw);
+-
+-	/* Re-capture the timer values to flush the command registers and
+-	 * verify that the time was properly adjusted.
+-	 */
+-	err = ice_read_phy_and_phc_time_eth56g(hw, port, &phy_time, &phc_time);
+-	if (err)
+-		goto err_unlock;
+-
+-	dev_info(ice_hw_to_dev(hw),
+-		 "Port %u PHY time synced to PHC: 0x%016llX, 0x%016llX\n",
+-		 port, (unsigned long long)phy_time,
+-		 (unsigned long long)phc_time);
+-
+-err_unlock:
+-	ice_ptp_unlock(hw);
+-	return err;
+-}
+-
+ /**
+  * ice_stop_phy_timer_eth56g - Stop the PHY clock timer
+  * @hw: pointer to the HW struct
+@@ -2013,10 +1744,6 @@ int ice_stop_phy_timer_eth56g(struct ice_hw *hw, u8 port, bool soft_reset)
+ {
+ 	int err;
+ 
+-	err = ice_write_ptp_reg_eth56g(hw, port, PHY_REG_TX_OFFSET_READY, 0);
+-	if (err)
+-		return err;
+-
+ 	err = ice_write_ptp_reg_eth56g(hw, port, PHY_REG_RX_OFFSET_READY, 0);
+ 	if (err)
+ 		return err;
+@@ -2031,9 +1758,11 @@ int ice_stop_phy_timer_eth56g(struct ice_hw *hw, u8 port, bool soft_reset)
+  * @hw: pointer to the HW struct
+  * @port: the PHY port to start
+  *
+- * Start the clock of a PHY port. This must be done as part of the flow to
+- * re-calibrate Tx and Rx timestamping offsets whenever the clock time is
+- * initialized or when link speed changes.
++ * Perform a PHY soft reset and then start the clock for the PHY port.
++ *
++ * This must be done as part of the flow to re-calibrate Tx and Rx
++ * timestamping offsets whenever the clock time is initialized or when link
++ * speed changes.
+  *
+  */
+ int ice_start_phy_timer_eth56g(struct ice_hw *hw, u8 port)
+@@ -2046,23 +1775,34 @@ int ice_start_phy_timer_eth56g(struct ice_hw *hw, u8 port)
+ 
+ 	tmr_idx = ice_get_ptp_src_clock_index(hw);
+ 
++	err = ice_ptp_phy_soft_reset_eth56g(hw, port);
++	if (err)
++		return err;
++
+ 	err = ice_stop_phy_timer_eth56g(hw, port, false);
+ 	if (err)
+ 		return err;
+ 
++	/* Hold the PTP semaphore across the whole incval init and phase sync so
++	 * concurrent adjtime/adjfine cannot interfere
++	 */
++	if (!ice_ptp_lock(hw)) {
++		dev_err(ice_hw_to_dev(hw), "Failed to acquire PTP semaphore\n");
++		return -EBUSY;
++	}
++
+ 	ice_ptp_src_cmd(hw, ICE_PTP_NOP);
+ 
+ 	err = ice_phy_cfg_parpcs_eth56g(hw, port);
+ 	if (err)
+-		return err;
+-
++		goto err_ptp_unlock;
+ 	err = ice_phy_cfg_ptp_1step_eth56g(hw, port);
+ 	if (err)
+-		return err;
++		goto err_ptp_unlock;
+ 
+ 	err = ice_phy_cfg_mac_eth56g(hw, port);
+ 	if (err)
+-		return err;
++		goto err_ptp_unlock;
+ 
+ 	if (ice_is_primary(hw)) {
+ 		lo = rd32(hw, GLTSYN_INCVAL_L(tmr_idx));
+@@ -2073,11 +1813,6 @@ int ice_start_phy_timer_eth56g(struct ice_hw *hw, u8 port)
+ 	}
+ 	incval = (u64)hi << 32 | lo;
+ 
+-	if (!ice_ptp_lock(hw)) {
+-		dev_err(ice_hw_to_dev(hw), "Failed to acquire PTP semaphore\n");
+-		return -EBUSY;
+-	}
+-
+ 	err = ice_write_40b_ptp_reg_eth56g(hw, port, PHY_REG_TIMETUS_L, incval);
+ 	if (err)
+ 		goto err_ptp_unlock;
+@@ -2090,10 +1825,6 @@ int ice_start_phy_timer_eth56g(struct ice_hw *hw, u8 port)
+ 
+ 	ice_ptp_unlock(hw);
+ 
+-	err = ice_sync_phy_timer_eth56g(hw, port);
+-	if (err)
+-		return err;
+-
+ 	err = ice_write_ptp_reg_eth56g(hw, port, PHY_REG_TX_OFFSET_READY, 1);
+ 	if (err)
+ 		return err;
+@@ -2156,6 +1887,7 @@ int ice_ptp_read_tx_hwtstamp_status_eth56g(struct ice_hw *hw, u32 *ts_status)
+  *
+  * Trigger a soft reset of the ETH56G PHY by toggling the soft reset
+  * bit in the PHY global register. The reset sequence consists of:
++ *   0. Reading every timestamp memory register to clear its valid bit
+  *   1. Clearing the soft reset bit
+  *   2. Asserting the soft reset bit
+  *   3. Clearing the soft reset bit again
+@@ -2164,6 +1896,12 @@ int ice_ptp_read_tx_hwtstamp_status_eth56g(struct ice_hw *hw, u32 *ts_status)
+  * to settle. This provides a controlled way to reinitialize the PHY
+  * without requiring a full device reset.
+  *
++ * To ensure that the internal counter matches the contents of the
++ * PHY_REG_TX_MEMORY_STATUS, read every timestamp index prior to performing
++ * the soft reset. The PHY_REG_TX_MEMORY_STATUS reads ensure that the region
++ * is cleared, while the soft reset procedure ensures that the timestamp
++ * counter is reset to zero.
++ *
+  * Return: 0 on success, or a negative error code on failure when
+  *         reading or writing the PHY register.
+  */
+@@ -2172,6 +1910,13 @@ int ice_ptp_phy_soft_reset_eth56g(struct ice_hw *hw, u8 port)
+ 	u32 global_val;
+ 	int err;
+ 
++	err = ice_ptp_clear_tx_memory_status_eth56g(hw, port);
++	if (err) {
++		ice_debug(hw, ICE_DBG_PTP, "Failed to clear PHY_REG_TX_MEMORY_STATUS for port %d, err %d\n",
++			  port, err);
++		return err;
++	}
++
+ 	err = ice_read_ptp_reg_eth56g(hw, port, PHY_REG_GLOBAL, &global_val);
+ 	if (err) {
+ 		ice_debug(hw, ICE_DBG_PTP, "Failed to read PHY_REG_GLOBAL for port %d, err %d\n",
+@@ -3993,8 +3738,8 @@ int ice_ptp_clear_phy_offset_ready_e82x(struct ice_hw *hw)
+  * Issue a ICE_PTP_READ_TIME timer command to simultaneously capture the PHY
+  * and PHC timer values.
+  */
+-static int ice_read_phy_and_phc_time_e82x(struct ice_hw *hw, u8 port,
+-					  u64 *phy_time, u64 *phc_time)
++int ice_read_phy_and_phc_time_e82x(struct ice_hw *hw, u8 port, u64 *phy_time,
++				   u64 *phc_time)
+ {
+ 	u64 tx_time, rx_time;
+ 	u32 zo, lo;
+@@ -4453,8 +4198,8 @@ ice_read_phy_tstamp_ll_e810(struct ice_hw *hw, u8 idx, u8 *hi, u32 *lo)
+ 
+ 	/* Wait for any pending in-progress low latency interrupt */
+ 	err = wait_event_interruptible_locked_irq(params->atqbal_wq,
+-						  !(params->atqbal_flags &
+-						    ATQBAL_FLAGS_INTR_IN_PROGRESS));
++						  !test_bit(ATQBAL_FLAGS_INTR_IN_PROGRESS,
++							    params->atqbal_flags));
+ 	if (err) {
+ 		spin_unlock_irq(&params->atqbal_wq.lock);
+ 		return err;
+@@ -4683,8 +4428,8 @@ static int ice_ptp_prep_phy_adj_ll_e810(struct ice_hw *hw, s32 adj)
+ 
+ 	/* Wait for any pending in-progress low latency interrupt */
+ 	err = wait_event_interruptible_locked_irq(params->atqbal_wq,
+-						  !(params->atqbal_flags &
+-						    ATQBAL_FLAGS_INTR_IN_PROGRESS));
++						  !test_bit(ATQBAL_FLAGS_INTR_IN_PROGRESS,
++							    params->atqbal_flags));
+ 	if (err) {
+ 		spin_unlock_irq(&params->atqbal_wq.lock);
+ 		return err;
+@@ -4774,8 +4519,8 @@ static int ice_ptp_prep_phy_incval_ll_e810(struct ice_hw *hw, u64 incval)
+ 
+ 	/* Wait for any pending in-progress low latency interrupt */
+ 	err = wait_event_interruptible_locked_irq(params->atqbal_wq,
+-						  !(params->atqbal_flags &
+-						    ATQBAL_FLAGS_INTR_IN_PROGRESS));
++						  !test_bit(ATQBAL_FLAGS_INTR_IN_PROGRESS,
++							    params->atqbal_flags));
+ 	if (err) {
+ 		spin_unlock_irq(&params->atqbal_wq.lock);
+ 		return err;
+@@ -5969,6 +5714,36 @@ static int ice_ptp_tmr_cmd(struct ice_hw *hw, enum ice_ptp_tmr_cmd cmd)
+ 	return 0;
+ }
+ 
++/**
++ * ice_ptp_src_tmr_cmd - Trigger a timer command for the source timer only
++ * @hw: pointer to HW struct
++ * @cmd: the command to issue
++ *
++ * Apply @cmd to the source timer while all PHY ports are issued a NOP, so
++ * their free running timers are left untouched.
++ */
++static int ice_ptp_src_tmr_cmd(struct ice_hw *hw, enum ice_ptp_tmr_cmd cmd)
++{
++	u32 port;
++
++	ice_ptp_src_cmd(hw, cmd);
++
++	for (port = 0; port < hw->ptp.num_lports; port++) {
++		int err;
++
++		err = ice_ptp_write_port_cmd(hw, port, ICE_PTP_NOP);
++		if (err) {
++			ice_debug(hw, ICE_DBG_PTP, "Failed to prepare PHY port %u for NOP, err %d\n",
++				  port, err);
++			return err;
++		}
++	}
++
++	ice_ptp_exec_tmr_cmd(hw);
++
++	return 0;
++}
++
+ /**
+  * ice_ptp_init_time - Initialize device time to provided value
+  * @hw: pointer to HW struct
+@@ -6008,9 +5783,8 @@ int ice_ptp_init_time(struct ice_hw *hw, u64 time)
+ 		err = ice_ptp_prep_phy_time_e82x(hw, (u32)(time & 0xFFFFFFFF));
+ 		break;
+ 	case ICE_MAC_GENERIC_3K_E825:
+-		err = ice_ptp_prep_phy_time_eth56g(hw,
+-						   (u32)(time & 0xFFFFFFFF));
+-		break;
++		/* PHY port timers free run; the offset to PHC is kept in SW */
++		return ice_ptp_src_tmr_cmd(hw, ICE_PTP_INIT_TIME);
+ 	default:
+ 		err = -EOPNOTSUPP;
+ 	}
+@@ -6130,8 +5904,8 @@ int ice_ptp_adj_clock(struct ice_hw *hw, s32 adj)
+ 		err = ice_ptp_prep_phy_adj_e82x(hw, adj);
+ 		break;
+ 	case ICE_MAC_GENERIC_3K_E825:
+-		err = ice_ptp_prep_phy_adj_eth56g(hw, adj);
+-		break;
++		/* PHY port timers free run; the offset to PHC is kept in SW */
++		return ice_ptp_src_tmr_cmd(hw, ICE_PTP_ADJ_TIME);
+ 	default:
+ 		err = -EOPNOTSUPP;
+ 	}
+@@ -6210,8 +5984,9 @@ void ice_ptp_reset_ts_memory(struct ice_hw *hw)
+ 		ice_ptp_reset_ts_memory_e82x(hw);
+ 		break;
+ 	case ICE_MAC_GENERIC_3K_E825:
+-		ice_ptp_reset_ts_memory_eth56g(hw);
+-		break;
++		/* E825 hardware must only reset timestamp memory as part of
++		 * the soft reset procedure.
++		 */
+ 	case ICE_MAC_E810:
+ 	default:
+ 		return;
+diff --git a/src/ice_ptp_hw.h b/src/ice_ptp_hw.h
+index 474f59d..c9a1628 100644
+--- a/src/ice_ptp_hw.h
++++ b/src/ice_ptp_hw.h
+@@ -336,6 +336,8 @@ int ice_start_phy_timer_e82x(struct ice_hw *hw, u8 port);
+ int ice_phy_cfg_tx_offset_e82x(struct ice_hw *hw, u8 port);
+ int ice_phy_cfg_rx_offset_e82x(struct ice_hw *hw, u8 port);
+ int ice_phy_cfg_intr_e82x(struct ice_hw *hw, u8 quad, bool ena, u8 threshold);
++int ice_read_phy_and_phc_time_e82x(struct ice_hw *hw, u8 port, u64 *phy_time,
++				   u64 *phc_time);
+ 
+ int ice_write_pca9575_reg(struct ice_hw *hw, u8 offset, u8 data);
+ bool ice_is_pca9575_present(struct ice_hw *hw);
+@@ -381,6 +383,8 @@ int ice_phy_cfg_rx_offset_eth56g(struct ice_hw *hw, u8 port);
+ int ice_phy_cfg_intr_eth56g(struct ice_hw *hw, u8 port, bool ena, u8 threshold);
+ int ice_phy_cfg_ptp_1step_eth56g(struct ice_hw *hw, u8 port);
+ int ice_ptp_phy_soft_reset_eth56g(struct ice_hw *hw, u8 port);
++int ice_read_phy_and_phc_time_eth56g(struct ice_hw *hw, u8 port, u64 *phy_time,
++				     u64 *phc_time);
+ 
+ #define ICE_ETH56G_NOMINAL_INCVAL	0x140000000ULL
+ #define ICE_ETH56G_NOMINAL_PCS_REF_TUS	0x100000000ULL
+@@ -731,6 +735,8 @@ static inline u64 ice_get_base_incval(const struct ice_hw *hw,
+ #define PHY_TSTAMP_L(x) (((x) * 8) + 0)
+ #define PHY_TSTAMP_U(x) (((x) * 8) + 4)
+ 
++#define INDEX_PER_PORT			64
++
+ #define PHY_REG_DESKEW_0		0x94
+ #define PHY_REG_DESKEW_0_RLEVEL		GENMASK(6, 0)
+ #define PHY_REG_DESKEW_0_RLEVEL_FRAC	GENMASK(9, 7)
+diff --git a/src/ice_trace.h b/src/ice_trace.h
+index 836abaa..ed5de5a 100644
+--- a/src/ice_trace.h
++++ b/src/ice_trace.h
+@@ -283,7 +283,7 @@ DECLARE_EVENT_CLASS(ice_tx_tstamp_template,
+ 				     __field(int, len)
+ 				     __field(int, in_use)
+ 				     __field(u8, init)
+-				     __field(u8, calibrating)),
++				     __field(u8, disabled)),
+ 
+ 		    TP_fast_assign(lockdep_assert_held(&tx->lock);
+ #ifdef HAVE_ASSIGN_STR_2_PARAMS
+@@ -295,7 +295,7 @@ DECLARE_EVENT_CLASS(ice_tx_tstamp_template,
+ 				   __assign_str(netdev_name);
+ #endif /* HAVE_ASSIGN_STR_2_PARAMS */
+ 				   __entry->skb = skb;
+-				   __entry->seq = ice_ptp_get_seq_id(skb);
++				   __entry->seq = ice_ptp_get_tx_seq_id(skb);
+ 				   __entry->idx = idx;
+ 				   __entry->block = tx->block;
+ 				   __entry->offset = tx->offset;
+@@ -303,14 +303,14 @@ DECLARE_EVENT_CLASS(ice_tx_tstamp_template,
+ 				   __entry->in_use = bitmap_weight(tx->in_use,
+ 								   tx->len);
+ 				   __entry->init = tx->init;
+-				   __entry->calibrating = tx->calibrating;),
++				   __entry->disabled = tx->disabled;),
+ 
+-		    TP_printk("dev=%s netdev=%s skb=%p sequence_id=%d block=%d offset=%d len=%d in_use=%d init=%d calibrating=%d idx=%d",
++		    TP_printk("dev=%s netdev=%s skb=%p sequence_id=%d block=%d offset=%d len=%d in_use=%d init=%d disabled=%d idx=%d",
+ 			      __get_str(dev_name), __get_str(netdev_name),
+ 			      __entry->skb, __entry->seq,
+ 			      __entry->block, __entry->offset, __entry->len,
+ 			      __entry->in_use, __entry->init,
+-			      __entry->calibrating, __entry->idx));
++			      __entry->disabled, __entry->idx));
+ #define DEFINE_TX_TSTAMP_OP_EVENT(name) \
+ DEFINE_EVENT(ice_tx_tstamp_template, name, \
+ 	     TP_PROTO(struct device *dev, struct ice_ptp_tx *tx, \
+@@ -346,7 +346,7 @@ DECLARE_EVENT_CLASS(ice_tx_tstamp_with_value_template,
+ 				     __field(int, len)
+ 				     __field(int, in_use)
+ 				     __field(u8, init)
+-				     __field(u8, calibrating)),
++				     __field(u8, disabled)),
+ 
+ 		    TP_fast_assign(lockdep_assert_held(&tx->lock);
+ #ifdef HAVE_ASSIGN_STR_2_PARAMS
+@@ -358,7 +358,7 @@ DECLARE_EVENT_CLASS(ice_tx_tstamp_with_value_template,
+ 				   __assign_str(netdev_name);
+ #endif /* HAVE_ASSIGN_STR_2_PARAMS */
+ 				   __entry->skb = skb;
+-				   __entry->seq = ice_ptp_get_seq_id(skb);
++				   __entry->seq = ice_ptp_get_tx_seq_id(skb);
+ 				   __entry->raw_tstamp = raw_tstamp;
+ 				   __entry->tstamp = tstamp;
+ 				   __entry->idx = idx;
+@@ -368,15 +368,15 @@ DECLARE_EVENT_CLASS(ice_tx_tstamp_with_value_template,
+ 				   __entry->in_use = bitmap_weight(tx->in_use,
+ 								   tx->len);
+ 				   __entry->init = tx->init;
+-				   __entry->calibrating = tx->calibrating;),
++				   __entry->disabled = tx->disabled;),
+ 
+-		    TP_printk("dev=%s netdev=%s skb=%p sequence_id=%d raw_tstamp=%llu tstamp=%llu block=%d offset=%d len=%d in_use=%d init=%d calibrating=%d idx=%d",
++		    TP_printk("dev=%s netdev=%s skb=%p sequence_id=%d raw_tstamp=%llu tstamp=%llu block=%d offset=%d len=%d in_use=%d init=%d disabled=%d idx=%d",
+ 			      __get_str(dev_name), __get_str(netdev_name),
+ 			      __entry->skb, __entry->seq,
+ 			      __entry->raw_tstamp, __entry->tstamp,
+ 			      __entry->block, __entry->offset, __entry->len,
+ 			      __entry->in_use, __entry->init,
+-			      __entry->calibrating, __entry->idx));
++			      __entry->disabled, __entry->idx));
+ 
+ #define DEFINE_TX_TSTAMP_OP_EVENT_WITH_VALUE(name) \
+ DEFINE_EVENT(ice_tx_tstamp_with_value_template, name, \
+@@ -389,6 +389,40 @@ DEFINE_TX_TSTAMP_OP_EVENT_WITH_VALUE(ice_tx_tstamp_complete);
+ DEFINE_TX_TSTAMP_OP_EVENT_WITH_VALUE(ice_tx_tstamp_invalid);
+ DEFINE_TX_TSTAMP_OP_EVENT_WITH_VALUE(ice_tx_tstamp_dropped);
+ 
++/* Trace event for Rx timestamp */
++TRACE_EVENT(ice_rx_hwtstamp,
++	    TP_PROTO(struct device *dev, struct sk_buff *skb,
++		     u64 cached_time, u32 ts_high, u64 ts_ns),
++
++	    TP_ARGS(dev, skb, cached_time, ts_high, ts_ns),
++
++	    TP_STRUCT__entry(__string(dev_name, dev_name(dev))
++			     __string(netdev_name, netdev_name(skb->dev))
++			     __field(void *, skb)
++			     __field(int, seq)
++			     __field(u64, cached_time)
++			     __field(u32, ts_high)
++			     __field(u64, ts_ns)),
++
++	    TP_fast_assign(__entry->skb = skb;
++			   __entry->seq = ice_ptp_get_rx_seq_id(skb);
++			   __entry->cached_time = cached_time;
++			   __entry->ts_high = ts_high;
++			   __entry->ts_ns = ts_ns;
++#ifdef HAVE_ASSIGN_STR_2_PARAMS
++			   __assign_str(dev_name, dev_name(dev));
++			   __assign_str(netdev_name, netdev_name(skb->dev));
++#else
++			   __assign_str(dev_name);
++			   __assign_str(netdev_name);
++#endif /* HAVE_ASSIGN_STR_2_PARAMS */
++			   ),
++
++	    TP_printk("dev=%s netdev=%s skb=%pK sequence_id=%d cached_time=%llu ts_high=%u ts_ns=%llu",
++		      __get_str(dev_name), __get_str(netdev_name),
++		      __entry->skb, __entry->seq,
++		      __entry->cached_time, __entry->ts_high, __entry->ts_ns));
++
+ /* Trace events for the miscellaneous (OICR) interrupt handler */
+ TRACE_EVENT(ice_misc_intr_begin,
+ 	    TP_PROTO(struct ice_pf *pf, u32 oicr, u32 ena_mask),
+diff --git a/src/ice_type.h b/src/ice_type.h
+index c2bf987..079806c 100644
+--- a/src/ice_type.h
++++ b/src/ice_type.h
+@@ -1417,12 +1417,16 @@ enum ice_sma_pins {
+ 	ICE_SMA_PINS_NUM
+ };
+ 
+-#define ATQBAL_FLAGS_INTR_IN_PROGRESS	BIT(0)
++enum ice_atqbal_flags {
++	ATQBAL_FLAGS_INTR_IN_PROGRESS,
++
++	ATQBAL_FLAGS_NBITS, /* must be last */
++};
+ 
+ struct ice_e810_params {
+ 	/* The wait queue lock also protects the low latency interface */
+ 	wait_queue_head_t atqbal_wq;
+-	unsigned int atqbal_flags;
++	DECLARE_BITMAP(atqbal_flags, ATQBAL_FLAGS_NBITS);
+ };
+ 
+ enum ice_eth56g_link_spd {
+diff --git a/src/ice_vf_lib.c b/src/ice_vf_lib.c
+index d95f91b..c32756b 100644
+--- a/src/ice_vf_lib.c
++++ b/src/ice_vf_lib.c
+@@ -890,7 +890,12 @@ void ice_reset_all_vfs(struct ice_pf *pf)
+ 		ice_vf_fsub_init(vf);
+ 
+ 		ice_vf_pre_vsi_rebuild(vf);
+-		ice_vf_rebuild_vsi(vf);
++		if (ice_vf_rebuild_vsi(vf)) {
++			dev_err(dev, "VF %u VSI rebuild failed, leaving VF disabled\n",
++				vf->vf_id);
++			mutex_unlock(&vf->cfg_lock);
++			continue;
++		}
+ 		ice_vf_post_vsi_rebuild(vf);
+ 
+ 		ice_eswitch_attach(pf, vf);
+@@ -1215,20 +1220,6 @@ static int ice_init_vf_rss_lut_sysfs(struct ice_vf *vf)
+ 	return device_create_file(&vf->vfdev->dev, &vf->rss_lut_attr);
+ }
+ 
+-static bool
+-ice_is_transmit_lldp_enabled(struct ice_pf *pf)
+-{
+-	struct ice_vf *vf;
+-	unsigned int bkt;
+-
+-	ice_for_each_vf(pf, bkt, vf) {
+-		if (vf->transmit_lldp)
+-			return true;
+-	}
+-
+-	return false;
+-}
+-
+ /**
+  * ice_ena_vf_rx_lldp
+  * @vf: VF to configure Rx LLDP for
+@@ -1314,11 +1305,6 @@ int ice_handle_vf_tx_lldp(struct ice_vf *vf, bool ena)
+ 		return -EPERM;
+ 	}
+ 
+-	if (ena && ice_is_transmit_lldp_enabled(pf)) {
+-		dev_err(dev, "Only a single VF per port is allowed to transmit LLDP packets, ignoring the settings");
+-		return -EPERM;
+-	}
+-
+ 	allow_override = ena ? ice_vsi_ctx_set_allow_override
+ 			     : ice_vsi_ctx_clear_allow_override;
+ 
+@@ -1327,16 +1313,6 @@ int ice_handle_vf_tx_lldp(struct ice_vf *vf, bool ena)
+ 
+ 	vf->transmit_lldp = ena;
+ 
+-	vsi = ice_get_main_vsi(pf);
+-	if (!vsi)
+-		return -ENOENT;
+-	/* If VF can transmit LLDP, then PF cannot and vice versa */
+-	allow_override = ena ? ice_vsi_ctx_clear_allow_override
+-			     : ice_vsi_ctx_set_allow_override;
+-
+-	if (ice_vsi_update_security(vsi, allow_override))
+-		return -ENOENT;
+-
+ 	return 0;
+ }
+ 
+-- 
+2.43.0
+
