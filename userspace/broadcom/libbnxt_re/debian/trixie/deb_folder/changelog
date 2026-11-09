@@ -1,3 +1,10 @@
+libbnxt-re (239.1.170.0-1) unstable; urgency=medium
+
+  * Upgrade the release of the libbnxt_re Infiniband verbs library for StarlingX
+    to 239.1.170.0 from 238.1.138.5.
+
+ -- Iulian Mocanu <iulian.mocanu@windriver.com>  Thu, 12 Nov 2026 11:40:29 +0800
+
 libbnxt-re (238.1.138.5-1) unstable; urgency=medium
 
   * Upgrade the release of the libbnxt_re Infiniband verbs library for StarlingX

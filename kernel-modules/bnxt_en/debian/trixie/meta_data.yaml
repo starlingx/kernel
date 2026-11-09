@@ -1,13 +1,13 @@
 ---
-debver: 1.10.3.238.1.138.5
+debver: 1.10.3.239.1.170.0
 debname: bnxt-en
 dl_hook: dl_hook
 dl_files:
-  bcm_238.1.138.6a.tar.gz:
+  bcm_239.1.170.0a.tar.gz:
     topdir: null
     url: "https://docs.broadcom.com/docs-and-downloads/\
-          ethernet-network-adapters/NXE/BRCM_238.1.138.6/bcm_238.1.138.6a.tar.gz"
-    sha256sum: 9b3b3fb3b5d14bafbb6ae83c45005c2edef8d0a76fbbc2f9a4cfad0b2d05ecc7
+          ethernet-network-adapters/NXE/BRCM_239.1.170.0/bcm_239.1.170.0a.tar.gz"
+    sha256sum: 9e3d40259889e24ea3bbfa4f3ab2bd9e0dfc7df02fd38b3bd548385cf444f258
 revision:
   dist: $STX_DIST
   GITREVCOUNT:
