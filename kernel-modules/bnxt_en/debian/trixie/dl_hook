@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2022 Wind River Systems, Inc.
+# Copyright (c) 2026 Wind River Systems, Inc.
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements. The ASF licenses this
@@ -24,8 +24,8 @@
 # building.
 # Tools needed: mkdir, rm, tar
 
-DL_TARBALL=bcm_238.1.138.6a.tar.gz
-SRC_TARBALL=drivers_linux/bundle/netxtreme-bnxt_en-1.10.3-238.1.138.5.tar.gz
+DL_TARBALL=bcm_239.1.170.0a.tar.gz
+SRC_TARBALL=drivers_linux/bundle/netxtreme-bnxt_en-1.10.3-239.1.170.0.tar.gz
 TMPDIR="bcm_tmp"
 
 DESTDIR="${1}"
