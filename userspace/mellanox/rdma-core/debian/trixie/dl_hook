@@ -9,7 +9,7 @@ then
     exit 1
 fi
 
-cd OFED-internal-debian-25.10-2.4.1/SOURCES
+cd MLNX_OFED_SRC-*/SOURCES
 if [ $? -ne 0 ]
 then
     echo "SOURCES failed: DOCA_PKG source!"
