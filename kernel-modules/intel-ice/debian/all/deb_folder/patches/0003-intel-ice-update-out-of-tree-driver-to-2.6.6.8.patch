@@ -7,7 +7,7 @@ Update the Intel ICE out-of-tree driver to version 2.6.6.8
 
 - ice 2.6.6.8 was provided by Intel
 
-The 2.6.6.8 new update is a debug drop
+The 2.6.6.8 new update is an Intel interim debug drop
 delivered to investigate the E825 PF VSI rebuild failure (-EIO)
 and PHY stall seen under sustained SR-IOV RFC2544 traffic. Over
 base 2.6.6.4.1 it adds:
